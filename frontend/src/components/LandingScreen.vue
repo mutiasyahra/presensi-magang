@@ -25,9 +25,8 @@ const onSignIn = () => {
         </div>
 
         <div class="auth-buttons">
-          <button class="btn-primary" @click="onSignIn">
+          <button class="btn-primary" @click="$emit('click-login')">
             Sign In
-            <span class="arrow">→</span>
           </button>
           
           <button class="btn-secondary">
