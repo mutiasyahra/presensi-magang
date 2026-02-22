@@ -1,10 +1,11 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import LandingScreen from './components/LandingScreen.vue'
 import DashboardScreen from './components/DashboardScreen.vue'
 import ClockInScreen from './components/ClockInScreen.vue'
 import ClockOutScreen from './components/ClockOutScreen.vue'
-import HistoryScreen from './components/HistoryScreen.vue' // 1. IMPORT BARU
+import HistoryScreen from './components/HistoryScreen.vue'
+import LoginScreen from './components/LoginScreen.vue'
 
 const currentPage = ref('landing')
 
@@ -12,18 +13,42 @@ const navigateTo = (page) => {
   currentPage.value = page
   window.scrollTo(0, 0)
 }
+
+// Cek apakah user sudah punya token saat app dibuka
+onMounted(() => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    currentPage.value = 'dashboard'
+  }
+})
+
+// Dipanggil saat LoginScreen berhasil login
+const onLoginSuccess = (user) => {
+  navigateTo('dashboard')
+}
+
+// Dipanggil saat user logout (dari DashboardScreen)
+const onLogout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  navigateTo('landing')
+}
 </script>
+
 
 <template>
   <div class="app-background">
     <div class="mobile-frame">
       
-      <LandingScreen v-if="currentPage === 'landing'" @click-login="navigateTo('dashboard')" />
+      <LandingScreen v-if="currentPage === 'landing'" @click-login="navigateTo('login')" />
+
+      <LoginScreen v-if="currentPage === 'login'" @login-success="onLoginSuccess" />
 
       <DashboardScreen 
         v-if="currentPage === 'dashboard'" 
         @open-clock-in="navigateTo('clock-in')"
-        @navigate="navigateTo" 
+        @navigate="navigateTo"
+        @logout="onLogout"
       />
 
       <ClockInScreen v-if="currentPage === 'clock-in'" @go-back="navigateTo('dashboard')" />
@@ -39,6 +64,7 @@ const navigateTo = (page) => {
     </div>
   </div>
 </template>
+
 
 <style>
 /* Reset Dasar */
