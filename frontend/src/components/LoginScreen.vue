@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="card">
       <div class="header">
-        <div class="logo-icon">🎓</div>
+        <img src="/src/assets/bps.png" alt="Logo BPS" class="logo-img" />
         <h1 class="app-name">InternTrack</h1>
         <p class="subtitle">Student Portal</p>
       </div>
@@ -27,7 +27,7 @@
           <a href="#">Forgot Password?</a>
         </div>
 
-        <button type="submit" class="btn-login">
+        <button @click="$emit('login-success')" class="btn-login">
           Log In ➔
         </button>
       </form>

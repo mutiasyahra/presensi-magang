@@ -237,11 +237,11 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="nav-item">
+        <div class="nav-item" @click="$emit('navigate', 'leave')" style="cursor: pointer;">
           <img src="../assets/leave.png" alt="Leave">
           <span>Leave</span>
         </div>
-        <div class="nav-item">
+        <div class="nav-item" @click="$emit('navigate', 'profile')">
           <img src="../assets/profile.png" alt="Profile">
           <span>Profile</span>
         </div>

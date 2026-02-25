@@ -24,16 +24,6 @@ const onSignIn = () => {
           </p>
         </div>
 
-        <div class="auth-buttons">
-          <button class="btn-primary" @click="$emit('click-login')">
-            Sign In
-          </button>
-          
-          <button class="btn-secondary">
-            Create Account
-          </button>
-        </div>
-
         <div class="footer-text">
           <p>Version 2.0.1 • Edisi Spesial</p>
         </div>

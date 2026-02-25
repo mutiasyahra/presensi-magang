@@ -1,24 +1,43 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue' // Tambahkan onMounted di sini
 import LandingScreen from './components/LandingScreen.vue'
+import LoginScreen from './components/LoginScreen.vue'
 import DashboardScreen from './components/DashboardScreen.vue'
 import ClockInScreen from './components/ClockInScreen.vue'
 import ClockOutScreen from './components/ClockOutScreen.vue'
-import HistoryScreen from './components/HistoryScreen.vue' // 1. IMPORT BARU
+import HistoryScreen from './components/HistoryScreen.vue'
+import LeaveScreen from './components/LeaveScreen.vue'
+import ProfileScreen from './components/ProfileScreen.vue'
 
-const currentPage = ref('landing')
+// 1. Ubah halaman pertama kembali ke 'landing'
+const currentPage = ref('landing') 
 
 const navigateTo = (page) => {
   currentPage.value = page
   window.scrollTo(0, 0)
 }
+
+// 2. Tambahkan timer Splash Screen otomatis di sini!
+onMounted(() => {
+  // Jika saat aplikasi dibuka halamannya adalah landing
+  if (currentPage.value === 'landing') {
+    setTimeout(() => {
+      navigateTo('login') // Pindah otomatis ke halaman login
+    }, 3000) // 3000 = 3 detik. Bisa kamu atur sendiri angkanya!
+  }
+})
 </script>
 
 <template>
   <div class="app-background">
     <div class="mobile-frame">
       
-      <LandingScreen v-if="currentPage === 'landing'" @click-login="navigateTo('dashboard')" />
+      <LandingScreen v-if="currentPage === 'landing'" @click-login="navigateTo('login')" />
+
+      <LoginScreen 
+        v-if="currentPage === 'login'" 
+        @login-success="navigateTo('dashboard')" 
+      />
 
       <DashboardScreen 
         v-if="currentPage === 'dashboard'" 
@@ -35,8 +54,18 @@ const navigateTo = (page) => {
         @go-back="navigateTo('dashboard')"
         @navigate="navigateTo"
       />
-      
-    </div>
+
+      <LeaveScreen 
+        v-if="currentPage === 'leave'" 
+        @go-back="navigateTo('dashboard')"
+        @navigate="navigateTo"
+      />
+
+      <ProfileScreen 
+        v-if="currentPage === 'profile'" 
+        @navigate="navigateTo"
+      />
+      </div>
   </div>
 </template>
 
