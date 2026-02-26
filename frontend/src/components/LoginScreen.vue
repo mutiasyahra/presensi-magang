@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="card">
       <div class="header">
-        <div class="logo-icon">🎓</div>
+        <img src="/src/assets/bps.png" alt="Logo BPS" class="logo-img" />
         <h1 class="app-name">InternTrack</h1>
         <p class="subtitle">Student Portal</p>
       </div>
@@ -115,6 +115,13 @@ const handleLogin = async () => {
   border-radius: 20px;
   margin: 0 auto 15px;
   color: #4F46E5;
+}
+
+.logo-img {
+  width: 70px;
+  height: auto;
+  margin: 0 auto 15px;
+  display: block;
 }
 
 .app-name {

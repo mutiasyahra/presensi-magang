@@ -3,6 +3,8 @@ import { ref, computed } from "vue";
 
 const emit = defineEmits(["navigate", "go-back"]);
 
+const emit = defineEmits(['navigate', 'go-back'])
+
 // --- DATA DUMMY ---
 const historyData = ref([
   {
@@ -172,12 +174,12 @@ const getStatusClass = (status) => {
         </div>
 
         <div class="nav-item" @click="$emit('navigate', 'leave')">
-          <img src="../assets/leave.png" alt="Leave" />
+          <img src="../assets/leave.png" alt="Leave">
           <span>Leave</span>
         </div>
 
         <div class="nav-item" @click="$emit('navigate', 'profile')">
-          <img src="../assets/profile.png" alt="Profile" />
+          <img src="../assets/profile.png" alt="Profile">
           <span>Profile</span>
         </div>
       </div>
@@ -476,44 +478,29 @@ const getStatusClass = (status) => {
 }
 
 /* REVISI: Active State untuk History */
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  color: #94a3b8; /* Warna teks abu-abu */
+.nav-item { 
+  display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; 
+  color: #94A3B8; /* Warna teks abu-abu */
 }
 
-.nav-item img {
-  width: 24px;
-  height: 24px;
+.nav-item img { 
+  width: 24px; height: 24px; 
   /* Trik CSS: Paksa semua icon jadi warna abu-abu senada */
-  filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%)
-    hue-rotate(182deg) brightness(87%) contrast(85%);
+  filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%) hue-rotate(182deg) brightness(87%) contrast(85%);
   transition: all 0.2s ease;
 }
 
-.nav-item span {
-  font-size: 10px;
-  font-weight: 600;
+.nav-item span { font-size: 10px; font-weight: 600; }
+
+.nav-item.active { 
+  color: #2563EB; /* Warna teks biru untuk yang aktif */
 }
 
-.nav-item.active {
-  color: #2563eb; /* Warna teks biru untuk yang aktif */
-}
-
-.nav-item.active img {
+.nav-item.active img { 
   /* Trik CSS: Paksa icon yang aktif (Leave) jadi warna biru! */
-  filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%)
-    hue-rotate(213deg) brightness(96%) contrast(97%);
+  filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%);
 }
-.nav-item-scan-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-}
+.nav-item-scan-wrapper { display: flex; justify-content: center; align-items: center; height: 100%; }
 .scan-button {
   width: 50px;
   height: 50px;

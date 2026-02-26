@@ -1,16 +1,16 @@
 <script setup>
-import { ref, onMounted } from "vue";
-import LandingScreen from "./components/LandingScreen.vue";
-import LoginScreen from "./components/LoginScreen.vue";
-import DashboardScreen from "./components/DashboardScreen.vue";
-import ClockInScreen from "./components/ClockInScreen.vue";
-import ClockOutScreen from "./components/ClockOutScreen.vue";
-import HistoryScreen from "./components/HistoryScreen.vue";
-import LeaveScreen from "./components/LeaveScreen.vue";
-import ProfileScreen from "./components/ProfileScreen.vue";
+import { ref, onMounted } from 'vue'
+import LandingScreen from './components/LandingScreen.vue'
+import LoginScreen from './components/LoginScreen.vue'
+import DashboardScreen from './components/DashboardScreen.vue'
+import ClockInScreen from './components/ClockInScreen.vue'
+import ClockOutScreen from './components/ClockOutScreen.vue'
+import HistoryScreen from './components/HistoryScreen.vue'
+import LeaveScreen from './components/LeaveScreen.vue'
+import ProfileScreen from './components/ProfileScreen.vue'
 
 // 1. Ubah halaman pertama kembali ke 'landing'
-const currentPage = ref("landing");
+const currentPage = ref('landing') 
 
 const navigateTo = (page) => {
   currentPage.value = page;
@@ -19,17 +19,17 @@ const navigateTo = (page) => {
 
 // 2. Gabungan: Cek Token & Timer Splash Screen otomatis
 onMounted(() => {
-  const token = localStorage.getItem("token");
-
+  const token = localStorage.getItem('token')
+  
   if (token) {
     // Jika sudah pernah login, langsung ke dashboard
-    currentPage.value = "dashboard";
+    currentPage.value = 'dashboard'
   } else {
     // Jika belum login & sedang di landing, tunggu 3 detik lalu ke login
-    if (currentPage.value === "landing") {
+    if (currentPage.value === 'landing') {
       setTimeout(() => {
-        navigateTo("login");
-      }, 3000);
+        navigateTo('login')
+      }, 3000)
     }
   }
 });
@@ -55,9 +55,9 @@ const onLogout = () => {
         @click-login="navigateTo('login')"
       />
 
-      <LoginScreen
-        v-if="currentPage === 'login'"
-        @login-success="onLoginSuccess"
+      <LoginScreen 
+        v-if="currentPage === 'login'" 
+        @login-success="onLoginSuccess" 
       />
 
       <DashboardScreen
@@ -83,14 +83,17 @@ const onLogout = () => {
         @navigate="navigateTo"
       />
 
-      <LeaveScreen
-        v-if="currentPage === 'leave'"
+      <LeaveScreen 
+        v-if="currentPage === 'leave'" 
         @go-back="navigateTo('dashboard')"
         @navigate="navigateTo"
       />
 
-      <ProfileScreen v-if="currentPage === 'profile'" @navigate="navigateTo" />
-    </div>
+      <ProfileScreen 
+        v-if="currentPage === 'profile'" 
+        @navigate="navigateTo"
+      />
+      </div>
   </div>
 </template>
 
