@@ -26,7 +26,8 @@
           </div>
           <div class="card-content">
             <p class="label">CURRENT LOCATION</p>
-            <p class="value">Building 4, Tech Innovation Hub, Science Park Drive, Singapore 118222</p>
+            <p class="value">{{ locationName || 'Fetching location...' }}</p>
+            <p v-if="coords.lat" class="coords">{{ coords.lat }}, {{ coords.lng }}</p>
           </div>
         </div>
 
@@ -37,7 +38,7 @@
           <div class="card-content">
             <p class="label">TIMESTAMP</p>
             <div class="time-row">
-              <span class="value">Oct 24, 2023 • 05:00 PM</span>
+              <span class="value">{{ currentTimeStr }}</span>
               <span class="badge-ontime">ON TIME</span>
             </div>
           </div>
@@ -49,6 +50,7 @@
             <span class="label-title">DAILY ACTIVITY</span>
           </div>
           <textarea 
+            v-model="progressKegiatan"
             class="custom-textarea" 
             placeholder="What did you accomplish today?"
           ></textarea>
@@ -60,26 +62,148 @@
             <span class="label-title">EVIDENCE UPLOAD</span>
           </div>
           
-          <div class="upload-area">
-             <div class="upload-placeholder">
+          <div class="upload-area" @click="triggerFileInput">
+             <div class="upload-placeholder" v-if="!selectedFile">
                 <img src="../assets/pilih file.png" class="upload-icon" alt="Upload">
                 <p class="upload-text">Lampirkan foto atau dokumen pendukung<br>(Format PDF/JPG, Max 5MB)</p>
                 <button class="btn-pilih-file">Pilih File</button>
              </div>
+             <div class="selected-file" v-else>
+               <p>{{ selectedFile.name }}</p>
+               <button @click.stop="selectedFile = null" class="btn-remove">Remove</button>
+             </div>
+             <input type="file" ref="fileInput" @change="handleFileChange" style="display: none" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx" />
           </div>
         </div>
 
+        <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
+
       </div> 
       </div> <div class="footer-fixed">
-      <button class="btn-submit">
+      <button class="btn-submit" @click="submitAttendance" :disabled="isLoading">
         <img src="../assets/camera.png" alt="Cam">
-        Submit Attendance
+        {{ isLoading ? 'Submitting...' : 'Submit Attendance' }}
       </button>
       <a href="#" class="retake-link">Retake Photo</a>
     </div>
 
   </div>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import api from '../api/axios.js'
+
+const emit = defineEmits(['go-back'])
+
+const progressKegiatan = ref('')
+const selectedFile = ref(null)
+const fileInput = ref(null)
+const isLoading = ref(false)
+const errorMessage = ref('')
+const locationName = ref('Tech Innovations Hub, Jakarta (Simulated)')
+const coords = ref({ lat: null, lng: null })
+const currentTimeStr = ref('')
+
+const updateTime = () => {
+  const now = new Date()
+  const options = { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+  currentTimeStr.value = now.toLocaleDateString('en-US', options).replace(',', ' •')
+}
+
+const getLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        coords.value.lat = position.coords.latitude
+        coords.value.lng = position.coords.longitude
+      },
+      (err) => console.error("Error getting location:", err)
+    )
+  }
+}
+
+const triggerFileInput = () => {
+  fileInput.value.click()
+}
+
+const handleFileChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    if (file.size > 5 * 1024 * 1024) {
+      errorMessage.value = "File size exceeds 5MB."
+      return
+    }
+    selectedFile.value = file
+  }
+}
+
+const submitAttendance = async () => {
+  if (!progressKegiatan.value) {
+    errorMessage.value = "Please fill in your daily activity."
+    return
+  }
+  if (!selectedFile.value) {
+    errorMessage.value = "Please upload evidence."
+    return
+  }
+
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const formData = new FormData()
+    formData.append('progress_kegiatan', progressKegiatan.value)
+    formData.append('lat', coords.value.lat || -6.200000)
+    formData.append('long', coords.value.lng || 106.816666)
+    formData.append('photo', selectedFile.value)
+
+    await api.post('/clock-out', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+
+    alert("Clock-out successful!")
+    emit('go-back')
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message || "Failed to submit attendance."
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  updateTime()
+  getLocation()
+})
+</script>
+
+<style scoped>
+.error-text {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 10px;
+  text-align: center;
+}
+.selected-file p {
+  font-size: 13px;
+  color: #334155;
+  margin-bottom: 8px;
+}
+.btn-remove {
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.coords {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+</style>
 
 <style scoped>
 /* --- 1. LAYOUT UTAMA --- */

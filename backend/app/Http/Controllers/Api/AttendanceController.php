@@ -181,12 +181,61 @@ class AttendanceController extends Controller
 
     public function stats()
     {
-        $data = Attendance::selectRaw('DATE(attendance_date) as tanggal, COUNT(*) as total')
-            ->groupBy('tanggal')
-            ->orderBy('tanggal', 'asc')
-            ->get();
+        $user = auth()->user();
+        $month = Carbon::now()->format('Y-m');
 
-        return response()->json($data);
+        if ($user->role === 'admin') {
+            // Stats global untuk admin
+            $totalPresent = Attendance::where('status', 'hadir')
+                ->where('attendance_date', 'like', $month.'%')
+                ->count();
+                
+            $totalLate = Attendance::where('status', 'terlambat')
+                ->where('attendance_date', 'like', $month.'%')
+                ->count();
+                
+            $totalAbsent = Attendance::where('status', 'alfa')
+                ->where('attendance_date', 'like', $month.'%')
+                ->count();
+
+            $pendingLeaves = \App\Models\Leave::where('status', 'pending')->count();
+            $totalInterns = \App\Models\User::where('role', 'user')->count();
+
+            return response()->json([
+                'present' => $totalPresent,
+                'late' => $totalLate,
+                'absent' => $totalAbsent,
+                'pending_leaves' => $pendingLeaves,
+                'total_interns' => $totalInterns
+            ]);
+        }
+
+        // Stats personal untuk user
+        $present = Attendance::where('user_id', $user->id)
+            ->where('status', 'hadir')
+            ->where('attendance_date', 'like', $month.'%')
+            ->count();
+
+        $late = Attendance::where('user_id', $user->id)
+            ->where('status', 'terlambat')
+            ->where('attendance_date', 'like', $month.'%')
+            ->count();
+
+        $absent = Attendance::where('user_id', $user->id)
+            ->where('status', 'alfa')
+            ->where('attendance_date', 'like', $month.'%')
+            ->count();
+
+        // Attendance rate calculation (dummy for now, based on work days)
+        $totalWorkDays = 22; // Assumed
+        $rate = $totalWorkDays > 0 ? round(($present / $totalWorkDays) * 100, 1) : 0;
+
+        return response()->json([
+            'present' => $present,
+            'late' => $late,
+            'absent' => $absent,
+            'attendance_rate' => $rate
+        ]);
     }
 
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)

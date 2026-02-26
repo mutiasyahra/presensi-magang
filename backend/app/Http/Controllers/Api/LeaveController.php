@@ -9,6 +9,15 @@ use App\Notifications\LeaveApprovedNotification;
 
 class LeaveController extends Controller
 {
+    public function index(Request $request)
+    {
+        $leaves = Leave::with('user')->orderBy('created_at', 'desc')->get();
+        return response()->json([
+            'message' => 'Daftar pengajuan cuti',
+            'data' => $leaves
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([

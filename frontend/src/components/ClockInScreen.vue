@@ -25,7 +25,8 @@
           </div>
           <div class="card-content">
             <p class="label">CURRENT LOCATION</p>
-            <p class="value">Building 4, Tech Innovation Hub, Science Park Drive, Singapore 118222</p>
+            <p class="value">{{ locationName || 'Fetching location...' }}</p>
+            <p v-if="coords.lat" class="coords">{{ coords.lat }}, {{ coords.lng }}</p>
           </div>
         </div>
         <div class="info-card">
@@ -35,7 +36,7 @@
           <div class="card-content">
             <p class="label">TIMESTAMP</p>
             <div class="time-row">
-              <span class="value">Oct 24, 2023 • 09:41 AM</span>
+              <span class="value">{{ currentTimeStr }}</span>
               <span class="badge-ontime">ON TIME</span>
             </div>
           </div>
@@ -47,22 +48,98 @@
             <span class="label">DAILY WORK PLAN</span>
           </div>
           <textarea 
+            v-model="rencanaKegiatan"
             class="plan-input" 
             placeholder="List your task..&#10;Example: Finalize UI for Dashboard & Weekly sync meeting"
           ></textarea>
         </div>
 
+        <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
+
       </div> 
       </div> <div class="footer-fixed">
-      <button class="btn-submit">
+      <button class="btn-submit" @click="submitAttendance" :disabled="isLoading">
         <img src="../assets/camera.png" alt="Cam">
-        Submit Attendance
+        {{ isLoading ? 'Submitting...' : 'Submit Attendance' }}
       </button>
       <a href="#" class="retake-link">Retake Photo</a>
     </div>
 
   </div>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import api from '../api/axios.js'
+
+const emit = defineEmits(['go-back'])
+
+const rencanaKegiatan = ref('')
+const isLoading = ref(false)
+const errorMessage = ref('')
+const locationName = ref('Tech Innovations Hub, Jakarta (Simulated)')
+const coords = ref({ lat: null, lng: null })
+const currentTimeStr = ref('')
+
+const updateTime = () => {
+  const now = new Date()
+  const options = { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+  currentTimeStr.value = now.toLocaleDateString('en-US', options).replace(',', ' •')
+}
+
+const getLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        coords.value.lat = position.coords.latitude
+        coords.value.lng = position.coords.longitude
+      },
+      (err) => {
+        console.error("Error getting location:", err)
+        // Fallback or alert
+      }
+    )
+  }
+}
+
+const submitAttendance = async () => {
+  if (!rencanaKegiatan.value) {
+    errorMessage.value = "Please fill in your work plan."
+    return
+  }
+
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const formData = new FormData()
+    formData.append('rencana_kegiatan', rencanaKegiatan.value)
+    formData.append('lat', coords.value.lat || -6.200000) // Default if geo fails
+    formData.append('long', coords.value.lng || 106.816666)
+    
+    // Simulations: Since we don't have real camera capture yet, we use a dummy blob
+    // In a real app, this would be the actual image captured.
+    const blob = await fetch('/src/assets/imagee.png').then(r => r.blob())
+    formData.append('photo', blob, 'attendance.png')
+
+    await api.post('/clock-in', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+
+    alert("Clock-in successful!")
+    emit('go-back')
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message || "Failed to submit attendance."
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  updateTime()
+  getLocation()
+})
+</script>
 
 <style scoped>
 /* =========================================

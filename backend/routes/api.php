@@ -34,6 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::patch('/leave/{id}', [LeaveController::class, 'approve']);
+    Route::get('/leaves', [LeaveController::class, 'index']);
     Route::get('/stats', [AttendanceController::class, 'stats']);
     Route::get('/export', [AttendanceController::class, 'exportExcel']);
     Route::get('/recap-monthly', [AttendanceController::class, 'monthlyRecap']);

@@ -1,78 +1,106 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import LandingScreen from './components/LandingScreen.vue'
-import DashboardScreen from './components/DashboardScreen.vue'
-import ClockInScreen from './components/ClockInScreen.vue'
-import ClockOutScreen from './components/ClockOutScreen.vue'
-import HistoryScreen from './components/HistoryScreen.vue'
-import LoginScreen from './components/LoginScreen.vue'
+import { ref, onMounted } from "vue";
+import LandingScreen from "./components/LandingScreen.vue";
+import LoginScreen from "./components/LoginScreen.vue";
+import DashboardScreen from "./components/DashboardScreen.vue";
+import ClockInScreen from "./components/ClockInScreen.vue";
+import ClockOutScreen from "./components/ClockOutScreen.vue";
+import HistoryScreen from "./components/HistoryScreen.vue";
+import LeaveScreen from "./components/LeaveScreen.vue";
+import ProfileScreen from "./components/ProfileScreen.vue";
 
-const currentPage = ref('landing')
+// 1. Ubah halaman pertama kembali ke 'landing'
+const currentPage = ref("landing");
 
 const navigateTo = (page) => {
-  currentPage.value = page
-  window.scrollTo(0, 0)
-}
+  currentPage.value = page;
+  window.scrollTo(0, 0);
+};
 
-// Cek apakah user sudah punya token saat app dibuka
+// 2. Gabungan: Cek Token & Timer Splash Screen otomatis
 onMounted(() => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem("token");
+
   if (token) {
-    currentPage.value = 'dashboard'
+    // Jika sudah pernah login, langsung ke dashboard
+    currentPage.value = "dashboard";
+  } else {
+    // Jika belum login & sedang di landing, tunggu 3 detik lalu ke login
+    if (currentPage.value === "landing") {
+      setTimeout(() => {
+        navigateTo("login");
+      }, 3000);
+    }
   }
-})
+});
 
 // Dipanggil saat LoginScreen berhasil login
 const onLoginSuccess = (user) => {
-  navigateTo('dashboard')
-}
+  navigateTo("dashboard");
+};
 
 // Dipanggil saat user logout (dari DashboardScreen)
 const onLogout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
-  navigateTo('landing')
-}
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  navigateTo("landing");
+};
 </script>
-
 
 <template>
   <div class="app-background">
     <div class="mobile-frame">
-      
-      <LandingScreen v-if="currentPage === 'landing'" @click-login="navigateTo('login')" />
+      <LandingScreen
+        v-if="currentPage === 'landing'"
+        @click-login="navigateTo('login')"
+      />
 
-      <LoginScreen v-if="currentPage === 'login'" @login-success="onLoginSuccess" />
+      <LoginScreen
+        v-if="currentPage === 'login'"
+        @login-success="onLoginSuccess"
+      />
 
-      <DashboardScreen 
-        v-if="currentPage === 'dashboard'" 
+      <DashboardScreen
+        v-if="currentPage === 'dashboard'"
         @open-clock-in="navigateTo('clock-in')"
         @navigate="navigateTo"
         @logout="onLogout"
       />
 
-      <ClockInScreen v-if="currentPage === 'clock-in'" @go-back="navigateTo('dashboard')" />
+      <ClockInScreen
+        v-if="currentPage === 'clock-in'"
+        @go-back="navigateTo('dashboard')"
+      />
 
-      <ClockOutScreen v-if="currentPage === 'clock-out'" @go-back="navigateTo('dashboard')" />
-      
-      <HistoryScreen 
-        v-if="currentPage === 'history'" 
+      <ClockOutScreen
+        v-if="currentPage === 'clock-out'"
+        @go-back="navigateTo('dashboard')"
+      />
+
+      <HistoryScreen
+        v-if="currentPage === 'history'"
         @go-back="navigateTo('dashboard')"
         @navigate="navigateTo"
       />
-      
+
+      <LeaveScreen
+        v-if="currentPage === 'leave'"
+        @go-back="navigateTo('dashboard')"
+        @navigate="navigateTo"
+      />
+
+      <ProfileScreen v-if="currentPage === 'profile'" @navigate="navigateTo" />
     </div>
   </div>
 </template>
 
-
 <style>
 /* Reset Dasar */
-body { 
-  margin: 0; 
-  padding: 0; 
-  font-family: 'Inter', sans-serif;
-  background-color: #F8FAFC; 
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", sans-serif;
+  background-color: #f8fafc;
 }
 
 /* LOGIK DESKTOP (Tampilan default di Laptop) */
@@ -91,7 +119,7 @@ body {
   min-width: 360px; /* PENTING: Jangan biarkan mengecil di bawah 360px agar tidak hancur */
   min-height: 100vh;
   background-color: #ffffff;
-  box-shadow: 0 0 40px rgba(0,0,0,0.1); /* Efek bayangan */
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.1); /* Efek bayangan */
   position: relative;
   overflow-x: hidden;
 }
@@ -102,7 +130,7 @@ body {
     background-color: #ffffff; /* Background jadi putih */
     display: block; /* Matikan mode tengah */
   }
-  
+
   .mobile-frame {
     max-width: 100%; /* Penuhi layar */
     min-width: 100%;
