@@ -15,20 +15,22 @@
       <form @submit.prevent="handleLogin">
         <div class="input-group">
           <label>EMAIL OR ID</label>
-          <input type="text" placeholder="student@university.edu" />
+          <input type="text" v-model="email" placeholder="student@university.edu" />
         </div>
 
         <div class="input-group">
           <label>PASSWORD</label>
-          <input type="password" placeholder="••••••••" />
+          <input type="password" v-model="password" placeholder="••••••••" />
         </div>
 
         <div class="forgot-pass">
           <a href="#">Forgot Password?</a>
         </div>
 
-        <button @click="$emit('login-success')" class="btn-login">
-          Log In ➔
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+        <button type="submit" class="btn-login" :disabled="isLoading">
+          {{ isLoading ? 'Loading...' : 'Log In ➔' }}
         </button>
       </form>
 
@@ -39,11 +41,48 @@
   </div>
 </template>
 
+
 <script setup>
-const handleLogin = () => {
-  alert("Tombol Login Ditekan! (Nanti kita sambung ke Backend)");
+import { ref } from 'vue'
+import api from '../api/axios.js'
+
+const emit = defineEmits(['login-success'])
+
+const email = ref('')
+const password = ref('')
+const isLoading = ref(false)
+const errorMessage = ref('')
+
+const handleLogin = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await api.post('/login', {
+      email: email.value,
+      password: password.value,
+    })
+
+    // Simpan token ke localStorage
+    const token = response.data.token
+    localStorage.setItem('token', token)
+    localStorage.setItem('user', JSON.stringify(response.data.user))
+
+    // Kirim sinyal ke App.vue bahwa login berhasil
+    emit('login-success', response.data.user)
+
+  } catch (error) {
+    if (error.response?.status === 422 || error.response?.status === 401) {
+      errorMessage.value = 'Email atau password salah.'
+    } else {
+      errorMessage.value = 'Gagal terhubung ke server. Coba lagi.'
+    }
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
+
 
 <style scoped>
 /* Container Utama (Bikin rata tengah) */
@@ -76,6 +115,13 @@ const handleLogin = () => {
   border-radius: 20px;
   margin: 0 auto 15px;
   color: #4F46E5;
+}
+
+.logo-img {
+  width: 70px;
+  height: auto;
+  margin: 0 auto 15px;
+  display: block;
 }
 
 .app-name {
@@ -167,6 +213,22 @@ const handleLogin = () => {
 
 .btn-login:hover {
   background-color: #1D4ED8;
+}
+
+.btn-login:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #DC2626;
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 12px;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  padding: 8px 12px;
 }
 
 /* Footer */

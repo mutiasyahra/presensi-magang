@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue' // Tambahkan onMounted di sini
+import { ref, onMounted } from 'vue'
 import LandingScreen from './components/LandingScreen.vue'
 import LoginScreen from './components/LoginScreen.vue'
 import DashboardScreen from './components/DashboardScreen.vue'
@@ -17,16 +17,36 @@ const navigateTo = (page) => {
   window.scrollTo(0, 0)
 }
 
-// 2. Tambahkan timer Splash Screen otomatis di sini!
+// 2. Gabungan: Cek Token & Timer Splash Screen otomatis
 onMounted(() => {
-  // Jika saat aplikasi dibuka halamannya adalah landing
-  if (currentPage.value === 'landing') {
-    setTimeout(() => {
-      navigateTo('login') // Pindah otomatis ke halaman login
-    }, 3000) // 3000 = 3 detik. Bisa kamu atur sendiri angkanya!
+  const token = localStorage.getItem('token')
+  
+  if (token) {
+    // Jika sudah pernah login, langsung ke dashboard
+    currentPage.value = 'dashboard'
+  } else {
+    // Jika belum login & sedang di landing, tunggu 3 detik lalu ke login
+    if (currentPage.value === 'landing') {
+      setTimeout(() => {
+        navigateTo('login')
+      }, 3000)
+    }
   }
 })
+
+// Dipanggil saat LoginScreen berhasil login
+const onLoginSuccess = (user) => {
+  navigateTo('dashboard')
+}
+
+// Dipanggil saat user logout (dari DashboardScreen)
+const onLogout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  navigateTo('landing')
+}
 </script>
+
 
 <template>
   <div class="app-background">
@@ -36,13 +56,14 @@ onMounted(() => {
 
       <LoginScreen 
         v-if="currentPage === 'login'" 
-        @login-success="navigateTo('dashboard')" 
+        @login-success="onLoginSuccess" 
       />
 
       <DashboardScreen 
         v-if="currentPage === 'dashboard'" 
         @open-clock-in="navigateTo('clock-in')"
-        @navigate="navigateTo" 
+        @navigate="navigateTo"
+        @logout="onLogout"
       />
 
       <ClockInScreen v-if="currentPage === 'clock-in'" @go-back="navigateTo('dashboard')" />
@@ -68,6 +89,7 @@ onMounted(() => {
       </div>
   </div>
 </template>
+
 
 <style>
 /* Reset Dasar */
