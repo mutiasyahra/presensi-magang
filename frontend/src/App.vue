@@ -9,6 +9,8 @@ import HistoryScreen from './components/HistoryScreen.vue'
 import LeaveScreen from './components/LeaveScreen.vue'
 import ProfileScreen from './components/ProfileScreen.vue'
 
+import AdminLayout from './components/admin/AdminLayout.vue'
+
 // 1. Ubah halaman pertama kembali ke 'landing'
 const currentPage = ref('landing') 
 
@@ -20,10 +22,15 @@ const navigateTo = (page) => {
 // 2. Gabungan: Cek Token & Timer Splash Screen otomatis
 onMounted(() => {
   const token = localStorage.getItem('token')
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
   
   if (token) {
-    // Jika sudah pernah login, langsung ke dashboard
-    currentPage.value = 'dashboard'
+    // Jika sudah pernah login, cek role
+    if (user.role === 'admin') {
+      currentPage.value = 'admin'
+    } else {
+      currentPage.value = 'dashboard'
+    }
   } else {
     // Jika belum login & sedang di landing, tunggu 3 detik lalu ke login
     if (currentPage.value === 'landing') {
@@ -36,7 +43,11 @@ onMounted(() => {
 
 // Dipanggil saat LoginScreen berhasil login
 const onLoginSuccess = (user) => {
-  navigateTo("dashboard");
+  if (user.role === 'admin') {
+    navigateTo('admin');
+  } else {
+    navigateTo('dashboard');
+  }
 };
 
 // Dipanggil saat user logout (dari DashboardScreen)
@@ -48,7 +59,12 @@ const onLogout = () => {
 </script>
 
 <template>
-  <div class="app-background">
+  <AdminLayout 
+    v-if="currentPage === 'admin'" 
+    @logout="onLogout"
+  />
+
+  <div v-else class="app-background">
     <div class="mobile-frame">
       <LandingScreen
         v-if="currentPage === 'landing'"
@@ -93,7 +109,7 @@ const onLogout = () => {
         v-if="currentPage === 'profile'" 
         @navigate="navigateTo"
       />
-      </div>
+    </div>
   </div>
 </template>
 

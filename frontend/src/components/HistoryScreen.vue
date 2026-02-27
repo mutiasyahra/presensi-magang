@@ -3,8 +3,6 @@ import { ref, computed } from "vue";
 
 const emit = defineEmits(["navigate", "go-back"]);
 
-const emit = defineEmits(['navigate', 'go-back'])
-
 // --- DATA DUMMY ---
 const historyData = ref([
   {
