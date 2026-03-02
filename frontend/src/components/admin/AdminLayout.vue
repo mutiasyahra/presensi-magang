@@ -6,6 +6,7 @@ import api from '../../api/axios.js';
 import AdminSidebar from './AdminSidebar.vue';
 import AdminOverview from './AdminOverview.vue';
 import AdminAttendance from './AdminAttendance.vue';
+import LiveMonitor from './LiveMonitor.vue';
 import AdminLeaves from './AdminLeaves.vue';
 import AdminReports from './AdminReports.vue';
 
@@ -62,17 +63,7 @@ onMounted(fetchData);
     />
 
     <main class="main-content">
-      <header class="top-header">
-        <div class="title-section">
-          <span class="breadcrumb">ADMIN PORTAL / {{ activeTab }}</span>
-          <h1>{{ activeTab.charAt(0).toUpperCase() + activeTab.slice(1) }}</h1>
-        </div>
-        <div class="user-pill">
-          <div class="avatar-circle">👨‍💼</div>
-          <span class="admin-name">Administrator</span>
-        </div>
-      </header>
-
+      
       <div v-if="isLoading" class="loader">
         <div class="spinner"></div>
         <p>Updating records...</p>
@@ -86,6 +77,9 @@ onMounted(fetchData);
         <AdminLeaves v-if="activeTab === 'leaves'" :leaveRequests="leaveRequests" @approve="approveLeave" />
         
         <AdminReports v-if="activeTab === 'reports'" />
+
+        <LiveMonitor v-if="activeTab === 'live'" />
+        
       </div>
     </main>
   </div>
@@ -93,6 +87,90 @@ onMounted(fetchData);
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* --- Top Header Style --- */
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px; /* Memberi jarak dengan 4 kotak di bawahnya */
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: #64748B;
+  margin: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: #94A3B8;
+}
+
+.search-bar input {
+  padding: 10px 16px 10px 38px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0F172A;
+  outline: none;
+  width: 260px;
+  background-color: white;
+  transition: all 0.2s ease;
+}
+
+.search-bar input::placeholder {
+  color: #94A3B8;
+}
+
+.search-bar input:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #64748B;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  background-color: #F1F5F9;
+  color: #0F172A;
+}
 
 .admin-shell {
   display: flex;
