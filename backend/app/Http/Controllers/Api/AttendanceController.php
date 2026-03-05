@@ -5,133 +5,124 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Attendance;
+use App\Models\Leave;
+use App\Models\User;
 use Carbon\Carbon;
 use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-
 class AttendanceController extends Controller
 {
+    //  CLOCK IN
     public function clockIn(Request $request)
     {
-        $user = $request->user();
-        $today = Carbon::today();
+        $request->validate([
+            'photo' => 'required|file|image',
+            'lat' => 'required|numeric',
+            'long' => 'required|numeric',
+            'rencana_kegiatan' => 'required|string'
+        ]);
 
-        // CEK apakah sudah absen hari ini
-        $already = Attendance::where('user_id', $user->id)
-                    ->whereDate('attendance_date', $today)
-                    ->first();
+        $userId = auth()->id();
+        $today = now()->toDateString();
 
-        if ($already) {
+        $attendance = Attendance::where('user_id', $userId)
+            ->where('attendance_date', $today)
+            ->first();
+
+        if ($attendance && $attendance->clock_in) {
             return response()->json([
-                'message' => 'Kamu sudah absen hari ini'
+                'message' => 'Anda sudah clock in hari ini'
             ], 400);
         }
 
-        // Validasi
-        $request->validate([
-            'photo' => 'required|image|mimes:jpg,jpeg,png|max:2048',
-            'lat' => 'required',
-            'long' => 'required',
-            'rencana_kegiatan' => 'required'
-        ]);
-
-        // Simpan foto
+        // store uploaded photo and save path
         $photoPath = $request->file('photo')->store('clock_in', 'public');
 
-        // Validasi lokasi (radius 100–200 meter dari kantor)
-        $officeLat = env('OFFICE_LAT');
-        $officeLong = env('OFFICE_LONG');
-        $allowedRadius = env('OFFICE_RADIUS');
-
-        $distance = $this->calculateDistance(
-            $request->lat,
-            $request->long,
-            $officeLat,
-            $officeLong
+        Attendance::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'attendance_date' => $today,
+            ],
+            [
+                'clock_in' => now(),
+                'clock_in_photo' => $photoPath,
+                'clock_in_lat' => $request->lat,
+                'clock_in_long' => $request->long,
+                'rencana_kegiatan' => $request->rencana_kegiatan,
+                'status' => 'hadir'
+            ]
         );
 
-        if ($distance > $allowedRadius) {
-            return response()->json([
-                'message' => 'Kamu berada di luar radius kantor'
-            ], 403);
-        }
-
-        // Simpan ke database
-        $attendance = Attendance::create([
-            'user_id' => $user->id,
-            'attendance_date' => $today,
-            'clock_in' => now(),
-            'clock_in_photo' => $photoPath,
-            'clock_in_lat' => $request->lat,
-            'clock_in_long' => $request->long,
-            'rencana_kegiatan' => $request->rencana_kegiatan,
-            'status' => 'hadir'
-        ]);
-
         return response()->json([
-            'message' => 'Clock In berhasil',
-            'data' => $attendance
+            'message' => 'Clock in berhasil'
         ]);
     }
 
+    //  CLOCK OUT
     public function clockOut(Request $request)
     {
-        $user = $request->user();
+        $request->validate([
+            'photo' => 'required|file|image',
+            'lat' => 'required|numeric',
+            'long' => 'required|numeric',
+            'progress_kegiatan' => 'required|string',
+            'evidence' => 'nullable|file|mimes:jpeg,png,pdf|max:5120'
+        ]);
+
+        $userId = auth()->id();
         $today = now()->toDateString();
 
-        // Cari presensi hari ini
-        $attendance = Attendance::where('user_id', $user->id)
-                        ->whereDate('attendance_date', $today)
-                        ->first();
+        $attendance = Attendance::where('user_id', $userId)
+            ->where('attendance_date', $today)
+            ->first();
 
-        if (!$attendance) {
+        if (!$attendance || !$attendance->clock_in) {
             return response()->json([
-                'message' => 'Kamu belum clock in hari ini'
+                'message' => 'Anda belum clock in hari ini'
             ], 400);
         }
 
         if ($attendance->clock_out) {
             return response()->json([
-                'message' => 'Kamu sudah clock out'
+                'message' => 'Anda sudah clock out hari ini'
             ], 400);
         }
 
-        // Validasi
-        $request->validate([
-            'photo' => 'required|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:5120',
-            'lat' => 'required',
-            'long' => 'required',
-            'progress_kegiatan' => 'required'
-        ]);
+        // save uploaded clock-out photo
+        $outPath = $request->file('photo')->store('clock_out', 'public');
+        
+        // save evidence if provided
+        $evidencePath = null;
+        if ($request->hasFile('evidence')) {
+            $evidencePath = $request->file('evidence')->store('evidence', 'public');
+        }
 
-        // Simpan foto
-        $photoPath = $request->file('photo')->store('clock_out', 'public');
-
-        // Update data
-        $attendance->update([
+        $updateData = [
             'clock_out' => now(),
-            'clock_out_photo' => $photoPath,
+            'clock_out_photo' => $outPath,
             'clock_out_lat' => $request->lat,
             'clock_out_long' => $request->long,
-            'progress_kegiatan' => $request->progress_kegiatan
-        ]);
+            'progress_kegiatan' => $request->progress_kegiatan,
+        ];
+
+        if ($evidencePath) {
+            $updateData['evidence'] = $evidencePath;
+        }
+
+        $attendance->update($updateData);
 
         return response()->json([
-            'message' => 'Clock Out berhasil',
-            'data' => $attendance
+            'message' => 'Clock out berhasil'
         ]);
     }
 
+    //  ADMIN - LIST ATTENDANCE
     public function index(Request $request)
     {
-        $user = $request->user();
-
-        if ($user->role !== 'admin') {
-            return response()->json([
-                'message' => 'Akses ditolak'
-            ], 403);
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Akses ditolak'], 403);
         }
 
         $query = Attendance::with('user');
@@ -151,19 +142,22 @@ class AttendanceController extends Controller
         ]);
     }
 
+    //  ADMIN - REKAP BULANAN
     public function monthlyRecap(Request $request)
     {
-        $user = $request->user();
-
-        if ($user->role !== 'admin') {
+        if ($request->user()->role !== 'admin') {
             return response()->json(['message' => 'Akses ditolak'], 403);
         }
 
-        $month = $request->month; // format: 2026-02
+        $request->validate([
+            'month' => 'required|date_format:Y-m'
+        ]);
+
+        $month = $request->month;
 
         $data = Attendance::selectRaw('user_id, COUNT(*) as total_hadir')
             ->where('status', 'hadir')
-            ->where('attendance_date', 'like', $month.'%')
+            ->where('attendance_date', 'like', $month . '%')
             ->groupBy('user_id')
             ->with('user')
             ->get();
@@ -174,109 +168,79 @@ class AttendanceController extends Controller
         ]);
     }
 
-    public function exportExcel(Request $request)
+    //  EXPORT EXCEL
+    public function exportExcel()
     {
         return Excel::download(new AttendanceExport, 'presensi.xlsx');
     }
 
+    //  DASHBOARD STATS
     public function stats()
     {
         $user = auth()->user();
-        $month = Carbon::now()->format('Y-m');
+        $month = now()->format('Y-m');
 
         if ($user->role === 'admin') {
-            // Stats global untuk admin
-            $totalPresent = Attendance::where('status', 'hadir')
-                ->where('attendance_date', 'like', $month.'%')
-                ->count();
-                
-            $totalLate = Attendance::where('status', 'terlambat')
-                ->where('attendance_date', 'like', $month.'%')
-                ->count();
-                
-            $totalAbsent = Attendance::where('status', 'alfa')
-                ->where('attendance_date', 'like', $month.'%')
-                ->count();
-
-            $pendingLeaves = \App\Models\Leave::where('status', 'pending')->count();
-            $totalInterns = \App\Models\User::where('role', 'user')->count();
-
             return response()->json([
-                'present' => $totalPresent,
-                'late' => $totalLate,
-                'absent' => $totalAbsent,
-                'pending_leaves' => $pendingLeaves,
-                'total_interns' => $totalInterns
+                'present' => Attendance::where('status', 'hadir')
+                    ->where('attendance_date', 'like', $month.'%')
+                    ->count(),
+
+                'absent' => Attendance::where('status', 'alpha')
+                    ->where('attendance_date', 'like', $month.'%')
+                    ->count(),
+
+                'pending_leaves' => Leave::where('status', 'pending')->count(),
+                'total_interns' => User::where('role', 'user')->count()
             ]);
         }
 
-        // Stats personal untuk user
         $present = Attendance::where('user_id', $user->id)
             ->where('status', 'hadir')
             ->where('attendance_date', 'like', $month.'%')
             ->count();
 
-        $late = Attendance::where('user_id', $user->id)
-            ->where('status', 'terlambat')
-            ->where('attendance_date', 'like', $month.'%')
-            ->count();
-
         $absent = Attendance::where('user_id', $user->id)
-            ->where('status', 'alfa')
+            ->where('status', 'alpha')
             ->where('attendance_date', 'like', $month.'%')
             ->count();
 
-        // Attendance rate calculation (dummy for now, based on work days)
-        $totalWorkDays = 22; // Assumed
-        $rate = $totalWorkDays > 0 ? round(($present / $totalWorkDays) * 100, 1) : 0;
+        $totalWorkDays = 22;
+        $rate = $totalWorkDays > 0
+            ? round(($present / $totalWorkDays) * 100, 1)
+            : 0;
 
         return response()->json([
             'present' => $present,
-            'late' => $late,
             'absent' => $absent,
             'attendance_rate' => $rate
         ]);
     }
 
-    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
-    {
-        $earthRadius = 6371000;
-
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLon = deg2rad($lon2 - $lon1);
-
-        $a = sin($dLat/2) * sin($dLat/2) +
-            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-            sin($dLon/2) * sin($dLon/2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
-
-        return $earthRadius * $c;
-    }
-
+    //  EXPORT PDF
     public function exportPdf(Request $request)
     {
-        $month = $request->month;
+        $request->validate([
+            'month' => 'required|date_format:Y-m'
+        ]);
 
         $data = Attendance::with('user')
-            ->where('attendance_date', 'like', $month.'%')
+            ->where('attendance_date', 'like', $request->month.'%')
             ->get();
 
         $pdf = Pdf::loadView('pdf.rekap', compact('data'));
 
-        return $pdf->download('rekap.pdf');
+        return $pdf->download('rekap-presensi.pdf');
     }
 
+    //  CALENDAR (USER)
     public function calendar(Request $request)
     {
         $user = $request->user();
 
-        $attendance = \App\Models\Attendance::where('user_id', $user->id)->get();
-        $leave = \App\Models\Leave::where('user_id', $user->id)->get();
-
         return response()->json([
-            'attendance' => $attendance,
-            'leave' => $leave
+            'attendance' => Attendance::where('user_id', $user->id)->get(),
+            'leave' => Leave::where('user_id', $user->id)->get()
         ]);
     }
 }

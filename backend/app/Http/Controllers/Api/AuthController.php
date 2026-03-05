@@ -42,6 +42,11 @@ class AuthController extends Controller
     // LOGIN
     public function login(Request $request)
     {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -55,6 +60,10 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Login berhasil',
             'token' => $token,
+            'role' => $user->role,
+            'redirect_to' => $user->role === 'admin'
+                ? '/admin/dashboard'
+                : '/dashboard',
             'user' => $user,
         ]);
     }

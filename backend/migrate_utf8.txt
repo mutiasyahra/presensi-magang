@@ -1,0 +1,32 @@
+﻿Dropped all tables successfully.
+Migration table created successfully.
+Migrating: 2014_10_12_000000_create_users_table
+Migrated:  2014_10_12_000000_create_users_table (62.82ms)
+Migrating: 2014_10_12_100000_create_password_resets_table
+Migrated:  2014_10_12_100000_create_password_resets_table (43.29ms)
+Migrating: 2019_08_19_000000_create_failed_jobs_table
+Migrated:  2019_08_19_000000_create_failed_jobs_table (58.41ms)
+Migrating: 2019_12_14_000001_create_personal_access_tokens_table
+Migrated:  2019_12_14_000001_create_personal_access_tokens_table (83.08ms)
+Migrating: 2026_02_17_112401_add_role_and_magang_to_users_table
+
+   Illuminate\Database\QueryException 
+
+  SQLSTATE[42S21]: Column already exists: 1060 Duplicate column name 'role' (SQL: alter table `users` add `role` enum('admin', 'user') not null default 'user', add `tempat_magang` varchar(255) null, add `alamat_magang` varchar(255) null, add `latitude_magang` decimal(10, 8) null, add `longitude_magang` decimal(11, 8) null)
+
+  at C:\Users\ASUS\project\presensi-magang\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:712
+    708Γûò         // If an exception occurs when attempting to run a query, we'll format the error
+    709Γûò         // message to include the bindings with SQL, which will make this exception a
+    710Γûò         // lot more helpful to the developer instead of just the database's errors.
+    711Γûò         catch (Exception $e) {
+  Γ₧£ 712Γûò             throw new QueryException(
+    713Γûò                 $query, $this->prepareBindings($bindings), $e
+    714Γûò             );
+    715Γûò         }
+    716Γûò     }
+
+  1   C:\Users\ASUS\project\presensi-magang\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:501
+      PDOException::("SQLSTATE[42S21]: Column already exists: 1060 Duplicate column name 'role'")
+
+  2   C:\Users\ASUS\project\presensi-magang\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:501
+      PDOStatement::execute()

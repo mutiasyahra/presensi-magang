@@ -1,6 +1,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 
+// --- USER DATA ---
+const user = ref({
+  name: "User",
+  email: "",
+});
+
+const emit = defineEmits(["open-clock-in", "navigate", "logout"]);
+
 // --- LOGIC WAKTU (JAM UTAMA) ---
 const timeMain = ref("");
 const timeSecond = ref("");
@@ -21,6 +29,11 @@ const updateTime = () => {
   };
   currentDateStr.value = now.toLocaleDateString("en-US", options);
 };
+
+// Get user initial for avatar
+const userInitial = computed(() => {
+  return user.value.name ? user.value.name.charAt(0).toUpperCase() : "U";
+});
 
 // --- LOGIC KALENDER ---
 const currDate = new Date();
@@ -110,6 +123,12 @@ let timer;
 onMounted(() => {
   updateTime();
   timer = setInterval(updateTime, 1000);
+
+  // Load user data from localStorage
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
+    user.value = JSON.parse(storedUser);
+  }
 });
 onUnmounted(() => {
   clearInterval(timer);
@@ -122,13 +141,13 @@ onUnmounted(() => {
       <div class="header-section">
         <div class="top-bar">
           <div class="profile-group">
-            <div class="avatar">S</div>
+            <div class="avatar">{{ userInitial }}</div>
             <div class="text-info">
               <p class="welcome">WELCOME BACK,</p>
-              <h2 class="username">Username</h2>
+              <h2 class="username">{{ user.name }}</h2>
             </div>
           </div>
-          <button class="btn-notif">
+          <button class="btn-notif" @click="$emit('navigate', 'profile')">
             <img src="../assets/notif.png" alt="Notif" />
           </button>
         </div>

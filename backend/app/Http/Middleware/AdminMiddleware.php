@@ -4,15 +4,20 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AdminMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        if ($request->user()->role !== 'admin') {
-            return response()->json([
-                'message' => 'Akses ditolak. Hanya admin.'
-            ], 403);
+        // belum login
+        if (!Auth::check()) {
+            return redirect('/login');
+        }
+
+        // bukan admin
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'AKSES DITOLAK — KHUSUS ADMIN');
         }
 
         return $next($request);

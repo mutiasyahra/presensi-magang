@@ -14,7 +14,6 @@ class AddRoleAndMagangToUsersTable extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role',['admin','user'])->default('user');
             $table->string('tempat_magang')->nullable();
             $table->string('alamat_magang')->nullable();
             $table->decimal('latitude_magang',10,8)->nullable();
@@ -31,7 +30,6 @@ class AddRoleAndMagangToUsersTable extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn([
-                'role',
                 'tempat_magang',
                 'alamat_magang',
                 'latitude_magang',

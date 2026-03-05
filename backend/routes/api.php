@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AttendanceController;
+use App\Http\Controllers\Api\InternController;
 use App\Http\Controllers\Api\LeaveController;
 
 /*
@@ -39,6 +40,8 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/export', [AttendanceController::class, 'exportExcel']);
     Route::get('/recap-monthly', [AttendanceController::class, 'monthlyRecap']);
     Route::get('/attendances', [AttendanceController::class, 'index']);
+    Route::get('/interns', [InternController::class, 'index']);
+    Route::post('/interns', [InternController::class, 'store']);
 
 });
 

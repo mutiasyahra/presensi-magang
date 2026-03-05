@@ -13,20 +13,27 @@ class Attendance extends Model
         'user_id',
         'attendance_date',
         'clock_in',
-        'clock_out',
         'clock_in_photo',
-        'clock_out_photo',
         'clock_in_lat',
         'clock_in_long',
+        'rencana_kegiatan',
+        'clock_out',
+        'clock_out_photo',
         'clock_out_lat',
         'clock_out_long',
-        'rencana_kegiatan',
         'progress_kegiatan',
-        'status'
+        'evidence',
+        'status',
+        'is_auto'
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
+
+    public function intern()
+    {
+        return $this->belongsTo(Intern::class);
+    }    
 }
