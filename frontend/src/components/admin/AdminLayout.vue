@@ -9,6 +9,7 @@ import AdminAttendance from './AdminAttendance.vue';
 import LiveMonitor from './LiveMonitor.vue';
 import AdminLeaves from './AdminLeaves.vue';
 import AdminReports from './AdminReports.vue';
+import SettingsScreen from './SettingsScreen.vue';
 
 const activeTab = ref('overview');
 const stats = ref({
@@ -79,6 +80,8 @@ onMounted(fetchData);
         <AdminReports v-if="activeTab === 'reports'" />
 
         <LiveMonitor v-if="activeTab === 'live'" />
+
+        <SettingsScreen v-if="activeTab === 'settings'" />
         
       </div>
     </main>

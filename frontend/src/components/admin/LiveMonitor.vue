@@ -1,5 +1,9 @@
 <script setup>
 import { ref } from 'vue';
+import VerificationScreen from './VerificationScreen.vue'; // Import file barumu
+
+// Variabel ini ibarat saklar. Kalau false = tutup, kalau true = buka
+const isVerifying = ref(false);
 
 // State untuk toggle view
 const activeView = ref('clock-in'); // 'clock-in' atau 'clock-out'
@@ -48,147 +52,156 @@ const getStatusClass = (status) => {
 </script>
 
 <template>
-  <div class="monitor-container">
-    <div class="page-header">
-      <h1 class="main-title">Daily Attendance Monitor</h1>
-      <div class="header-actions">
-        <div class="search-box">
-          <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input type="text" placeholder="Search intern name..." />
-        </div>
-        <button class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
-        <button class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
-      </div>
-    </div>
-
-    <div class="controls-section">
-      <div class="view-toggles">
-        <button 
-          class="toggle-btn" 
-          :class="{ active: activeView === 'clock-in' }"
-          @click="activeView = 'clock-in'"
-        >
-          Clock-in View
-        </button>
-        <button 
-          class="toggle-btn" 
-          :class="{ active: activeView === 'clock-out' }"
-          @click="activeView = 'clock-out'"
-        >
-          Clock-out View
-        </button>
-      </div>
-      
-      <div class="right-controls">
-        <div class="status-indicators">
-          <span class="indicator green"><span class="dot"></span> 42 Active</span>
-          <span class="indicator grey">8 Pending</span>
-        </div>
-        <button class="btn-filter">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-          Filters
-        </button>
-      </div>
-    </div>
-
-    <div class="stats-grid">
-      <div class="stat-card">
-        <p class="stat-label">ON TIME</p>
-        <div class="stat-row">
-          <h2 class="stat-value">38</h2>
-          <span class="stat-percent text-green">90%</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <p class="stat-label">LATE ARRIVALS</p>
-        <div class="stat-row">
-          <h2 class="stat-value">4</h2>
-          <span class="stat-percent text-orange">10%</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <p class="stat-label">OFFICE</p>
-        <div class="stat-row">
-          <h2 class="stat-value">32</h2>
-          <span class="stat-percent text-blue">76%</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <p class="stat-label">REMOTE</p>
-        <div class="stat-row">
-          <h2 class="stat-value">10</h2>
-          <span class="stat-percent text-grey">24%</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="cards-grid">
-      <div class="attendance-card" v-for="intern in attendanceCards" :key="intern.id">
-        <div class="card-header">
-          <div class="profile-area">
-            <div class="avatar-wrapper">
-              <img :src="intern.avatar" alt="avatar" />
-              <span class="status-dot"></span>
-            </div>
-            <div class="info">
-              <div class="name-row">
-                <h3 class="name">{{ intern.name }}</h3>
-                <span class="verify-badge" :class="intern.isVerified ? 'verified' : 'pending'">
-                  <svg v-if="intern.isVerified" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                  {{ intern.isVerified ? 'VERIFIED' : 'PENDING' }}
-                </span>
-              </div>
-              <p class="role">{{ intern.role }}</p>
-            </div>
+  <div class="monitor-wrapper">
+    
+    <div class="monitor-container" v-if="!isVerifying">
+      <div class="page-header">
+        <h1 class="main-title">Daily Attendance Monitor</h1>
+        <div class="header-actions">
+          <div class="search-box">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" placeholder="Search intern name..." />
           </div>
+          <button class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
+          <button class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
+        </div>
+      </div>
+
+      <div class="controls-section">
+        <div class="view-toggles">
+          <button 
+            class="toggle-btn" 
+            :class="{ active: activeView === 'clock-in' }"
+            @click="activeView = 'clock-in'"
+          >
+            Clock-in View
+          </button>
+          <button 
+            class="toggle-btn" 
+            :class="{ active: activeView === 'clock-out' }"
+            @click="activeView = 'clock-out'"
+          >
+            Clock-out View
+          </button>
         </div>
         
-        <div class="time-row">
-          <svg class="icon text-blue" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <span class="time-text">{{ intern.time }}</span>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="location-row">
-          <div class="loc-left">
-            <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            <span class="loc-text">{{ intern.location }}</span>
+        <div class="right-controls">
+          <div class="status-indicators">
+            <span class="indicator green"><span class="dot"></span> 42 Active</span>
+            <span class="indicator grey">8 Pending</span>
           </div>
-          <span class="status-pill" :class="getStatusClass(intern.status)">{{ intern.status }}</span>
-        </div>
-
-        <div class="card-actions">
-          <button class="btn-primary" :class="{ 'verify-mode': !intern.isVerified }">
-            {{ intern.isVerified ? 'View Timeline' : 'Verify Attendance' }}
-          </button>
-          <button class="btn-more">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+          <button class="btn-filter">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+            Filters
           </button>
         </div>
       </div>
 
-      <div class="attendance-card border-dashed">
-        <div class="manual-entry-content">
-          <div class="add-icon-wrapper">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <p class="stat-label">ON TIME</p>
+          <div class="stat-row">
+            <h2 class="stat-value">38</h2>
+            <span class="stat-percent text-green">90%</span>
           </div>
-          <h4>Register New Attendance Entry</h4>
-          <p>Add manual check-in for exceptional cases</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">LATE ARRIVALS</p>
+          <div class="stat-row">
+            <h2 class="stat-value">4</h2>
+            <span class="stat-percent text-orange">10%</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">OFFICE</p>
+          <div class="stat-row">
+            <h2 class="stat-value">32</h2>
+            <span class="stat-percent text-blue">76%</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">REMOTE</p>
+          <div class="stat-row">
+            <h2 class="stat-value">10</h2>
+            <span class="stat-percent text-grey">24%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cards-grid">
+        <div class="attendance-card" v-for="intern in attendanceCards" :key="intern.id">
+          <div class="card-header">
+            <div class="profile-area">
+              <div class="avatar-wrapper">
+                <img :src="intern.avatar" alt="avatar" />
+                <span class="status-dot"></span>
+              </div>
+              <div class="info">
+                <div class="name-row">
+                  <h3 class="name">{{ intern.name }}</h3>
+                  <span class="verify-badge" :class="intern.isVerified ? 'verified' : 'pending'">
+                    <svg v-if="intern.isVerified" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    {{ intern.isVerified ? 'VERIFIED' : 'PENDING' }}
+                  </span>
+                </div>
+                <p class="role">{{ intern.role }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="time-row">
+            <svg class="icon text-blue" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span class="time-text">{{ intern.time }}</span>
+          </div>
+
+          <div class="divider"></div>
+          <div class="location-row">
+            <div class="loc-left">
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              <span class="loc-text">{{ intern.location }}</span>
+            </div>
+            <span class="status-pill" :class="getStatusClass(intern.status)">{{ intern.status }}</span>
+          </div>
+
+          <div class="card-actions">
+            <button 
+              class="btn-primary" 
+              :class="{ 'verify-mode': !intern.isVerified }"
+              @click="isVerifying = true"
+            >
+              {{ intern.isVerified ? 'View Timeline' : 'Verify Attendance' }}
+            </button>
+            <button class="btn-more">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="attendance-card border-dashed">
+          <div class="manual-entry-content">
+            <div class="add-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+            </div>
+            <h4>Register New Attendance Entry</h4>
+            <p>Add manual check-in for exceptional cases</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pagination">
+        <p class="pagination-info">Showing 1 to 5 of 42 Interns</p>
+        <div class="pagination-controls">
+          <button class="page-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         </div>
       </div>
     </div>
 
-    <div class="pagination">
-      <p class="pagination-info">Showing 1 to 5 of 42 Interns</p>
-      <div class="pagination-controls">
-        <button class="page-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-        <button class="page-btn active">1</button>
-        <button class="page-btn">2</button>
-        <button class="page-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-      </div>
-    </div>
+    <VerificationScreen v-else @close="isVerifying = false" />
+
   </div>
 </template>
 
