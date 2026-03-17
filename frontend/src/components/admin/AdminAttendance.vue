@@ -211,11 +211,23 @@ const departmentCount = computed(() => {
   return set.size;
 });
 
-// Fungsi untuk menentukan warna progress bar berdasarkan persentase
+// Fungsi warna progress bar
 const getProgressColor = (value) => {
   if (value >= 90) return "bg-green";
   if (value > 0) return "bg-orange";
   return "bg-grey";
+};
+
+// Buka Modal Detail
+const openDetailModal = (intern) => {
+  selectedIntern.value = intern;
+  showDetailModal.value = true;
+};
+
+// Beralih dari Modal Detail ke Modal Edit
+const openEditFromDetail = () => {
+  showDetailModal.value = false;
+  showEditModal.value = true;
 };
 </script>
 
@@ -426,7 +438,7 @@ const getProgressColor = (value) => {
                     alt="avatar"
                   />
                 </div>
-                <div class="intern-details">
+                <div class="intern-details-cell">
                   <p class="intern-name">{{ intern.name }}</p>
                   <p class="intern-id">ID: {{ intern.id }}</p>
                 </div>
@@ -826,28 +838,13 @@ const getProgressColor = (value) => {
 </template>
 
 <style scoped>
-/* Main Layout */
-.directory-container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
+/* ================= MAIN LAYOUT & TABLE ================= */
+.directory-container { display: flex; flex-direction: column; gap: 24px; }
 
-/* Header */
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-
-  /* --- Efek Sticky & Glassmorphism --- */
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  padding: 20px 0;
-  margin-top: -20px; /* Menyeimbangkan padding atas agar sejajar */
-  background: rgba(248, 250, 252, 0.8); /* Sama seperti Dashboard */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  position: sticky; top: 0; z-index: 100; padding: 20px 0; margin-top: -20px;
+  background: rgba(248, 250, 252, 0.8); backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(226, 232, 240, 0.5);
 }
 
@@ -1288,19 +1285,10 @@ const getProgressColor = (value) => {
 }
 /* ================= Modal Styles ================= */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(15, 23, 42, 0.4); /* Efek gelap/dim */
-  backdrop-filter: blur(4px); /* Efek blur ala figma */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999; /* Memastikan modal paling depan */
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; z-index: 999;
 }
-
 .modal-content {
   background: white;
   width: 100%;
@@ -1521,7 +1509,37 @@ const getProgressColor = (value) => {
   background: #2563eb;
 }
 
-/* Responsive adjustments for mobile */
+/* ================= MODAL DETAIL STYLES ================= */
+.detail-modal { width: 100%; max-width: 420px; }
+.detail-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #F1F5F9; }
+.btn-back { display: flex; align-items: center; gap: 6px; background: none; border: none; font-size: 14px; font-weight: 500; color: #64748B; cursor: pointer; transition: color 0.2s; }
+.btn-back:hover { color: #0F172A; }
+
+.detail-profile { display: flex; flex-direction: column; align-items: center; padding: 28px 24px 20px; }
+.detail-avatar-wrapper { position: relative; width: 88px; height: 88px; border-radius: 50%; padding: 4px; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.08); margin-bottom: 16px; }
+.detail-avatar-wrapper img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.status-dot { position: absolute; bottom: 2px; right: 6px; width: 16px; height: 16px; background: #10B981; border: 3px solid white; border-radius: 50%; }
+
+.detail-name { font-size: 22px; font-weight: 800; color: #0F172A; margin: 0 0 4px 0; }
+.detail-id { font-size: 12px; font-weight: 700; color: #F59E0B; margin: 0 0 6px 0; letter-spacing: 0.5px; }
+.detail-role { font-size: 14px; color: #64748B; margin: 0; }
+
+.detail-stats { display: flex; align-items: center; padding: 20px; margin: 0 24px; border-top: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9; }
+.stat-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.d-stat-lbl { font-size: 10px; font-weight: 700; color: #94A3B8; letter-spacing: 1px; }
+.d-stat-val { font-size: 20px; font-weight: 800; color: #0F172A; }
+.stat-divider { width: 1px; height: 32px; background: #F1F5F9; }
+
+.detail-info-list { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.info-row { display: flex; justify-content: space-between; align-items: center; }
+.info-label { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; color: #64748B; }
+.info-value { font-size: 14px; font-weight: 600; color: #0F172A; text-align: right; }
+
+.detail-action-wrapper { padding: 0 24px 24px; }
+.btn-modify { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #3B82F6; color: white; border: none; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2); }
+.btn-modify:hover { background: #2563EB; }
+
+/* Responsive adjustments */
 @media (max-width: 640px) {
   .form-grid {
     grid-template-columns: 1fr;
