@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Leave;
 use App\Models\User;
+use App\Models\Intern;
 use Carbon\Carbon;
+
 use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -125,7 +127,7 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Akses ditolak'], 403);
         }
 
-        $query = Attendance::with('user');
+        $query = Attendance::with(['user', 'user.intern']);
 
         if ($request->start_date && $request->end_date) {
             $query->whereBetween('attendance_date', [
@@ -134,11 +136,61 @@ class AttendanceController extends Controller
             ]);
         }
 
+        if ($request->search) {
+            $search = $request->search;
+            $query->whereHas('user', function($q) use ($search) {
+                $q->where('name', 'like', "%$search%")
+                  ->orWhereHas('intern', function($sq) use ($search) {
+                      $sq->where('intern_id', 'like', "%$search%");
+                  });
+            });
+        }
+
+        if ($request->user_id) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->attendance_date) {
+            $query->where('attendance_date', $request->attendance_date);
+        }
+
         $data = $query->orderBy('attendance_date', 'desc')->get();
 
         return response()->json([
             'message' => 'Data presensi',
             'data' => $data
+        ]);
+    }
+
+
+    //  ADMIN - VERIFY ATTENDANCE
+    public function verify(Request $request, $id)
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Akses ditolak'], 403);
+        }
+
+        $request->validate([
+            'is_verified' => 'required|boolean',
+            'status' => 'sometimes|in:hadir,izin,alpha' // Optional, to reject with alpha status
+        ]);
+
+        $attendance = Attendance::find($id);
+
+        if (!$attendance) {
+            return response()->json(['message' => 'Data presensi tidak ditemukan'], 404);
+        }
+
+        $updateData = ['is_verified' => $request->is_verified];
+        if ($request->has('status')) {
+            $updateData['status'] = $request->status;
+        }
+
+        $attendance->update($updateData);
+
+        return response()->json([
+            'message' => 'Status verifikasi presensi berhasil diubah',
+            'data' => $attendance
         ]);
     }
 
@@ -181,19 +233,37 @@ class AttendanceController extends Controller
         $month = now()->format('Y-m');
 
         if ($user->role === 'admin') {
+            $present = Attendance::where('status', 'hadir')
+                ->where('attendance_date', 'like', $month.'%')
+                ->count();
+            
+            $late = Attendance::where('status', 'terlambat')
+                ->where('attendance_date', 'like', $month.'%')
+                ->count();
+            
+            $absent = Attendance::where('status', 'alpha')
+                ->where('attendance_date', 'like', $month.'%')
+                ->count();
+
+            $totalInterns = User::where('role', 'user')->count();
+            
+            // Calculate rates
+            $totalPresent = $present + $late;
+            $avgAttendance = $totalInterns > 0 ? round(($totalPresent / ($totalInterns * 22)) * 100, 1) : 0; // Assuming 22 work days
+            $onTimeRate = $totalPresent > 0 ? round(($present / $totalPresent) * 100, 1) : 0;
+
             return response()->json([
-                'present' => Attendance::where('status', 'hadir')
-                    ->where('attendance_date', 'like', $month.'%')
-                    ->count(),
-
-                'absent' => Attendance::where('status', 'alpha')
-                    ->where('attendance_date', 'like', $month.'%')
-                    ->count(),
-
+                'present' => $present,
+                'late' => $late,
+                'absent' => $absent,
+                'avg_attendance' => $avgAttendance,
+                'on_time_rate' => $onTimeRate,
                 'pending_leaves' => Leave::where('status', 'pending')->count(),
-                'total_interns' => User::where('role', 'user')->count()
+                'total_interns' => $totalInterns,
+                'total_departments' => Intern::distinct('department')->count('department')
             ]);
         }
+
 
         $present = Attendance::where('user_id', $user->id)
             ->where('status', 'hadir')

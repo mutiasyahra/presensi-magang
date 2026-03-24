@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="card">
       <div class="header">
-        <img src="/src/assets/bps.png" alt="Logo BPS" class="logo-img" />
+        <img src="../assets/bps.png" alt="Logo BPS" class="logo-img" />
         <h1 class="app-name">InternTrack</h1>
         <p class="subtitle">Student Portal</p>
       </div>

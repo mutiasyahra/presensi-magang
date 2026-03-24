@@ -16,6 +16,7 @@ const currentPage = ref("landing");
 
 const navigateTo = (page) => {
   currentPage.value = page;
+  localStorage.setItem("currentPage", page);
   window.scrollTo(0, 0);
 };
 
@@ -23,17 +24,23 @@ const navigateTo = (page) => {
 onMounted(() => {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const savedPage = localStorage.getItem("currentPage");
 
   if (token) {
-    // Jika sudah pernah login, cek role
-    if (user.role === "admin") {
+    // Jika sudah pernah login, kembali ke halaman terakhir atau set as dashboard/admin
+    if (savedPage && savedPage !== "landing" && savedPage !== "login") {
+      currentPage.value = savedPage;
+    } else if (user.role === "admin") {
       currentPage.value = "admin";
     } else {
       currentPage.value = "dashboard";
     }
   } else {
-    // Jika belum login & sedang di landing, tunggu 3 detik lalu ke login
-    if (currentPage.value === "landing") {
+    // Jika belum login, hanya bisa akses login atau kembali ke landing splash screen
+    if (savedPage === "login") {
+      currentPage.value = "login";
+    } else {
+      currentPage.value = "landing";
       setTimeout(() => {
         navigateTo("login");
       }, 3000);
@@ -54,8 +61,20 @@ const onLoginSuccess = (user) => {
 const onLogout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+  localStorage.removeItem("currentPage");
+  document.documentElement.classList.remove("dark");
   navigateTo("landing");
 };
+
+// Check Theme On Load
+onMounted(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (user && user.is_dark_mode) {
+        document.documentElement.classList.add("dark");
+    } else {
+        document.documentElement.classList.remove("dark");
+    }
+});
 </script>
 
 <template>

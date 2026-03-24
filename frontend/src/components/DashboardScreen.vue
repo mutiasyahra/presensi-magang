@@ -136,8 +136,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="main-wrapper">
-    <div class="mobile-frame">
+  <div class="screen-container">
       <div class="header-section">
         <div class="top-bar">
           <div class="profile-group">
@@ -299,31 +298,20 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 /* --- MAIN LAYOUT --- */
-.main-wrapper {
-  background-color: #e2e8f0;
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  margin: 0;
-  font-family: "Poppins", sans-serif;
-}
-.mobile-frame {
-  width: 100%;
-  max-width: 430px;
-  height: 100vh;
-  background-color: #f8fafc;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
+.screen-container {
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  background-color: #f8fafc;
+  overflow: hidden;
+  font-family: "Poppins", sans-serif;
+  position: relative;
 }
 
 /* --- HEADER --- */

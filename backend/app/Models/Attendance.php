@@ -24,7 +24,13 @@ class Attendance extends Model
         'progress_kegiatan',
         'evidence',
         'status',
-        'is_auto'
+        'is_auto',
+        'is_verified'
+    ];
+
+    protected $casts = [
+        'clock_in' => 'datetime',
+        'clock_out' => 'datetime',
     ];
 
     public function user()

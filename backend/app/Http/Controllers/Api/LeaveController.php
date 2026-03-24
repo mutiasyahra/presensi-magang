@@ -11,7 +11,7 @@ class LeaveController extends Controller
 {
     public function index(Request $request)
     {
-        $leaves = Leave::with('user')->orderBy('created_at', 'desc')->get();
+        $leaves = Leave::with('user.intern')->orderBy('created_at', 'desc')->get();
         return response()->json([
             'message' => 'Daftar pengajuan cuti',
             'data' => $leaves
@@ -21,7 +21,8 @@ class LeaveController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'date' => 'required|date',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
             'type' => 'required|in:izin,sakit',
             'reason' => 'required',
             'file' => 'nullable|mimes:jpg,jpeg,png,pdf|max:5120'
@@ -35,7 +36,8 @@ class LeaveController extends Controller
 
         $leave = Leave::create([
             'user_id' => $request->user()->id,
-            'date' => $request->date,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
             'type' => $request->type,
             'reason' => $request->reason,
             'file' => $filePath
