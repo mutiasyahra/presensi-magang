@@ -131,8 +131,8 @@ const getStatusClass = (status) => {
                 <span class="badge" :class="getStatusClass(item.status)">{{
                   item.status
                 }}</span>
-                <button class="btn-edit">
-                  <img src="../assets/pencil.png" alt="Edit" />
+                <button class="btn-edit" @click="$emit('navigate', 'edit-attendance', item.type === 'clock-in' ? 'in' : 'out')">
+                <img src="../assets/pencil.png" alt="Edit" />
                 </button>
               </div>
             </div>

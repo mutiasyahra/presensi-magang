@@ -8,14 +8,22 @@ import ClockOutScreen from "./components/ClockOutScreen.vue";
 import HistoryScreen from "./components/HistoryScreen.vue";
 import LeaveScreen from "./components/LeaveScreen.vue";
 import ProfileScreen from "./components/ProfileScreen.vue";
-
+import EditAttendance from "./components/EditAttendance.vue";
 import AdminLayout from "./components/admin/AdminLayout.vue";
 
-// 1. Ubah halaman pertama kembali ke 'landing'
+// Tambahkan variabel baru untuk menyimpan tipe edit
 const currentPage = ref("landing");
+const editType = ref("in"); // Defaultnya 'in'
 
-const navigateTo = (page) => {
+// Ubah fungsi navigateTo agar bisa menerima parameter kedua (tipe)
+const navigateTo = (page, type = "in") => {
   currentPage.value = page;
+  
+  // Jika pindah ke halaman edit, simpan tipenya
+  if (page === "edit-attendance") {
+    editType.value = type;
+  }
+  
   window.scrollTo(0, 0);
 };
 
@@ -78,6 +86,12 @@ const onLogout = () => {
         @open-clock-in="navigateTo('clock-in')"
         @navigate="navigateTo"
         @logout="onLogout"
+      />
+
+      <EditAttendance 
+        v-else-if="currentPage === 'edit-attendance'" 
+        :type="editType" 
+        @navigate="navigateTo" 
       />
 
       <ClockInScreen
