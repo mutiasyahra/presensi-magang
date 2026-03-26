@@ -11,25 +11,29 @@ import ProfileScreen from "./components/ProfileScreen.vue";
 import EditAttendance from "./components/EditAttendance.vue";
 import AdminLayout from "./components/admin/AdminLayout.vue";
 
-// Tambahkan variabel baru untuk menyimpan tipe edit
+// State halaman dan tipe edit
 const currentPage = ref("landing");
-const editType = ref("in"); // Defaultnya 'in'
+const editType = ref("in"); 
 
-// Ubah fungsi navigateTo agar bisa menerima parameter kedua (tipe)
+// Fungsi Navigasi yang sudah diperbaiki
 const navigateTo = (page, type = "in") => {
   currentPage.value = page;
+  
+  // Jika pindah ke halaman edit, simpan tipenya (in/out)
+  if (page === "edit-attendance") {
+    editType.value = type;
+  }
+  
   localStorage.setItem("currentPage", page);
   window.scrollTo(0, 0);
 };
 
-// 2. Gabungan: Cek Token & Timer Splash Screen otomatis
 onMounted(() => {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const savedPage = localStorage.getItem("currentPage");
 
   if (token) {
-    // Jika sudah pernah login, kembali ke halaman terakhir atau set as dashboard/admin
     if (savedPage && savedPage !== "landing" && savedPage !== "login") {
       currentPage.value = savedPage;
     } else if (user.role === "admin") {
@@ -38,7 +42,6 @@ onMounted(() => {
       currentPage.value = "dashboard";
     }
   } else {
-    // Jika belum login, hanya bisa akses login atau kembali ke landing splash screen
     if (savedPage === "login") {
       currentPage.value = "login";
     } else {
@@ -50,7 +53,6 @@ onMounted(() => {
   }
 });
 
-// Dipanggil saat LoginScreen berhasil login
 const onLoginSuccess = (user) => {
   if (user.role === "admin") {
     navigateTo("admin");
@@ -59,7 +61,6 @@ const onLoginSuccess = (user) => {
   }
 };
 
-// Dipanggil saat user logout (dari DashboardScreen)
 const onLogout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
@@ -68,7 +69,6 @@ const onLogout = () => {
   navigateTo("landing");
 };
 
-// Check Theme On Load
 onMounted(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (user && user.is_dark_mode) {
@@ -139,7 +139,6 @@ onMounted(() => {
 </template>
 
 <style>
-/* Reset Dasar */
 body {
   margin: 0;
   padding: 0;
@@ -147,38 +146,34 @@ body {
   background-color: #f8fafc;
 }
 
-/* LOGIK DESKTOP (Tampilan default di Laptop) */
 .app-background {
-  background-color: #e2e8f0; /* Warna abu-abu di luar HP */
+  background-color: #e2e8f0;
   min-height: 100vh;
   display: flex;
-  justify-content: center; /* Posisi di tengah layar */
+  justify-content: center;
   align-items: flex-start;
-  padding-top: 0;
 }
 
 .mobile-frame {
   width: 100%;
-  max-width: 480px; /* Maksimal lebar seperti HP */
-  min-width: 360px; /* PENTING: Jangan biarkan mengecil di bawah 360px agar tidak hancur */
+  max-width: 480px;
+  min-width: 360px;
   min-height: 100vh;
   background-color: #ffffff;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.1); /* Efek bayangan */
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow-x: hidden;
 }
 
-/* LOGIK MOBILE (Jika dibuka di HP beneran / Layar sempit) */
 @media screen and (max-width: 480px) {
   .app-background {
-    background-color: #ffffff; /* Background jadi putih */
-    display: block; /* Matikan mode tengah */
+    background-color: #ffffff;
+    display: block;
   }
-
   .mobile-frame {
-    max-width: 100%; /* Penuhi layar */
+    max-width: 100%;
     min-width: 100%;
-    box-shadow: none; /* Hilangkan bayangan */
+    box-shadow: none;
     min-height: 100vh;
   }
 }
