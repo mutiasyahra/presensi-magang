@@ -40,9 +40,20 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/export', [AttendanceController::class, 'exportExcel']);
     Route::get('/recap-monthly', [AttendanceController::class, 'monthlyRecap']);
     Route::get('/attendances', [AttendanceController::class, 'index']);
+    Route::patch('/attendances/{id}/verify', [AttendanceController::class, 'verify']);
     Route::get('/interns', [InternController::class, 'index']);
     Route::post('/interns', [InternController::class, 'store']);
+    
+    // Settings System
+    Route::get('/settings/system', [\App\Http\Controllers\Api\SettingsController::class, 'getSystem']);
+    Route::put('/settings/system', [\App\Http\Controllers\Api\SettingsController::class, 'updateSystem']);
 
+});
+
+// Settings Preferences (all authenticated users, even though this system is single admin currently)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/settings/me', [\App\Http\Controllers\Api\SettingsController::class, 'getMe']);
+    Route::put('/settings/me', [\App\Http\Controllers\Api\SettingsController::class, 'updateMe']);
 });
 
 // ================= AUTH =================

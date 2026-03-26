@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import api from '../api/axios.js'
 
 const emit = defineEmits(['go-back', 'navigate'])
 
@@ -21,13 +22,35 @@ const handleFileUpload = (event) => {
   }
 }
 
-const submitLeave = () => {
+const submitLeave = async () => {
   if (!startDate.value || !endDate.value || !reason.value) {
     alert('Harap lengkapi rentang tanggal dan alasan!')
     return
   }
-  alert('Pengajuan Izin Berhasil Dikirim! (Simulasi)')
-  emit('navigate', 'dashboard')
+
+  const formData = new FormData()
+  formData.append('start_date', startDate.value)
+  formData.append('end_date', endDate.value)
+  formData.append('type', selectedType.value)
+  formData.append('reason', reason.value)
+  
+  if (fileInput.value && fileInput.value.files[0]) {
+    formData.append('file', fileInput.value.files[0])
+  }
+
+  try {
+    const res = await api.post('/leave', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    console.log('[Leave] Submit leave sukses:', res.data)
+    alert('Pengajuan Izin Berhasil Dikirim!')
+    emit('navigate', 'dashboard')
+  } catch (error) {
+    console.error('[Leave] Gagal submit:', error)
+    alert('Gagal mengirim pengajuan izin.')
+  }
 }
 </script>
 

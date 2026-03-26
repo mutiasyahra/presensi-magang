@@ -25,36 +25,46 @@ const isLoading = ref(false);
 
 const fetchData = async () => {
   isLoading.value = true;
+  
+  const fetchStats = async () => {
+    try {
+      const statsRes = await api.get("/stats");
+      stats.value = statsRes.data;
+      console.log("[Admin] Stats dari API:", stats.value);
+    } catch (e) {
+      console.error("[Admin] Gagal ambil stats:", e.message);
+    }
+  };
+
+  const fetchAttendance = async () => {
+    try {
+      const attRes = await api.get("/attendances");
+      attendanceList.value = attRes.data?.data || attRes.data || [];
+      console.log("[Admin] Attendance list dari API:", attendanceList.value.length, "record(s)");
+    } catch (e) {
+      console.error("[Admin] Gagal ambil attendance:", e.message);
+    }
+  };
+
+  const fetchLeaves = async () => {
+    try {
+      const leaveRes = await api.get("/leaves");
+      leaveRequests.value = leaveRes.data?.data || leaveRes.data || [];
+      console.log("[Admin] Leave requests dari API:", leaveRequests.value.length, "record(s)");
+    } catch (e) {
+      console.error("[Admin] Gagal ambil leaves:", e.message);
+    }
+  };
+
   try {
-    const statsRes = await api.get("/stats");
-    stats.value = statsRes.data;
-    console.log("[Admin] Stats dari API:", stats.value);
-
-    const attRes = await api.get("/attendances");
-    attendanceList.value = attRes.data?.data || attRes.data || [];
-    console.log(
-      "[Admin] Attendance list dari API:",
-      attendanceList.value.length,
-      "record(s)",
-    );
-
-    const leaveRes = await api.get("/leaves");
-    leaveRequests.value = leaveRes.data?.data || leaveRes.data || [];
-    console.log(
-      "[Admin] Leave requests dari API:",
-      leaveRequests.value.length,
-      "record(s)",
-    );
+    await Promise.allSettled([fetchStats(), fetchAttendance(), fetchLeaves()]);
   } catch (error) {
-    console.error(
-      "[Admin] Gagal mengambil data:",
-      error.response?.status,
-      error.response?.data || error.message,
-    );
+    console.error("[Admin] Critical error in fetchData:", error);
   } finally {
     isLoading.value = false;
   }
 };
+
 
 const approveLeave = async (id, status) => {
   try {

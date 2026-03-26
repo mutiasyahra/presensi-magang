@@ -1,13 +1,167 @@
 <script setup>
-// Nanti kamu bisa lempar data intern (props) ke sini saat integrasi API
-// Membuat "sinyal" bernama 'close' untuk dikirim ke halaman induk
-const emit = defineEmits(['close']);
+import { defineProps, defineEmits, ref, onMounted, computed } from "vue";
+import axios from "axios";
+
+const props = defineProps({
+  attendance: {
+    type: Object,
+    required: true,
+  },
+});
+
+const emit = defineEmits(["close", "refresh"]);
+
+const isProcessing = ref(false);
+const currentAttendance = ref(props.attendance);
+const selectedDate = ref(props.attendance?.attendance_date || new Date().toISOString().split("T")[0]);
+
+// Calendar State
+const showCalendar = ref(false);
+const activeDates = ref([]);
+const calendarDate = ref(new Date(selectedDate.value));
+
+const fetchActiveDates = async () => {
+  try {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const response = await axios.get("http://localhost:8000/api/attendances", {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { 
+        user_id: props.attendance.user_id,
+      },
+    });
+    // Extract unique dates and normalize to YYYY-MM-DD robustly
+    if (response.data.data) {
+      activeDates.value = response.data.data
+        .map(i => {
+          if (!i.attendance_date) return null;
+          // Extract only YYYY-MM-DD from various potential formats
+          const match = i.attendance_date.match(/^(\d{4}-\d{2}-\d{2})/);
+          return match ? match[1] : i.attendance_date.split('T')[0];
+        })
+        .filter(Boolean);
+      activeDates.value = [...new Set(activeDates.value)];
+    }
+  } catch (error) {
+    console.error("Failed to fetch active dates", error);
+  }
+};
+
+onMounted(() => {
+  fetchActiveDates();
+});
+
+const fetchAttendanceByDate = async (date) => {
+  try {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const response = await axios.get("http://localhost:8000/api/attendances", {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { 
+        user_id: props.attendance.user_id,
+        attendance_date: date 
+      },
+    });
+
+    if (response.data.data && response.data.data.length > 0) {
+      currentAttendance.value = {
+        ...response.data.data[0],
+        name: props.attendance.name,
+        intern_id: props.attendance.intern_id,
+        avatar: props.attendance.avatar
+      };
+    } else {
+      currentAttendance.value = null;
+    }
+  } catch (error) {
+    console.error("Failed to fetch attendance for date", error);
+  }
+};
+
+// Calendar Logic
+const calendarMonthYear = computed(() => {
+  return calendarDate.value.toLocaleString('default', { month: 'long', year: 'numeric' });
+});
+
+const calendarDays = computed(() => {
+  const year = calendarDate.value.getFullYear();
+  const month = calendarDate.value.getMonth();
+  const todayStr = new Date().toISOString().split('T')[0];
+  
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  
+  const days = [];
+  
+  // Padding for start of month
+  const startPadding = firstDay.getDay();
+  for (let i = 0; i < startPadding; i++) {
+    days.push({ day: null });
+  }
+  
+  // Actual days
+  for (let i = 1; i <= lastDay.getDate(); i++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+    days.push({
+      day: i,
+      date: dateStr,
+      isActive: activeDates.value.includes(dateStr),
+      isSelected: selectedDate.value === dateStr,
+      isToday: todayStr === dateStr
+    });
+  }
+  
+  return days;
+});
+
+const changeMonth = (offset) => {
+  const newDate = new Date(calendarDate.value);
+  newDate.setMonth(newDate.getMonth() + offset);
+  calendarDate.value = newDate;
+};
+
+const selectDate = (date) => {
+  if (!date) return;
+  selectedDate.value = date;
+  showCalendar.value = false;
+  fetchAttendanceByDate(date);
+};
+
+const toggleCalendar = () => {
+  showCalendar.value = !showCalendar.value;
+  if (showCalendar.value) {
+    calendarDate.value = new Date(selectedDate.value);
+  }
+};
+
 const goBack = () => {
-  emit('close'); // Mengirim sinyal 'close' saat tombol back diklik
-  // Logic untuk kembali ke halaman Live Monitor
-  // Contoh jika pakai emits: emit('close');
-  // Contoh jika pakai router: router.back();
-  console.log("Kembali ke Live Monitor");
+  emit("close");
+};
+
+const handleVerify = async (status, isVerified) => {
+  if (!currentAttendance.value || !currentAttendance.value.id) return;
+  isProcessing.value = true;
+
+  try {
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
+    await axios.patch(
+      `http://localhost:8000/api/attendances/${currentAttendance.value.id}/verify`,
+      {
+        is_verified: isVerified,
+        status: status,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+
+    // Refresh parent list and close
+    emit("refresh");
+  } catch (error) {
+    console.error("Failed to verify attendance", error);
+    alert("Failed to verify attendance");
+  } finally {
+    isProcessing.value = false;
+  }
 };
 </script>
 
@@ -16,37 +170,158 @@ const goBack = () => {
     <header class="detail-header">
       <div class="header-left">
         <button class="btn-back" @click="goBack">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
           Back
         </button>
         <div class="divider"></div>
-        <div class="profile-info">
-          <img src="https://i.pravatar.cc/150?img=11" alt="Michael Chen" class="avatar" />
+        <div class="profile-info" v-if="attendance">
+          <img
+            :src="attendance.avatar || 'https://i.pravatar.cc/150'"
+            alt="Avatar"
+            class="avatar"
+          />
           <div class="user-details">
-            <h3>Michael Chen</h3>
-            <p>Backend Developer Intern</p>
+            <h3>{{ attendance.name }}</h3>
+            <p>{{ attendance.intern_id }}</p>
           </div>
-          <span class="badge-warning">⚠️ PENDING VERIFICATION</span>
         </div>
       </div>
       <div class="header-actions">
-        <button class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg></button>
-        <button class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
+        <div class="calendar-picker-container">
+          <div class="date-selector" @click="toggleCalendar">
+            <svg
+              class="calendar-main-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span class="current-date-text">{{ 
+              new Date(selectedDate).toLocaleDateString("en-GB", {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+              })
+            }}</span>
+          </div>
+
+          <!-- Custom Calendar Dropdown -->
+          <div class="custom-calendar-dropdown" v-if="showCalendar">
+            <div class="calendar-header">
+              <button @click.stop="changeMonth(-1)" class="nav-btn">&lt;</button>
+              <span class="month-label">{{ calendarMonthYear }}</span>
+              <button @click.stop="changeMonth(1)" class="nav-btn">&gt;</button>
+            </div>
+            <div class="calendar-grid">
+              <span v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day" class="day-name">
+                {{ day }}
+              </span>
+              <div 
+                v-for="(dateObj, index) in calendarDays" 
+                :key="index"
+                class="calendar-day"
+                :class="{ 
+                  'empty': !dateObj.day, 
+                  'selected': dateObj.isSelected,
+                  'has-activity': dateObj.isActive
+                }"
+                @click.stop="selectDate(dateObj.date)"
+              >
+                {{ dateObj.day }}
+                <span class="activity-dot" v-if="dateObj.isActive"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="btn-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="18" cy="5" r="3"></circle>
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="19" r="3"></circle>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+          </svg>
+        </button>
+        <button class="btn-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
       </div>
     </header>
 
-    <div class="content-grid">
-      
+    <div class="content-grid" v-if="currentAttendance">
       <div class="timeline-section">
         <div class="section-title">
           <h2>Activity Timeline</h2>
-          <span class="date">Monday, Oct 24, 2023</span>
+          <span class="date">{{
+            new Date(currentAttendance?.attendance_date).toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })
+          }}</span>
         </div>
 
         <div class="timeline">
           <div class="timeline-item">
             <div class="timeline-icon icon-blue">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <polyline points="10 17 15 12 10 7" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+              </svg>
             </div>
             <div class="timeline-content">
               <div class="event-header">
@@ -54,11 +329,23 @@ const goBack = () => {
                   <h4>Clock In</h4>
                   <p class="location">📍 Singapore, Science Park Drive</p>
                 </div>
-                <span class="time">09:41 AM</span>
+                <span class="time">{{
+                  currentAttendance?.clock_in
+                    ? new Date(currentAttendance.clock_in).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "-"
+                }}</span>
               </div>
-              
-              <div class="evidence-card">
-                <div class="selfie-placeholder bg-blue"></div>
+
+              <div class="evidence-card" v-if="currentAttendance?.clock_in_photo">
+                <div
+                  class="selfie-placeholder"
+                  :style="{
+                    backgroundImage: `url(http://localhost:8000/storage/${currentAttendance.clock_in_photo})`,
+                  }"
+                ></div>
                 <div class="evidence-footer">
                   <span class="label">📷 Morning Selfie</span>
                   <span class="status text-green">✅ GPS Verified</span>
@@ -67,18 +354,33 @@ const goBack = () => {
 
               <div class="info-card">
                 <p class="card-title">📝 DAILY WORK PLAN</p>
-                <ol>
-                  <li>Complete the integration of the user authentication service.</li>
-                  <li>Write unit tests for the new API endpoints.</li>
-                  <li>Coordinate with the frontend team regarding JWT storage implementation.</li>
-                </ol>
+                <p class="summary-text">
+                  {{
+                    currentAttendance?.rencana_kegiatan ||
+                    "Tidak ada rencana kegiatan."
+                  }}
+                </p>
               </div>
             </div>
           </div>
 
           <div class="timeline-item">
             <div class="timeline-icon icon-red">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
             </div>
             <div class="timeline-content">
               <div class="event-header">
@@ -86,11 +388,23 @@ const goBack = () => {
                   <h4>Clock Out</h4>
                   <p class="location">📍 Singapore, Science Park Drive</p>
                 </div>
-                <span class="time">06:05 PM</span>
+                <span class="time">{{
+                  currentAttendance?.clock_out
+                    ? new Date(currentAttendance.clock_out).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "-"
+                }}</span>
               </div>
-              
-              <div class="evidence-card">
-                <div class="selfie-placeholder bg-red"></div>
+
+              <div class="evidence-card" v-if="currentAttendance?.clock_out_photo">
+                <div
+                  class="selfie-placeholder"
+                  :style="{
+                    backgroundImage: `url(http://localhost:8000/storage/${currentAttendance.clock_out_photo})`,
+                  }"
+                ></div>
                 <div class="evidence-footer">
                   <span class="label">📷 Afternoon Selfie</span>
                   <span class="status text-green">✅ Validated</span>
@@ -99,14 +413,43 @@ const goBack = () => {
 
               <div class="info-card">
                 <p class="card-title">📉 DAILY ACTIVITY SUMMARY</p>
-                <p class="summary-text">Successfully integrated the auth service and passed all unit tests. Fixed 2 minor bugs in the database schema. Documentation updated and pushed to the staging branch for review.</p>
+                <p class="summary-text">
+                  {{
+                    attendance?.progress_kegiatan ||
+                    "Tidak ada progress kegiatan."
+                  }}
+                </p>
               </div>
 
-              <div class="attachments">
+              <div class="attachments" v-if="currentAttendance?.evidence">
                 <p class="card-title">📎 EVIDENCE / ATTACHMENTS</p>
                 <div class="attachment-images">
-                  <div class="img-box"></div>
-                  <div class="img-box"></div>
+                  <a
+                    :href="`http://localhost:8000/storage/${currentAttendance.evidence}`"
+                    target="_blank"
+                    class="img-box"
+                    :style="{
+                      backgroundImage: currentAttendance.evidence.match(
+                        /\.(jpeg|jpg|gif|png)$/i,
+                      )
+                        ? `url(http://localhost:8000/storage/${currentAttendance.evidence})`
+                        : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textDecoration: 'none',
+                      color: '#94A3B8',
+                    }"
+                  >
+                    <span
+                      v-if="
+                        !currentAttendance.evidence.match(/\.(jpeg|jpg|gif|png)$/i)
+                      "
+                      >📄 View File</span
+                    >
+                  </a>
                 </div>
               </div>
             </div>
@@ -115,17 +458,46 @@ const goBack = () => {
       </div>
 
       <div class="sidebar-section">
-        
         <div class="widget-card">
           <div class="widget-header">
             <h4>Location Verification</h4>
             <span class="badge-blue">REMOTE</span>
           </div>
           <div class="map-placeholder">
-            <div class="pin">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            </div>
-            <p>Map view of Singapore</p>
+            <template
+              v-if="currentAttendance?.clock_in_lat && currentAttendance?.clock_in_long"
+            >
+              <iframe
+                width="100%"
+                height="100%"
+                frameborder="0"
+                style="border: 0; border-radius: 12px; min-height: 140px"
+                :src="`https://maps.google.com/maps?q=${currentAttendance.clock_in_lat},${currentAttendance.clock_in_long}&hl=es;z=14&amp;output=embed`"
+                allowfullscreen
+              >
+              </iframe>
+            </template>
+            <template v-else>
+              <div class="pin">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+                  ></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+              </div>
+              <p>Map view of Singapore</p>
+            </template>
           </div>
           <div class="accuracy-info">
             <span class="icon">📍</span>
@@ -145,7 +517,9 @@ const goBack = () => {
             </div>
             <div class="stat-box">
               <p class="label">STATUS</p>
-              <p class="value text-green"><strong>On Time</strong></p>
+              <p class="value text-green">
+                <strong>{{ currentAttendance?.status?.toUpperCase() || "HADIR" }}</strong>
+              </p>
             </div>
           </div>
         </div>
@@ -159,21 +533,29 @@ const goBack = () => {
             Flag for Follow-up
           </label>
         </div>
-
       </div>
     </div>
-
-    <div class="action-footer">
-      <button class="btn-reject">Reject Attendance</button>
-      <button class="btn-verify">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        Verify Attendance
-      </button>
+    <div class="empty-state" v-else>
+      <div class="empty-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <h3>No Activity Found</h3>
+        <p>There is no attendance record for this intern on {{ new Date(selectedDate).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' }) }}.</p>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.verification-wrapper,
+.verification-wrapper * {
+  box-sizing: border-box;
+}
+
 .verification-wrapper {
   background: white;
   min-height: 100vh;
@@ -184,143 +566,646 @@ const goBack = () => {
 
 /* --- HEADER --- */
 .detail-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 32px; border-bottom: 1px solid #E2E8F0;
-  position: sticky; top: 0; background: white; z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
 }
 
-.header-left { display: flex; align-items: center; gap: 16px; }
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 
 .btn-back {
-  display: flex; align-items: center; gap: 4px; border: none; background: transparent;
-  font-size: 14px; font-weight: 600; color: #0F172A; cursor: pointer; padding: 8px 12px;
-  border-radius: 8px; transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: 0.2s;
 }
-.btn-back:hover { background: #F1F5F9; }
+.btn-back:hover {
+  background: #f1f5f9;
+}
 
-.divider { width: 1px; height: 32px; background: #E2E8F0; }
+.divider {
+  width: 1px;
+  height: 32px;
+  background: #e2e8f0;
+}
 
-.profile-info { display: flex; align-items: center; gap: 12px; }
-.avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-.user-details h3 { margin: 0; font-size: 15px; font-weight: 700; color: #0F172A; }
-.user-details p { margin: 0; font-size: 12px; color: #64748B; }
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.user-details h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.user-details p {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
 
 .badge-warning {
-  background: #FEFCE8; color: #D97706; border: 1px solid #FEF08A;
-  font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 6px; letter-spacing: 0.5px;
+  background: #fefce8;
+  color: #d97706;
+  border: 1px solid #fef08a;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
 }
 
-.header-actions { display: flex; gap: 8px; }
-.btn-icon {
-  background: transparent; border: none; color: #64748B; width: 36px; height: 36px;
-  border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;
+.header-actions {
+  display: flex;
+  gap: 8px;
 }
-.btn-icon:hover { background: #F1F5F9; color: #0F172A; }
+.btn-icon {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+}
+.btn-icon:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* --- CUSTOM CALENDAR --- */
+.calendar-picker-container {
+  position: relative;
+}
+
+.date-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f1f5f9;
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.date-selector:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.calendar-main-icon {
+  color: #64748b;
+}
+
+.current-date-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.custom-calendar-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  padding: 16px;
+  z-index: 1000;
+  user-select: none;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.month-label {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.nav-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.nav-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.day-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-align: center;
+  padding-bottom: 8px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  padding-bottom: 2px;
+}
+
+.calendar-day:hover:not(.empty) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.calendar-day.is-today:not(.selected) {
+  border: 1px solid #3b82f6;
+  color: #3b82f6;
+}
+
+.calendar-day.empty {
+  cursor: default;
+}
+
+.calendar-day.selected {
+  background: #3b82f6;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.activity-dot {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 3px;
+  background: #10b981;
+  border-radius: 50%;
+}
+
+.selected .activity-dot {
+  background: white;
+}
+
+.calendar-day.has-activity:not(.selected) {
+  color: #10b981;
+  font-weight: 800;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+/* --- EMPTY STATE --- */
+.empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 32px;
+  background: #f8fafc;
+}
+
+.empty-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.empty-icon {
+  color: #cbd5e1;
+  margin-bottom: 24px;
+}
+
+.empty-content h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+}
+
+.empty-content p {
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
 
 /* --- CONTENT GRID --- */
 .content-grid {
-  display: grid; grid-template-columns: 2fr 1fr; gap: 32px;
-  padding: 32px; max-width: 1200px; margin: 0 auto; width: 100%;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
   padding-bottom: 100px; /* Ruang untuk sticky footer */
 }
 
 /* --- KIRI: TIMELINE --- */
-.section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-.section-title h2 { margin: 0; font-size: 18px; font-weight: 700; color: #0F172A; }
-.section-title .date { font-size: 14px; color: #64748B; font-weight: 500; }
-
-.timeline { position: relative; padding-left: 16px; }
-.timeline::before {
-  content: ''; position: absolute; left: 23px; top: 8px; bottom: 0;
-  width: 2px; background: #E2E8F0;
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+.section-title h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.section-title .date {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
 }
 
-.timeline-item { display: flex; gap: 24px; margin-bottom: 40px; position: relative; z-index: 2; }
-.timeline-item:last-child { margin-bottom: 0; }
+.timeline {
+  position: relative;
+  padding-left: 16px;
+}
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 23px;
+  top: 8px;
+  bottom: 0;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 2;
+}
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
 
 .timeline-icon {
-  width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  background: white; flex-shrink: 0; margin-top: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  flex-shrink: 0;
+  margin-top: 4px;
 }
-.icon-blue { color: #3B82F6; box-shadow: 0 0 0 4px white; }
-.icon-red { color: #EF4444; box-shadow: 0 0 0 4px white; }
+.icon-blue {
+  color: #3b82f6;
+  box-shadow: 0 0 0 4px white;
+}
+.icon-red {
+  color: #ef4444;
+  box-shadow: 0 0 0 4px white;
+}
 
-.timeline-content { flex: 1; }
+.timeline-content {
+  flex: 1;
+}
 
-.event-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-.event-header h4 { margin: 0 0 4px 0; font-size: 16px; font-weight: 700; color: #0F172A; }
-.event-header .location { margin: 0; font-size: 13px; color: #64748B; }
-.event-header .time { background: #F1F5F9; color: #64748B; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; }
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.event-header h4 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.event-header .location {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+.event-header .time {
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
 
-.evidence-card { border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
-.selfie-placeholder { height: 200px; background-size: cover; background-position: center; }
-.bg-blue { background-color: #0F172A; /* Ganti dgn URL foto asli nanti */ }
-.bg-red { background-color: #0F172A; }
+.evidence-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 8px; /* Reduced spacing */
+}
+.selfie-placeholder {
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+}
+.bg-blue {
+  background-color: #0f172a; /* Ganti dgn URL foto asli nanti */
+}
+.bg-red {
+  background-color: #0f172a;
+}
 
-.evidence-footer { display: flex; justify-content: space-between; padding: 12px 16px; background: white; font-size: 13px; font-weight: 600; }
-.evidence-footer .label { color: #64748B; }
-.text-green { color: #10B981; }
+.evidence-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+}
+.evidence-footer .label {
+  color: #64748b;
+}
+.text-green {
+  color: #10b981;
+}
 
-.info-card { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-.card-title { margin: 0 0 12px 0; font-size: 11px; font-weight: 700; color: #94A3B8; letter-spacing: 0.5px; }
-.info-card ol { margin: 0; padding-left: 20px; color: #334155; font-size: 14px; line-height: 1.6; }
-.summary-text { margin: 0; color: #334155; font-size: 14px; line-height: 1.6; }
+.info-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.card-title {
+  margin: 0 0 12px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+.info-card ol {
+  margin: 0;
+  padding-left: 20px;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.summary-text {
+  margin: 0;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.6;
+}
 
-.attachments { margin-top: 24px; }
-.attachment-images { display: flex; gap: 12px; }
-.img-box { width: 160px; height: 100px; background: #1E293B; border-radius: 8px; }
+.attachments {
+  margin-top: 8px;
+}
+.attachment-images {
+  display: flex;
+  gap: 12px;
+}
+.img-box {
+  width: 160px;
+  height: 100px;
+  background: #1e293b;
+  border-radius: 8px;
+}
 
 /* --- KANAN: SIDEBAR --- */
-.sidebar-section { display: flex; flex-direction: column; gap: 24px; }
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 
-.widget-card { border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px; background: white; }
-.widget-card h4 { margin: 0 0 16px 0; font-size: 14px; font-weight: 700; color: #0F172A;  }
+.widget-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  background: white;
+}
+.widget-card h4 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
 
-.widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.widget-header h4 { margin: 0; }
-.badge-blue { background: #EFF6FF; color: #3B82F6; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 4px; }
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.widget-header h4 {
+  margin: 0;
+}
+.badge-blue {
+  background: #eff6ff;
+  color: #3b82f6;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
 
 .map-placeholder {
-  height: 140px; background: #DBEAFE; border-radius: 12px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; margin-bottom: 16px; gap: 8px;
+  height: 140px;
+  background: #dbeafe;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  gap: 8px;
 }
-.map-placeholder .pin { width: 40px; height: 40px; background: #3B82F6; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(59,130,246,0.3); }
-.map-placeholder p { margin: 0; font-size: 12px; color: #60A5FA; font-weight: 600; }
+.map-placeholder .pin {
+  width: 40px;
+  height: 40px;
+  background: #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+.map-placeholder p {
+  margin: 0;
+  font-size: 12px;
+  color: #60a5fa;
+  font-weight: 600;
+}
 
-.accuracy-info { display: flex; gap: 12px; align-items: flex-start; }
-.accuracy-info .title { margin: 0; font-size: 13px; font-weight: 600; color: #0F172A; }
-.accuracy-info .desc { margin: 2px 0 0 0; font-size: 12px; color: #64748B; }
+.accuracy-info {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.accuracy-info .title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+.accuracy-info .desc {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
 
-.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.stat-box { background: #F8FAFC; padding: 16px; border-radius: 12px; border: 1px solid #E2E8F0; }
-.stat-box .label { margin: 0 0 8px 0; font-size: 11px; font-weight: 700; color: #64748B; }
-.stat-box .value { margin: 0; font-size: 14px; color: #0F172A; }
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.stat-box {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+.stat-box .label {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+.stat-box .value {
+  margin: 0;
+  font-size: 14px;
+  color: #0f172a;
+}
 
 textarea {
-  width: 100%; height: 100px; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px;
-  font-family: inherit; font-size: 14px; color: #0F172A; resize: none; outline: none; margin-bottom: 16px; background: transparent;
+  width: 100%;
+  height: 100px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #0f172a;
+  resize: none;
+  outline: none;
+  margin-bottom: 16px;
+  background: transparent;
 }
-textarea:focus { border-color: #3B82F6; }
+textarea:focus {
+  border-color: #3b82f6;
+}
 
-.checkbox-container { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #0F172A; cursor: pointer; background: transparent; }
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #0f172a;
+  cursor: pointer;
+  background: transparent;
+}
 
 /* --- FOOTER ACTIONS --- */
 .action-footer {
-  position: fixed; bottom: 0; right: 0; width: 100%; /* Atau sesuaikan dengan lebar area konten utama */
-  background: white; border-top: 1px solid #E2E8F0; padding: 16px 32px;
-  display: flex; justify-content: flex-end; gap: 16px; z-index: 20;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 100%; /* Atau sesuaikan dengan lebar area konten utama */
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  padding: 16px 32px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  z-index: 20;
 }
 
 .btn-reject {
-  background: white; border: 1px solid #EF4444; color: #EF4444; padding: 10px 24px;
-  border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s;
+  background: white;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
 }
-.btn-reject:hover { background: #FEF2F2; }
+.btn-reject:hover {
+  background: #fef2f2;
+}
 
 .btn-verify {
-  background: #3B82F6; border: none; color: white; padding: 10px 24px;
-  border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s;
-  display: flex; align-items: center; gap: 8px;
+  background: #3b82f6;
+  border: none;
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.btn-verify:hover { background: #2563EB; }
+.btn-verify:hover {
+  background: #2563eb;
+}
 </style>

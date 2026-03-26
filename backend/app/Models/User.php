@@ -22,6 +22,9 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_dark_mode',
+        'notify_late_alerts',
+        'notify_leave_requests',
     ];
 
     /**
@@ -41,6 +44,9 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_dark_mode' => 'boolean',
+        'notify_late_alerts' => 'boolean',
+        'notify_leave_requests' => 'boolean',
     ];
 
     public function attendances()

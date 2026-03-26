@@ -44,3 +44,70 @@ body {
     background-color: #f9f9f9;
   }
 }
+
+/* Dark Mode Global Styles */
+html.dark {
+  background-color: #1a202c; /* Tailwind gray-900 */
+  color: #e2e8f0; /* Tailwind gray-200 */
+}
+
+html.dark body {
+  background-color: #1a202c;
+  color: #e2e8f0;
+}
+
+html.dark .app-background {
+  background-color: #111827; /* Tailwind gray-900 */
+}
+
+html.dark .mobile-frame {
+  background-color: #1f2937; /* Tailwind gray-800 */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  color: #f3f4f6; /* Tailwind gray-100 */
+}
+
+/* Base Card / Container adjustments in dark mode */
+html.dark .settings-card, 
+html.dark .card,
+html.dark .bg-white {
+    background-color: #374151 !important; /* Tailwind gray-700 */
+    border-color: #4b5563 !important; /* Tailwind gray-600 */
+    color: #f3f4f6 !important; /* Tailwind gray-100 */
+}
+
+/* Inputs and Forms in dark mode */
+html.dark input[type="text"],
+html.dark input[type="email"],
+html.dark input[type="password"],
+html.dark input[type="number"],
+html.dark input[type="time"] {
+  background-color: #1f2937;
+  border-color: #4b5563;
+  color: #f3f4f6;
+}
+
+html.dark input:focus {
+  border-color: #3b82f6; /* Blue 500 */
+  background-color: #374151;
+}
+
+/* Text adjustments */
+html.dark .text-gray-900,
+html.dark .main-title,
+html.dark .card-title,
+html.dark h1, html.dark h2, html.dark h3, html.dark h4 {
+    color: #f9fafb !important;
+}
+
+html.dark .text-gray-600,
+html.dark .text-gray-500,
+html.dark .subtitle,
+html.dark .help-text,
+html.dark .to-text,
+html.dark p {
+    color: #d1d5db !important;
+}
+
+html.dark .form-group label {
+  color: #e5e7eb;
+}

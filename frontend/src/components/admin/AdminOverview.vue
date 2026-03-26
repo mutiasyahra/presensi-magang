@@ -83,33 +83,36 @@ const getStatus = (record, action) => {
 // Sekarang menghasilkan entri terpisah untuk clock-in dan clock-out
 const recentActivities = computed(() => {
   const list = props.attendanceList || [];
-  const activities = [];
+  const allEvents = [];
 
-  // Ambil 10 data attendance terakhir terlebih dahulu
-  list.slice(0, 10).forEach((record, index) => {
-    // baris clock-in
-    activities.push({
-      id: `${record.id || index}-in`,
-      name: record.user?.name || "Unknown",
-      role: record.user?.email || "",
-      action: "Clocked In",
-      time: formatTime(record.clock_in),
-      location: record.clock_in_lat
-        ? `${parseFloat(record.clock_in_lat).toFixed(4)}, ${parseFloat(
-            record.clock_in_long,
-          ).toFixed(4)}`
-        : "Remote",
-      status: getStatus(record, "Clocked In"),
-    });
+  list.forEach((record, index) => {
+    // Add clock-in event (always exists in record)
+    if (record.clock_in) {
+      allEvents.push({
+        id: `${record.id || index}-in`,
+        name: record.user?.name || "Unknown",
+        role: record.user?.email || "",
+        action: "Clocked In",
+        time: formatTime(record.clock_in),
+        rawTime: new Date(record.clock_in),
+        location: record.clock_in_lat
+          ? `${parseFloat(record.clock_in_lat).toFixed(4)}, ${parseFloat(
+              record.clock_in_long,
+            ).toFixed(4)}`
+          : "Remote",
+        status: getStatus(record, "Clocked In"),
+      });
+    }
 
-    // baris clock-out jika sudah ada
+    // Add clock-out event if it exists
     if (record.clock_out) {
-      activities.push({
+      allEvents.push({
         id: `${record.id || index}-out`,
         name: record.user?.name || "Unknown",
         role: record.user?.email || "",
         action: "Clocked Out",
         time: formatTime(record.clock_out),
+        rawTime: new Date(record.clock_out),
         location: record.clock_out_lat
           ? `${parseFloat(record.clock_out_lat).toFixed(4)}, ${parseFloat(
               record.clock_out_long,
@@ -120,7 +123,10 @@ const recentActivities = computed(() => {
     }
   });
 
-  return activities;
+  // Sort by rawTime descending (latest first) and take top 10
+  return allEvents
+    .sort((a, b) => b.rawTime - a.rawTime)
+    .slice(0, 10);
 });
 
 // Computed: hitung jumlah clock-in hari ini

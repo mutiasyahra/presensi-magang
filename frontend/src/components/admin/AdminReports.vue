@@ -1,31 +1,85 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import api from '../../api/axios.js';
 
-// Fungsi download bawaanmu tetap dipertahankan
-const downloadRecap = async () => {
+const attendanceRecords = ref([]);
+const stats = ref({});
+const isLoading = ref(false);
+const searchQuery = ref('');
+const dateRange = ref(''); // Placeholder for simplified range
+
+const fetchReportData = async () => {
+  isLoading.value = true;
   try {
-    const response = await api.get('/recap-monthly', { responseType: 'blob' });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'Recap_Absensi.pdf');
-    document.body.appendChild(link);
-    link.click();
+    // Fetch individual stats
+    const statsRes = await api.get('/stats');
+    stats.value = statsRes.data;
+
+    // Fetch attendance list (default all)
+    const params = {};
+    if (searchQuery.value) params.search = searchQuery.value;
+    
+    const attRes = await api.get('/attendances', { params });
+    attendanceRecords.value = attRes.data?.data || attRes.data || [];
   } catch (error) {
-    alert("Download failed.");
+    console.error("[AdminReports] Gagal load data:", error);
+  } finally {
+    isLoading.value = false;
   }
 };
 
-// Data dummy (sementara) agar tabel langsung terisi sesuai gambar desain
-const dummyRecords = ref([
-  { id: 1, name: 'Alexander Wright', dept: 'Engineering', initials: 'AW', color: '#EFF6FF', textColor: '#3B82F6', date: 'Oct 24, 2023', clockIn: '08:52 AM', clockOut: '05:30 PM', hours: '8h 38m', location: 'Headquarters', status: 'Present' },
-  { id: 2, name: 'Sarah Jenkins', dept: 'Marketing', initials: 'SJ', color: '#F8FAFC', textColor: '#64748B', date: 'Oct 24, 2023', clockIn: '09:15 AM', clockOut: '06:05 PM', hours: '8h 50m', location: 'Remote', status: 'Late Entry' },
-  { id: 3, name: 'Michael Chen', dept: 'Product Design', initials: 'MC', color: '#F5F3FF', textColor: '#8B5CF6', date: 'Oct 24, 2023', clockIn: '08:22 AM', clockOut: '05:15 PM', hours: '8h 53m', location: 'Headquarters', status: 'Present' },
-  { id: 4, name: 'Emma Rodriguez', dept: 'Engineering', initials: 'ER', color: '#FEF2F2', textColor: '#EF4444', date: 'Oct 24, 2023', clockIn: '-', clockOut: '-', hours: '0h 0m', location: '-', status: 'Absent' },
-  { id: 5, name: 'David Lee', dept: 'Operations', initials: 'DL', color: '#ECFEFF', textColor: '#06B6D4', date: 'Oct 23, 2023', clockIn: '08:45 AM', clockOut: '05:45 PM', hours: '9h 00m', location: 'Headquarters', status: 'Present' },
-]);
+const downloadRecap = async () => {
+  try {
+    const response = await api.get('/export', { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Attendance_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    alert("Export failed.");
+  }
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+};
+
+const formatTimeOnly = (dateTimeStr) => {
+  if (!dateTimeStr) return '-';
+  const date = new Date(dateTimeStr);
+  return date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true });
+};
+
+const formatDuration = (start, end) => {
+  if (!start || !end) return '0h 0m';
+  const startTime = new Date(start);
+  const endTime = new Date(end);
+  const diffMs = endTime - startTime;
+  if (diffMs <= 0) return '0h 0m';
+  
+  const diffHrs = Math.floor(diffMs / 3600000);
+  const diffMins = Math.floor((diffMs % 3600000) / 60000);
+  return `${diffHrs}h ${diffMins}m`;
+};
+
+const formatLocation = (lat, long) => {
+  if (!lat || !long) return 'Remote';
+  return `${parseFloat(lat).toFixed(4)}, ${parseFloat(long).toFixed(4)}`;
+};
+
+const getInitials = (name) => {
+  if (!name) return 'U';
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+};
+
+onMounted(fetchReportData);
 </script>
+
 
 <template>
   <div class="reports-container">
@@ -46,13 +100,13 @@ const dummyRecords = ref([
         <label>DATE RANGE</label>
         <div class="input-wrapper">
           <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          <input type="text" value="Oct 01, 2023 - Oct 31, 2023" readonly />
+          <input type="text" v-model="dateRange" placeholder="Future Implementation..." readonly />
         </div>
       </div>
       <div class="filter-group">
         <label>DEPARTMENT</label>
         <div class="input-wrapper select-wrapper">
-          <select>
+          <select disabled>
             <option>All Departments</option>
           </select>
         </div>
@@ -61,12 +115,13 @@ const dummyRecords = ref([
         <label>SEARCH INTERN</label>
         <div class="input-wrapper">
           <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input type="text" placeholder="Name or ID..." />
+          <input type="text" v-model="searchQuery" @keyup.enter="fetchReportData" placeholder="Name or ID..." />
         </div>
       </div>
       <div class="filter-actions">
-        <button class="btn-apply">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+        <button class="btn-apply" @click="fetchReportData">
+          <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+          <span v-else>Loading...</span>
           Apply Filters
         </button>
       </div>
@@ -76,29 +131,29 @@ const dummyRecords = ref([
       <div class="stat-card">
         <span class="stat-label">Avg. Attendance</span>
         <div class="stat-value-row">
-          <h2>94.8%</h2>
-          <span class="badge badge-trend-up">↗ 2.4%</span>
+          <h2>{{ stats.avg_attendance ?? '0' }}%</h2>
+          <span class="badge badge-grey">Monthly Avg</span>
         </div>
       </div>
       <div class="stat-card">
         <span class="stat-label">On-Time Rate</span>
         <div class="stat-value-row">
-          <h2>88.2%</h2>
-          <span class="badge badge-trend-down">↘ 1.1%</span>
+          <h2>{{ stats.on_time_rate ?? '0' }}%</h2>
+          <span class="badge badge-blue">Presence Quality</span>
         </div>
       </div>
       <div class="stat-card">
-        <span class="stat-label">Leaves/Absences</span>
+        <span class="stat-label">Leaves & Permits</span>
         <div class="stat-value-row">
-          <h2>12</h2>
-          <span class="badge badge-grey">Last 30 days</span>
+          <h2>{{ stats.pending_leaves ?? 0 }}</h2>
+          <span class="badge badge-grey">Awaiting Action</span>
         </div>
       </div>
       <div class="stat-card">
         <span class="stat-label">Active Interns</span>
         <div class="stat-value-row">
-          <h2>42</h2>
-          <span class="badge badge-blue">5 Depts</span>
+          <h2>{{ stats.total_interns ?? 0 }}</h2>
+          <span class="badge badge-blue">{{ stats.total_departments ?? 0 }} Depts</span>
         </div>
       </div>
     </div>
@@ -107,11 +162,11 @@ const dummyRecords = ref([
       <div class="card-header">
         <div class="header-left">
           <h3>Detailed Attendance Records</h3>
-          <p>Showing all logs based on selected filters</p>
+          <p v-if="isLoading">Updating records...</p>
+          <p v-else>Showing {{ attendanceRecords.length }} records</p>
         </div>
         <div class="header-right">
-          <button class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg></button>
-          <button class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button>
+          <button class="btn-icon" @click="fetchReportData"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button>
         </div>
       </div>
 
@@ -129,26 +184,29 @@ const dummyRecords = ref([
             </tr>
           </thead>
           <tbody>
-            <tr v-for="record in dummyRecords" :key="record.id">
+            <tr v-if="attendanceRecords.length === 0">
+              <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">No attendance records found.</td>
+            </tr>
+            <tr v-for="record in attendanceRecords" :key="record.id">
               <td>
                 <div class="intern-details">
-                  <div class="avatar-placeholder" :style="{ backgroundColor: record.color, color: record.textColor }">
-                    {{ record.initials }}
+                  <div class="avatar-placeholder" style="background-color: #f1f5f9; color: #3b82f6">
+                    {{ getInitials(record.user?.name) }}
                   </div>
                   <div class="info">
-                    <p class="name">{{ record.name }}</p>
-                    <p class="dept">{{ record.dept }}</p>
+                    <p class="name">{{ record.user?.name || 'Unknown' }}</p>
+                    <p class="dept">{{ record.user?.intern?.department || 'N/A' }}</p>
                   </div>
                 </div>
               </td>
-              <td><span class="regular-text">{{ record.date }}</span></td>
-              <td><span class="regular-text">{{ record.clockIn }}</span></td>
-              <td><span class="regular-text">{{ record.clockOut }}</span></td>
-              <td><span class="regular-text">{{ record.hours }}</span></td>
-              <td><span class="regular-text">{{ record.location }}</span></td>
+              <td><span class="regular-text">{{ formatDate(record.attendance_date) }}</span></td>
+              <td><span class="regular-text">{{ formatTimeOnly(record.clock_in) }}</span></td>
+              <td><span class="regular-text">{{ formatTimeOnly(record.clock_out) }}</span></td>
+              <td><span class="regular-text">{{ formatDuration(record.clock_in, record.clock_out) }}</span></td>
+              <td><span class="regular-text">{{ formatLocation(record.clock_in_lat, record.clock_in_long) }}</span></td>
               <td>
-                <span class="status-badge" :class="record.status.toLowerCase().replace(' ', '-')">
-                  {{ record.status }}
+                <span class="status-badge" :class="record.status === 'terlambat' ? 'late-entry' : (record.status === 'hadir' ? 'present' : 'absent')">
+                  {{ record.status?.toUpperCase() }}
                 </span>
               </td>
             </tr>
@@ -157,13 +215,14 @@ const dummyRecords = ref([
       </div>
 
       <div class="pagination-footer">
-        <p>Showing 5 of 124 records</p>
+        <p>Showing {{ attendanceRecords.length }} records</p>
         <div class="pagination">
-          <button class="page-btn">Previous</button>
-          <button class="page-btn">Next</button>
+          <button class="page-btn" disabled>Previous</button>
+          <button class="page-btn" disabled>Next</button>
         </div>
       </div>
     </div>
+
 
   </div>
 </template>

@@ -3,6 +3,10 @@ import { ref, computed } from "vue";
 
 const emit = defineEmits(["navigate", "go-back"]);
 
+const getImageUrl = (name) => {
+  return new URL(`../assets/${name}`, import.meta.url).href;
+};
+
 // --- DATA DUMMY ---
 const historyData = ref([
   {
@@ -61,8 +65,7 @@ const getStatusClass = (status) => {
 </script>
 
 <template>
-  <div class="main-wrapper">
-    <div class="mobile-frame">
+  <div class="screen-container">
       <div class="top-fixed-area">
         <div class="header">
           <button class="btn-back" @click="$emit('navigate', 'dashboard')">
@@ -114,7 +117,7 @@ const getStatusClass = (status) => {
           >
             <div class="card-top">
               <div class="icon-wrapper">
-                <img :src="`/src/assets/${item.icon}`" alt="Icon" />
+                <img :src="getImageUrl(item.icon)" alt="Icon" />
               </div>
 
               <div class="card-info">
@@ -139,7 +142,7 @@ const getStatusClass = (status) => {
 
             <div class="dashed-box">
               <div class="dashed-header">
-                <img :src="`/src/assets/${item.noteIcon}`" alt="Note Icon" />
+                <img :src="getImageUrl(item.noteIcon)" alt="Note Icon" />
                 <span>{{ item.noteTitle }}</span>
               </div>
               <p class="dashed-content">"{{ item.note }}"</p>
@@ -182,32 +185,20 @@ const getStatusClass = (status) => {
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 /* --- MAIN LAYOUT (Sama seperti Dashboard) --- */
-.main-wrapper {
-  background-color: #e2e8f0;
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  margin: 0;
-  font-family: "Inter", sans-serif;
-}
-
-.mobile-frame {
-  width: 100%;
-  max-width: 430px;
-  height: 100vh;
-  background-color: #f8fafc;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
+.screen-container {
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  background-color: #f8fafc;
+  overflow: hidden;
+  font-family: "Inter", sans-serif;
+  position: relative;
 }
 
 /* --- TOP FIXED AREA --- */

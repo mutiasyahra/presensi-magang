@@ -20,7 +20,8 @@ class CreateLeavesTable extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
 
             // Tanggal izin/sakit
-            $table->date('date');
+            $table->date('start_date');
+            $table->date('end_date');
 
             // Jenis izin
             $table->enum('type', ['izin', 'sakit']);

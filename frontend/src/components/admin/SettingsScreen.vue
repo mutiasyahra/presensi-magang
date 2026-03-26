@@ -108,12 +108,14 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
+import api from '../../api/axios.js';
+import Swal from 'sweetalert2';
 
-// Data State (Biar formnya ada isinya persis seperti di desain)
+// Data State
 const account = reactive({
-  fullName: 'Alex Richardson',
-  email: 'alex.richardson@company.com',
+  fullName: '',
+  email: '',
   password: ''
 });
 
@@ -130,9 +132,116 @@ const notifications = reactive({
 
 const isDarkMode = ref(false);
 
-// Fungsi simulasi klik tombol
-const saveAccount = () => alert('Account settings saved!');
-const saveSystem = () => alert('System configuration updated!');
+const loadSettings = async () => {
+    try {
+        // Fetch User Settings
+        const userRes = await api.get('/settings/me');
+        if (userRes.data?.data) {
+            const u = userRes.data.data;
+            account.fullName = u.fullName || '';
+            account.email = u.email || '';
+            isDarkMode.value = u.isDarkMode;
+            notifications.lateAlerts = u.notifyLateAlerts;
+            notifications.leaveRequests = u.notifyLeaveRequests;
+        }
+
+        // Fetch System Settings
+        const sysRes = await api.get('/settings/system');
+        if (sysRes.data?.data) {
+            const s = sysRes.data.data;
+            system.startTime = s.startTime || '08:00';
+            system.endTime = s.endTime || '17:00';
+            system.radius = s.radius || 100;
+        }
+    } catch (error) {
+        console.error("Failed to load settings:", error);
+        Swal.fire('Error', 'Gagal memuat pengaturan.', 'error');
+    }
+};
+
+const saveAccount = async () => {
+    try {
+        const payload = {
+            fullName: account.fullName,
+            email: account.email,
+            isDarkMode: isDarkMode.value,
+            notifyLateAlerts: notifications.lateAlerts,
+            notifyLeaveRequests: notifications.leaveRequests,
+        };
+
+        if (account.password.trim() !== '') {
+            payload.password = account.password;
+        }
+
+        await api.put('/settings/me', payload);
+
+        // Update localStorage user object so App.vue uses latest settings on fresh load
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const userObj = JSON.parse(userStr);
+                userObj.name = account.fullName;
+                userObj.email = account.email;
+                userObj.is_dark_mode = isDarkMode.value;
+                userObj.notify_late_alerts = notifications.lateAlerts;
+                userObj.notify_leave_requests = notifications.leaveRequests;
+                localStorage.setItem('user', JSON.stringify(userObj));
+            } catch (e) {
+                console.error("Failed to parse user from localStorage", e);
+            }
+        }
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Tersimpan',
+            text: 'Pengaturan akun berhasil diperbarui!',
+            timer: 1500,
+            showConfirmButton: false
+        });
+        account.password = ''; // clear password field
+    } catch (error) {
+        console.error("Failed to save account settings", error);
+        Swal.fire('Error', 'Gagal menyimpan pengaturan akun: ' + (error.response?.data?.message || 'Terjadi kesalahan sistem.'), 'error');
+    }
+};
+
+const saveSystem = async () => {
+    try {
+        const payload = {
+            startTime: system.startTime,
+            endTime: system.endTime,
+            radius: parseInt(system.radius) || 100,
+        };
+        await api.put('/settings/system', payload);
+        Swal.fire({
+            icon: 'success',
+            title: 'Tersimpan',
+            text: 'Konfigurasi sistem berhasil diperbarui!',
+            timer: 1500,
+            showConfirmButton: false
+        });
+    } catch (error) {
+        console.error("Failed to save system settings", error);
+        Swal.fire('Error', 'Gagal menyimpan konfigurasi sistem: ' + (error.response?.data?.message || 'Terjadi kesalahan sistem.'), 'error');
+    }
+};
+
+watch([isDarkMode, () => notifications.lateAlerts, () => notifications.leaveRequests], () => {
+    // When toggle changes, automatically save user preferences
+    saveAccount();
+});
+
+watch(isDarkMode, (newVal) => {
+    if (newVal) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+});
+
+onMounted(() => {
+    loadSettings();
+});
 </script>
 
 <style scoped>

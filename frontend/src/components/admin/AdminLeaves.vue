@@ -1,6 +1,48 @@
 <script setup>
-defineProps(['leaveRequests']);
+import { computed } from 'vue';
+
+const props = defineProps(['leaveRequests']);
 const emit = defineEmits(['approve']);
+
+const pendingCount = computed(() => props.leaveRequests?.filter(l => l.status === 'pending').length || 0);
+
+const isToday = (dateString) => {
+  if (!dateString) return false;
+  const d = new Date(dateString);
+  const today = new Date();
+  return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+};
+
+const approvedTodayCount = computed(() => props.leaveRequests?.filter(l => l.status === 'approved' && isToday(l.updated_at)).length || 0);
+const rejectedTodayCount = computed(() => props.leaveRequests?.filter(l => l.status === 'rejected' && isToday(l.updated_at)).length || 0);
+
+const totalLeaveRate = computed(() => {
+  if (!props.leaveRequests?.length) return '0%';
+  const processed = props.leaveRequests.filter(l => l.status !== 'pending').length;
+  return Math.round((processed / props.leaveRequests.length) * 100) + '%';
+});
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+};
+
+const getDuration = (start, end) => {
+  if (!start || !end) return '1 Day';
+  const s = new Date(start);
+  const e = new Date(end);
+  const diffTime = Math.abs(e - s);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  return diffDays + (diffDays > 1 ? ' Days' : ' Day');
+};
+
+const getFileUrl = (filePath) => {
+  if (!filePath) return '#';
+  if (filePath.startsWith('http')) return filePath;
+  const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://127.0.0.1:8000';
+  return `${baseUrl}/storage/${filePath}`;
+};
 </script>
 
 <template>
@@ -21,29 +63,29 @@ const emit = defineEmits(['approve']);
       <div class="stat-card">
         <span class="stat-label">PENDING</span>
         <div class="stat-value-row">
-          <h2>12</h2>
-          <span class="badge badge-blue">+3 today</span>
+          <h2>{{ pendingCount < 10 && pendingCount > 0 ? '0' + pendingCount : pendingCount }}</h2>
+          <span class="badge badge-blue">Awaiting Action</span>
         </div>
       </div>
       <div class="stat-card">
         <span class="stat-label">APPROVED TODAY</span>
         <div class="stat-value-row">
-          <h2>08</h2>
+          <h2>{{ approvedTodayCount < 10 && approvedTodayCount > 0 ? '0' + approvedTodayCount : approvedTodayCount }}</h2>
           <span class="badge badge-green">Good pace</span>
         </div>
       </div>
       <div class="stat-card">
         <span class="stat-label">REJECTED TODAY</span>
         <div class="stat-value-row">
-          <h2>02</h2>
+          <h2>{{ rejectedTodayCount < 10 && rejectedTodayCount > 0 ? '0' + rejectedTodayCount : rejectedTodayCount }}</h2>
           <span class="badge badge-red">Low quota</span>
         </div>
       </div>
       <div class="stat-card">
-        <span class="stat-label">TOTAL LEAVE RATE</span>
+        <span class="stat-label">COMPLETION RATE</span>
         <div class="stat-value-row">
-          <h2>4.2%</h2>
-          <span class="badge badge-grey">Avg/Intern</span>
+          <h2>{{ totalLeaveRate }}</h2>
+          <span class="badge badge-grey">Processed</span>
         </div>
       </div>
     </div>
@@ -84,7 +126,7 @@ const emit = defineEmits(['approve']);
                   <div class="avatar-placeholder">{{ leave.user?.name?.charAt(0) || 'U' }}</div>
                   <div class="info">
                     <p class="name">{{ leave.user?.name || 'Unknown Intern' }}</p>
-                    <p class="id">ID: {{ leave.user?.id || '202308000' }}</p>
+                    <p class="id">ID: {{ leave.user?.intern?.intern_id || leave.user?.id || '202308000' }}</p>
                   </div>
                 </div>
               </td>
@@ -97,17 +139,17 @@ const emit = defineEmits(['approve']);
 
               <td>
                 <div class="duration-info">
-                  <p class="dates">{{ leave.date }}</p>
-                  <p class="days">{{ leave.duration || '1 Working Day' }}</p>
+                  <p class="dates">{{ formatDate(leave.start_date) }} - {{ formatDate(leave.end_date) }}</p>
+                  <p class="days">{{ getDuration(leave.start_date, leave.end_date) }}</p>
                 </div>
               </td>
 
               <td>
                 <div class="reason-evidence">
                   <p class="reason">"{{ leave.reason }}"</p>
-                  <a v-if="leave.attachment" href="#" class="evidence-link">
+                  <a v-if="leave.file" :href="getFileUrl(leave.file)" target="_blank" class="evidence-link">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-                    {{ leave.attachment }}
+                    View Document
                   </a>
                   <p v-else class="no-evidence">No evidence provided</p>
                 </div>
