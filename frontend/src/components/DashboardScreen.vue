@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import api from "../api/axios";
 
 // --- USER DATA ---
 const user = ref({
@@ -56,6 +57,39 @@ const monthNames = [
 ];
 const weekDays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
+const attendances = ref([]);
+const holidays = ref([]);
+
+const fetchCalendarData = async () => {
+  try {
+    const res = await api.get("/calendar");
+    if (res.data && res.data.attendance) {
+      attendances.value = res.data.attendance;
+    }
+  } catch (err) {
+    console.error("Gagal mengambil data kalender:", err);
+  }
+};
+
+const fetchHolidays = async (year) => {
+  try {
+    const res = await fetch(
+      `https://date.nager.at/api/v3/PublicHolidays/${year}/ID`,
+    );
+    if (res.ok) {
+      holidays.value = await res.json();
+    }
+  } catch (err) {
+    console.error("Gagal mengambil data hari libur:", err);
+  }
+};
+
+watch(displayYear, (newYear, oldYear) => {
+  if (newYear !== oldYear) {
+    fetchHolidays(newYear);
+  }
+});
+
 // Generate hari dalam bulan
 const calendarDays = computed(() => {
   const year = displayYear.value;
@@ -77,12 +111,33 @@ const calendarDays = computed(() => {
 
   // Isi tanggal
   for (let i = 1; i <= daysInMonth; i++) {
-    // Simulasi status (Hanya contoh visual agar mirip desain)
-    // Random status: 1=Present (Green), 2=Late (Yellow), 0=None
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
+    const currentDayObj = new Date(year, month, i);
+    const dayOfWeek = currentDayObj.getDay();
+
+    // Cek Libur (Sabtu/Minggu atau Hari Libur Nasional)
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const isNationalHoliday = holidays.value.some((h) => h.date === dateStr);
+    const isHoliday = isWeekend || isNationalHoliday;
+
+    // Cek Presensi
+    const attendanceRecord = attendances.value.find(
+      (a) => a.attendance_date === dateStr,
+    );
+
     let status = null;
-    if (i < 15 && i % 7 !== 0 && i % 6 !== 0) status = "present";
-    if (i === 12 || i === 4) status = "late";
-    if (i === 18) status = "absent";
+    if (attendanceRecord) {
+      if (attendanceRecord.status === "hadir" || attendanceRecord.clock_in) {
+        status = "present";
+      } else if (attendanceRecord.status === "terlambat") {
+        status = "late";
+      } else if (
+        attendanceRecord.status === "alpha" ||
+        attendanceRecord.status === "izin"
+      ) {
+        status = "absent";
+      }
+    }
 
     // Cek apakah hari ini
     const today = new Date();
@@ -96,6 +151,7 @@ const calendarDays = computed(() => {
       type: "date",
       isToday: isToday,
       status: status,
+      isHoliday: isHoliday,
     });
   }
   return days;
@@ -129,6 +185,9 @@ onMounted(() => {
   if (storedUser) {
     user.value = JSON.parse(storedUser);
   }
+
+  fetchCalendarData();
+  fetchHolidays(displayYear.value);
 });
 onUnmounted(() => {
   clearInterval(timer);
@@ -137,167 +196,170 @@ onUnmounted(() => {
 
 <template>
   <div class="screen-container">
-      <div class="header-section">
-        <div class="top-bar">
-          <div class="profile-group">
-            <div class="avatar">{{ userInitial }}</div>
-            <div class="text-info">
-              <p class="welcome">WELCOME BACK,</p>
-              <h2 class="username">{{ user.name }}</h2>
-            </div>
-          </div>
-          <button class="btn-notif" @click="$emit('navigate', 'profile')">
-            <img src="../assets/notif.png" alt="Notif" />
-          </button>
-        </div>
-      </div>
-
-      <div class="scroll-area">
-        <div class="content-wrapper">
-          <div class="location-card">
-            <div class="loc-icon-wrapper">
-              <img src="../assets/location.png" alt="Loc" class="loc-img" />
-            </div>
-            <div class="loc-text">
-              <p class="loc-label">OFFICE LOCATION</p>
-              <h3 class="loc-name">Tech Innovations Hub, Jakarta</h3>
-            </div>
-            <div class="arrow-right">></div>
-          </div>
-
-          <div class="stats-simple-card">
-            <div class="rate-info">
-              <p class="rate-label">ATTENDANCE RATE</p>
-              <h1 class="rate-num">94.8%</h1>
-              <p class="rate-desc">↗ +2.4% from last month</p>
-            </div>
-            <div class="rate-circle">
-              <span>GOOD</span>
-            </div>
-          </div>
-
-          <div class="time-card">
-            <div class="date-row">
-              <span class="date-text">{{ currentDateStr }}</span>
-              <span class="work-hours">09:00 - 17:00</span>
-            </div>
-
-            <p class="working-label">Current Working Time</p>
-
-            <div class="clock-wrapper">
-              <h1 class="digital-clock">{{ timeMain }}</h1>
-              <span class="seconds-text">{{ timeSecond }}</span>
-            </div>
-
-            <div class="action-buttons">
-              <button class="btn-clock-in" @click="$emit('open-clock-in')">
-                <img src="../assets/clock in.png" alt="In" />
-                Clock In
-              </button>
-              <button
-                class="action-btn clock-out"
-                @click="$emit('navigate', 'clock-out')"
-              >
-                <div class="icon-wrapper">
-                  <img src="../assets/clock out.png" alt="Out" />
-                </div>
-                <span>Clock Out</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="section-title">
-            <h3>Monthly Attendance</h3>
-          </div>
-
-          <div class="stats-grid">
-            <div class="stat-card">
-              <img src="../assets/present.png" class="stat-icon" />
-              <span class="stat-num">20</span>
-              <span class="stat-label">Present</span>
-            </div>
-            <div class="stat-card">
-              <img src="../assets/late.png" class="stat-icon" />
-              <span class="stat-num">02</span>
-              <span class="stat-label">Late</span>
-            </div>
-            <div class="stat-card">
-              <img src="../assets/absent.png" class="stat-icon" />
-              <span class="stat-num">01</span>
-              <span class="stat-label">Absent</span>
-            </div>
-          </div>
-
-          <div class="calendar-card">
-            <div class="cal-header">
-              <h3>{{ monthNames[displayMonth] }} {{ displayYear }}</h3>
-              <div class="cal-nav">
-                <button @click="prevMonth" class="nav-btn">‹</button>
-                <button @click="nextMonth" class="nav-btn">›</button>
-              </div>
-            </div>
-
-            <div class="cal-days-name">
-              <span v-for="day in weekDays" :key="day">{{ day }}</span>
-            </div>
-
-            <div class="cal-grid">
-              <div
-                v-for="(item, index) in calendarDays"
-                :key="index"
-                class="cal-cell"
-              >
-                <div
-                  v-if="item.type === 'date'"
-                  class="date-circle"
-                  :class="{ 'current-day': item.isToday }"
-                >
-                  {{ item.date }}
-                </div>
-
-                <div
-                  v-if="item.status"
-                  class="status-dot"
-                  :class="item.status"
-                ></div>
-              </div>
-            </div>
-          </div>
-
-          <div style="height: 50px"></div>
-        </div>
-      </div>
-
-      <div class="bottom-nav">
-        <div class="nav-item active">
-          <img src="../assets/home.png" alt="Home" />
-          <span>Home</span>
-        </div>
-        <div class="nav-item" @click="$emit('navigate', 'history')">
-          <img src="../assets/history.png" alt="History" />
-          <span>History</span>
-        </div>
-
-        <div class="nav-item-scan-wrapper">
-          <div class="scan-button">
-            <img src="../assets/qr.png" alt="Scan" />
+    <div class="header-section">
+      <div class="top-bar">
+        <div class="profile-group">
+          <div class="avatar">{{ userInitial }}</div>
+          <div class="text-info">
+            <p class="welcome">WELCOME BACK,</p>
+            <h2 class="username">{{ user.name }}</h2>
           </div>
         </div>
-
-        <div
-          class="nav-item"
-          @click="$emit('navigate', 'leave')"
-          style="cursor: pointer"
-        >
-          <img src="../assets/leave.png" alt="Leave" />
-          <span>Leave</span>
-        </div>
-        <div class="nav-item" @click="$emit('navigate', 'profile')">
-          <img src="../assets/profile.png" alt="Profile" />
-          <span>Profile</span>
-        </div>
+        <button class="btn-notif" @click="$emit('navigate', 'profile')">
+          <img src="../assets/notif.png" alt="Notif" />
+        </button>
       </div>
     </div>
+
+    <div class="scroll-area">
+      <div class="content-wrapper">
+        <div class="location-card">
+          <div class="loc-icon-wrapper">
+            <img src="../assets/location.png" alt="Loc" class="loc-img" />
+          </div>
+          <div class="loc-text">
+            <p class="loc-label">OFFICE LOCATION</p>
+            <h3 class="loc-name">Tech Innovations Hub, Jakarta</h3>
+          </div>
+          <div class="arrow-right">></div>
+        </div>
+
+        <div class="stats-simple-card">
+          <div class="rate-info">
+            <p class="rate-label">ATTENDANCE RATE</p>
+            <h1 class="rate-num">94.8%</h1>
+            <p class="rate-desc">↗ +2.4% from last month</p>
+          </div>
+          <div class="rate-circle">
+            <span>GOOD</span>
+          </div>
+        </div>
+
+        <div class="time-card">
+          <div class="date-row">
+            <span class="date-text">{{ currentDateStr }}</span>
+            <span class="work-hours">09:00 - 17:00</span>
+          </div>
+
+          <p class="working-label">Current Working Time</p>
+
+          <div class="clock-wrapper">
+            <h1 class="digital-clock">{{ timeMain }}</h1>
+            <span class="seconds-text">{{ timeSecond }}</span>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-clock-in" @click="$emit('open-clock-in')">
+              <img src="../assets/clock in.png" alt="In" />
+              Clock In
+            </button>
+            <button
+              class="action-btn clock-out"
+              @click="$emit('navigate', 'clock-out')"
+            >
+              <div class="icon-wrapper">
+                <img src="../assets/clock out.png" alt="Out" />
+              </div>
+              <span>Clock Out</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="section-title">
+          <h3>Monthly Attendance</h3>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <img src="../assets/present.png" class="stat-icon" />
+            <span class="stat-num">20</span>
+            <span class="stat-label">Present</span>
+          </div>
+          <div class="stat-card">
+            <img src="../assets/late.png" class="stat-icon" />
+            <span class="stat-num">02</span>
+            <span class="stat-label">Late</span>
+          </div>
+          <div class="stat-card">
+            <img src="../assets/absent.png" class="stat-icon" />
+            <span class="stat-num">01</span>
+            <span class="stat-label">Absent</span>
+          </div>
+        </div>
+
+        <div class="calendar-card">
+          <div class="cal-header">
+            <h3>{{ monthNames[displayMonth] }} {{ displayYear }}</h3>
+            <div class="cal-nav">
+              <button @click="prevMonth" class="nav-btn">‹</button>
+              <button @click="nextMonth" class="nav-btn">›</button>
+            </div>
+          </div>
+
+          <div class="cal-days-name">
+            <span v-for="day in weekDays" :key="day">{{ day }}</span>
+          </div>
+
+          <div class="cal-grid">
+            <div
+              v-for="(item, index) in calendarDays"
+              :key="index"
+              class="cal-cell"
+            >
+              <div
+                v-if="item.type === 'date'"
+                class="date-circle"
+                :class="{
+                  'current-day': item.isToday,
+                  'is-holiday': item.isHoliday,
+                }"
+              >
+                {{ item.date }}
+              </div>
+
+              <div
+                v-if="item.status"
+                class="status-dot"
+                :class="item.status"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height: 50px"></div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item active">
+        <img src="../assets/home.png" alt="Home" />
+        <span>Home</span>
+      </div>
+      <div class="nav-item" @click="$emit('navigate', 'history')">
+        <img src="../assets/history.png" alt="History" />
+        <span>History</span>
+      </div>
+
+      <div class="nav-item-scan-wrapper">
+        <div class="scan-button">
+          <img src="../assets/qr.png" alt="Scan" />
+        </div>
+      </div>
+
+      <div
+        class="nav-item"
+        @click="$emit('navigate', 'leave')"
+        style="cursor: pointer"
+      >
+        <img src="../assets/leave.png" alt="Leave" />
+        <span>Leave</span>
+      </div>
+      <div class="nav-item" @click="$emit('navigate', 'profile')">
+        <img src="../assets/profile.png" alt="Profile" />
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -668,8 +730,13 @@ onUnmounted(() => {
 /* Highlight Hari Ini */
 .current-day {
   background-color: #2563eb;
-  color: white;
+  color: white !important;
   box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+}
+
+/* Warna merah untuk hari libur (Sabtu/Minggu/Tanggal Merah) */
+.date-circle.is-holiday {
+  color: #ef4444;
 }
 
 /* Dots Indicator */
