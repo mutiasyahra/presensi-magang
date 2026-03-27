@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import SplashScreen from "./components/SplashScreen.vue";
 import LandingScreen from "./components/LandingScreen.vue";
 import LoginScreen from "./components/LoginScreen.vue";
 import DashboardScreen from "./components/DashboardScreen.vue";
@@ -13,7 +14,13 @@ import AdminLayout from "./components/admin/AdminLayout.vue";
 
 // State halaman dan tipe edit
 const currentPage = ref("landing");
-const editType = ref("in"); 
+const editType = ref("in");
+const showSplash = ref(false);
+
+const onSplashDone = () => {
+  showSplash.value = false;
+  navigateTo("login");
+};
 
 // Fungsi Navigasi yang sudah diperbaiki
 const navigateTo = (page, type = "in") => {
@@ -42,14 +49,9 @@ onMounted(() => {
       currentPage.value = "dashboard";
     }
   } else {
-    if (savedPage === "login") {
-      currentPage.value = "login";
-    } else {
-      currentPage.value = "landing";
-      setTimeout(() => {
-        navigateTo("login");
-      }, 3000);
-    }
+    // Selalu tampilkan splash saat belum login
+    currentPage.value = "login";
+    showSplash.value = true;
   }
 });
 
@@ -84,8 +86,10 @@ onMounted(() => {
 
   <div v-else class="app-background">
     <div class="mobile-frame">
+      <SplashScreen v-if="showSplash" @done="onSplashDone" />
+
       <LandingScreen
-        v-if="currentPage === 'landing'"
+        v-if="!showSplash && currentPage === 'landing'"
         @click-login="navigateTo('login')"
       />
 
