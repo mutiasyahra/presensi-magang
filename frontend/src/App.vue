@@ -68,7 +68,7 @@ const onLogout = () => {
   localStorage.removeItem("user");
   localStorage.removeItem("currentPage");
   document.documentElement.classList.remove("dark");
-  navigateTo("landing");
+  navigateTo("login");
 };
 
 onMounted(() => {
