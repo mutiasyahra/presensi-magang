@@ -30,6 +30,7 @@ const fetchHistoryData = async () => {
           
           historyList.push({
             id: att.id + "-in",
+            attendanceId: att.id,
             rawDate: inDate,
             day: inDate.toLocaleDateString("en-US", { weekday: "long" }),
             date: inDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
@@ -47,6 +48,7 @@ const fetchHistoryData = async () => {
           const outDate = new Date(att.clock_out);
           historyList.push({
             id: att.id + "-out",
+            attendanceId: att.id,
             rawDate: outDate,
             day: outDate.toLocaleDateString("en-US", { weekday: "long" }),
             date: outDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
@@ -160,7 +162,7 @@ const getStatusClass = (status) => {
                 <span class="badge" :class="getStatusClass(item.status)">{{
                   item.status
                 }}</span>
-                <button class="btn-edit" @click="$emit('navigate', 'edit-attendance', item.type === 'clock-in' ? 'in' : 'out')">
+                <button class="btn-edit" @click="$emit('navigate', 'edit-attendance', item.type === 'clock-in' ? 'in' : 'out', item.attendanceId)">
                 <img src="../assets/pencil.png" alt="Edit" />
                 </button>
               </div>

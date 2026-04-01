@@ -15,6 +15,7 @@ import AdminLayout from "./components/admin/AdminLayout.vue";
 // State halaman dan tipe edit
 const currentPage = ref("landing");
 const editType = ref("in");
+const editId = ref(null);
 const showSplash = ref(false);
 
 const onSplashDone = () => {
@@ -23,12 +24,13 @@ const onSplashDone = () => {
 };
 
 // Fungsi Navigasi yang sudah diperbaiki
-const navigateTo = (page, type = "in") => {
+const navigateTo = (page, type = "in", id = null) => {
   currentPage.value = page;
   
   // Jika pindah ke halaman edit, simpan tipenya (in/out)
   if (page === "edit-attendance") {
     editType.value = type;
+    editId.value = id;
   }
   
   localStorage.setItem("currentPage", page);
@@ -108,6 +110,7 @@ onMounted(() => {
       <EditAttendance 
         v-else-if="currentPage === 'edit-attendance'" 
         :type="editType" 
+        :attendance-id="editId"
         @navigate="navigateTo" 
       />
 
