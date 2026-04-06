@@ -131,6 +131,7 @@ const notifications = reactive({
 });
 
 const isDarkMode = ref(false);
+const isLoaded = ref(false); // flag to prevent watch from firing during initial load
 
 const loadSettings = async () => {
     try {
@@ -156,10 +157,13 @@ const loadSettings = async () => {
     } catch (error) {
         console.error("Failed to load settings:", error);
         Swal.fire('Error', 'Gagal memuat pengaturan.', 'error');
+    } finally {
+        // Mark as loaded AFTER all values are set — watch will now be active
+        isLoaded.value = true;
     }
 };
 
-const saveAccount = async () => {
+const saveAccount = async (silent = false) => {
     try {
         const payload = {
             fullName: account.fullName,
@@ -191,17 +195,21 @@ const saveAccount = async () => {
             }
         }
 
-        Swal.fire({
-            icon: 'success',
-            title: 'Tersimpan',
-            text: 'Pengaturan akun berhasil diperbarui!',
-            timer: 1500,
-            showConfirmButton: false
-        });
-        account.password = ''; // clear password field
+        if (!silent) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Tersimpan',
+                text: 'Pengaturan akun berhasil diperbarui!',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            account.password = ''; // clear password field
+        }
     } catch (error) {
         console.error("Failed to save account settings", error);
-        Swal.fire('Error', 'Gagal menyimpan pengaturan akun: ' + (error.response?.data?.message || 'Terjadi kesalahan sistem.'), 'error');
+        if (!silent) {
+            Swal.fire('Error', 'Gagal menyimpan pengaturan akun: ' + (error.response?.data?.message || 'Terjadi kesalahan sistem.'), 'error');
+        }
     }
 };
 
@@ -227,8 +235,9 @@ const saveSystem = async () => {
 };
 
 watch([isDarkMode, () => notifications.lateAlerts, () => notifications.leaveRequests], () => {
-    // When toggle changes, automatically save user preferences
-    saveAccount();
+    // Only auto-save after initial load is complete (not during loadSettings)
+    if (!isLoaded.value) return;
+    saveAccount(true); // silent = true, no popup
 });
 
 watch(isDarkMode, (newVal) => {

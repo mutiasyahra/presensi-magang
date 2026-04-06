@@ -59,12 +59,19 @@ const weekDays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
 const attendances = ref([]);
 const holidays = ref([]);
+const leaves = ref([]);
+
+const presentCount = computed(() => calendarDays.value.filter(d => d.type === 'date' && d.status === 'present').length);
+const lateCount = computed(() => calendarDays.value.filter(d => d.type === 'date' && d.status === 'late').length);
+const absentCount = computed(() => calendarDays.value.filter(d => d.type === 'date' && d.status === 'absent').length);
+const leaveCount = computed(() => calendarDays.value.filter(d => d.type === 'date' && d.status === 'leave').length);
 
 const fetchCalendarData = async () => {
   try {
     const res = await api.get("/calendar");
-    if (res.data && res.data.attendance) {
-      attendances.value = res.data.attendance;
+    if (res.data) {
+      if (res.data.attendance) attendances.value = res.data.attendance;
+      if (res.data.leave) leaves.value = res.data.leave;
     }
   } catch (err) {
     console.error("Gagal mengambil data kalender:", err);
@@ -120,22 +127,33 @@ const calendarDays = computed(() => {
     const isNationalHoliday = holidays.value.some((h) => h.date === dateStr);
     const isHoliday = isWeekend || isNationalHoliday;
 
-    // Cek Presensi
-    const attendanceRecord = attendances.value.find(
-      (a) => a.attendance_date === dateStr,
-    );
-
     let status = null;
-    if (attendanceRecord) {
-      if (attendanceRecord.status === "hadir" || attendanceRecord.clock_in) {
-        status = "present";
-      } else if (attendanceRecord.status === "terlambat") {
-        status = "late";
-      } else if (
-        attendanceRecord.status === "alpha" ||
-        attendanceRecord.status === "izin"
-      ) {
-        status = "absent";
+
+    // Check if on leave first
+    const leaveRecord = leaves.value.find(l => {
+      if (l.status !== 'approved') return false;
+      return dateStr >= l.start_date && dateStr <= l.end_date;
+    });
+
+    if (leaveRecord) {
+      status = "leave";
+    } else {
+      // Cek Presensi
+      const attendanceRecord = attendances.value.find(
+        (a) => a.attendance_date === dateStr,
+      );
+
+      if (attendanceRecord) {
+        if (attendanceRecord.status === "hadir" || attendanceRecord.clock_in) {
+          status = "present";
+        } else if (attendanceRecord.status === "terlambat") {
+          status = "late";
+        } else if (
+          attendanceRecord.status === "alpha" ||
+          attendanceRecord.status === "izin"
+        ) {
+          status = "absent";
+        }
       }
     }
 
@@ -272,18 +290,23 @@ onUnmounted(() => {
         <div class="stats-grid">
           <div class="stat-card">
             <img src="../assets/present.png" class="stat-icon" />
-            <span class="stat-num">20</span>
+            <span class="stat-num">{{ presentCount < 10 && presentCount > 0 ? '0' + presentCount : presentCount }}</span>
             <span class="stat-label">Present</span>
           </div>
           <div class="stat-card">
             <img src="../assets/late.png" class="stat-icon" />
-            <span class="stat-num">02</span>
+            <span class="stat-num">{{ lateCount < 10 && lateCount > 0 ? '0' + lateCount : lateCount }}</span>
             <span class="stat-label">Late</span>
           </div>
           <div class="stat-card">
             <img src="../assets/absent.png" class="stat-icon" />
-            <span class="stat-num">01</span>
+            <span class="stat-num">{{ absentCount < 10 && absentCount > 0 ? '0' + absentCount : absentCount }}</span>
             <span class="stat-label">Absent</span>
+          </div>
+          <div class="stat-card">
+            <svg style="margin-bottom: 6px; color: #a855f7; display: inline-block;" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4h-3V2h-2v2h-4V2H8v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/><path d="M7 12h10v2H7z"/></svg>
+            <span class="stat-num">{{ leaveCount < 10 && leaveCount > 0 ? '0' + leaveCount : leaveCount }}</span>
+            <span class="stat-label">Leave</span>
           </div>
         </div>
 
@@ -753,6 +776,9 @@ onUnmounted(() => {
 }
 .status-dot.absent {
   background-color: #ef4444;
+}
+.status-dot.leave {
+  background-color: #a855f7;
 }
 
 /* --- HEADER (Perbaikan agar tidak rusak) --- */
