@@ -1,8 +1,10 @@
 <script setup>
+
 import { ref, onMounted, computed } from "vue";
 import api from "../api/axios.js";
 
-const emit = defineEmits(["navigate", "logout"]);
+// Gabungkan semua event di sini
+const emit = defineEmits(["navigate", "logout", "open-personal-info", "open-settings", "open-privacy"]);
 
 const user = ref({
   name: "User",
@@ -86,7 +88,7 @@ onMounted(() => {
       <div class="settings-section">
         <h4 class="section-title">SETTINGS & INFORMATION</h4>
 
-        <div class="setting-item">
+        <div class="setting-item" @click="$emit('open-personal-info')">
           <div class="setting-icon-wrapper">
             <img src="../assets/profile full color.png" alt="Personal Info" />
           </div>
@@ -94,7 +96,7 @@ onMounted(() => {
           <span class="chevron">›</span>
         </div>
 
-        <div class="setting-item">
+        <div class="setting-item" @click="$emit('open-settings')">
           <div class="setting-icon-wrapper">
             <img src="../assets/app settings.png" alt="App Settings" />
           </div>
@@ -102,7 +104,7 @@ onMounted(() => {
           <span class="chevron">›</span>
         </div>
 
-        <div class="setting-item">
+        <div class="setting-item" @click="$emit('open-privacy')">
           <div class="setting-icon-wrapper">
             <img src="../assets/privacy.png" alt="Privacy Policy" />
           </div>
@@ -129,7 +131,7 @@ onMounted(() => {
         <span>History</span>
       </div>
 
-      <div class="nav-item scan-btn" @click="$emit('navigate', 'scan')">
+      <div class="nav-item scan-btn" @click="$emit('navigate', 'qr-scan')">
         <div class="scan-circle">
           <img src="../assets/qr.png" alt="Scan QR" class="qr-icon" />
         </div>
@@ -361,14 +363,15 @@ onMounted(() => {
   display: flex;
   align-items: center;
   background: white;
-  padding: 16px;
+  padding: 16px 20px; /* Ditambah padding kanan agar tidak mepet */
   border-radius: 16px;
   margin-bottom: 12px;
   cursor: pointer;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s;
+  transition: all 0.2s ease;
   text-align: left;
   width: 100%;
+  box-sizing: border-box; /* Memastikan padding tidak merusak lebar */
 }
 
 .setting-item:active {
@@ -397,12 +400,17 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 600;
   color: #1e293b;
+  margin-right: 10px;
 }
 
 .chevron {
-  font-size: 20px;
+  font-size: 18px;
   color: #cbd5e1;
   font-weight: 600;
+  width: 20px; /* Beri lebar tetap */
+  display: flex;
+  justify-content: flex-end; /* Paksa menempel ke arah kanan dengan rapi */
+  line-height: 1;
 }
 
 /* Tombol Logout Khusus */

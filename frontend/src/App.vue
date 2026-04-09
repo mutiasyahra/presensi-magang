@@ -1,5 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import QRScanner from "./components/QRScanner.vue";
+import PersonalInfoDetail from "./components/PersonalInfoDetail.vue";
 import LandingScreen from "./components/LandingScreen.vue";
 import LoginScreen from "./components/LoginScreen.vue";
 import DashboardScreen from "./components/DashboardScreen.vue";
@@ -10,6 +12,8 @@ import LeaveScreen from "./components/LeaveScreen.vue";
 import ProfileScreen from "./components/ProfileScreen.vue";
 import EditAttendance from "./components/EditAttendance.vue";
 import AdminLayout from "./components/admin/AdminLayout.vue";
+import AppSettings from "./components/AppSettings.vue";
+import PrivacyPolicy from "./components/PrivacyPolicy.vue";
 
 // State halaman dan tipe edit
 const currentPage = ref("landing");
@@ -89,13 +93,18 @@ onMounted(() => {
         @click-login="navigateTo('login')"
       />
 
+      <QRScanner 
+        v-else-if="currentPage === 'qr-scan'" 
+        @go-back="navigateTo('dashboard')" 
+      />
+
       <LoginScreen
-        v-if="currentPage === 'login'"
+        v-else-if="currentPage === 'login'"
         @login-success="onLoginSuccess"
       />
 
       <DashboardScreen
-        v-if="currentPage === 'dashboard'"
+        v-else-if="currentPage === 'dashboard'"
         @open-clock-in="navigateTo('clock-in')"
         @navigate="navigateTo"
         @logout="onLogout"
@@ -108,31 +117,49 @@ onMounted(() => {
       />
 
       <ClockInScreen
-        v-if="currentPage === 'clock-in'"
+        v-else-if="currentPage === 'clock-in'"
         @go-back="navigateTo('dashboard')"
       />
 
       <ClockOutScreen
-        v-if="currentPage === 'clock-out'"
+        v-else-if="currentPage === 'clock-out'"
         @go-back="navigateTo('dashboard')"
       />
 
       <HistoryScreen
-        v-if="currentPage === 'history'"
+        v-else-if="currentPage === 'history'"
         @go-back="navigateTo('dashboard')"
         @navigate="navigateTo"
       />
 
       <LeaveScreen
-        v-if="currentPage === 'leave'"
+        v-else-if="currentPage === 'leave'"
         @go-back="navigateTo('dashboard')"
         @navigate="navigateTo"
       />
 
-      <ProfileScreen
-        v-if="currentPage === 'profile'"
+      <ProfileScreen 
+        v-else-if="currentPage === 'profile'" 
         @navigate="navigateTo"
         @logout="onLogout"
+        @open-personal-info="currentPage = 'profile-detail'"
+        @open-settings="currentPage = 'app-settings'"
+        @open-privacy="currentPage = 'privacy-policy'" 
+      />
+
+      <PrivacyPolicy 
+        v-else-if="currentPage === 'privacy-policy'" 
+        @go-back="currentPage = 'profile'" 
+      />
+
+      <AppSettings 
+        v-else-if="currentPage === 'app-settings'" 
+        @go-back="currentPage = 'profile'" 
+      />
+
+      <PersonalInfoDetail 
+        v-else-if="currentPage === 'profile-detail'" 
+        @go-back="currentPage = 'profile'" 
       />
     </div>
   </div>

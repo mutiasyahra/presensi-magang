@@ -340,7 +340,7 @@ onUnmounted(() => {
         <span>History</span>
       </div>
 
-      <div class="nav-item-scan-wrapper">
+      <div class="nav-item-scan-wrapper" @click="$emit('navigate', 'qr-scan')">
         <div class="scan-button">
           <img src="../assets/qr.png" alt="Scan" />
         </div>
