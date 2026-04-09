@@ -95,7 +95,7 @@ onMounted(() => {
       <SplashScreen v-if="showSplash" @done="onSplashDone" />
 
       <LandingScreen
-        v-if="!showSplash && currentPage === 'landing'"
+        v-else-if="currentPage === 'landing'"
         @click-login="navigateTo('login')"
       />
 
