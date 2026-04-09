@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import QRScanner from "./components/QRScanner.vue";
 import PersonalInfoDetail from "./components/PersonalInfoDetail.vue";
+import SplashScreen from "./components/SplashScreen.vue";
 import LandingScreen from "./components/LandingScreen.vue";
 import LoginScreen from "./components/LoginScreen.vue";
 import DashboardScreen from "./components/DashboardScreen.vue";
@@ -17,15 +18,23 @@ import PrivacyPolicy from "./components/PrivacyPolicy.vue";
 
 // State halaman dan tipe edit
 const currentPage = ref("landing");
-const editType = ref("in"); 
+const editType = ref("in");
+const editId = ref(null);
+const showSplash = ref(false);
+
+const onSplashDone = () => {
+  showSplash.value = false;
+  navigateTo("login");
+};
 
 // Fungsi Navigasi yang sudah diperbaiki
-const navigateTo = (page, type = "in") => {
+const navigateTo = (page, type = "in", id = null) => {
   currentPage.value = page;
   
   // Jika pindah ke halaman edit, simpan tipenya (in/out)
   if (page === "edit-attendance") {
     editType.value = type;
+    editId.value = id;
   }
   
   localStorage.setItem("currentPage", page);
@@ -46,14 +55,9 @@ onMounted(() => {
       currentPage.value = "dashboard";
     }
   } else {
-    if (savedPage === "login") {
-      currentPage.value = "login";
-    } else {
-      currentPage.value = "landing";
-      setTimeout(() => {
-        navigateTo("login");
-      }, 3000);
-    }
+    // Selalu tampilkan splash saat belum login
+    currentPage.value = "login";
+    showSplash.value = true;
   }
 });
 
@@ -70,7 +74,7 @@ const onLogout = () => {
   localStorage.removeItem("user");
   localStorage.removeItem("currentPage");
   document.documentElement.classList.remove("dark");
-  navigateTo("landing");
+  navigateTo("login");
 };
 
 onMounted(() => {
@@ -88,8 +92,10 @@ onMounted(() => {
 
   <div v-else class="app-background">
     <div class="mobile-frame">
+      <SplashScreen v-if="showSplash" @done="onSplashDone" />
+
       <LandingScreen
-        v-if="currentPage === 'landing'"
+        v-if="!showSplash && currentPage === 'landing'"
         @click-login="navigateTo('login')"
       />
 
@@ -113,6 +119,7 @@ onMounted(() => {
       <EditAttendance 
         v-else-if="currentPage === 'edit-attendance'" 
         :type="editType" 
+        :attendance-id="editId"
         @navigate="navigateTo" 
       />
 

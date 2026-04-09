@@ -1,32 +1,86 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import api from "../api/axios";
 
 // Menerima data 'type' dari App.vue
 const props = defineProps({
   type: {
     type: String,
     default: "in"
+  },
+  attendanceId: {
+    type: [Number, String],
+    default: null
   }
 });
 
 const emit = defineEmits(["navigate"]);
 
-const workPlan = ref(
-  "Lorem ipsum dolor sit amet consectetur adipiscing elit. Dolor sit amet consectetur adipiscing elit quisque faucibus."
-);
+const workPlan = ref("");
+const imageUrl = ref("");
+const locationText = ref("");
+const timestampText = ref("");
+const isLate = ref(false);
 
 // Membuat teks otomatis berubah tergantung 'type'
 const pageTitle = computed(() => props.type === 'in' ? 'Edit Clock In' : 'Edit Clock Out');
 const sectionTitle = computed(() => props.type === 'in' ? 'DAILY WORK PLAN' : 'DAILY ACTIVITY');
 
+const getStorageUrl = (path) => {
+  if (!path) return "";
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+  return baseUrl.replace('/api', '') + '/storage/' + path;
+};
+
+const fetchAttendanceData = async () => {
+  if (!props.attendanceId) return;
+  try {
+    const res = await api.get("/calendar");
+    if (res.data && res.data.attendance) {
+      const att = res.data.attendance.find(a => a.id == props.attendanceId);
+      if (att) {
+        if (props.type === "in") {
+          workPlan.value = att.rencana_kegiatan || "-";
+          imageUrl.value = getStorageUrl(att.clock_in_photo);
+          locationText.value = `Lat: ${att.clock_in_lat || "-"}, Long: ${att.clock_in_long || "-"}`;
+          
+          if (att.clock_in) {
+            const d = new Date(att.clock_in);
+            timestampText.value = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + " • " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+          } else {
+            timestampText.value = "-";
+          }
+          isLate.value = att.status === "terlambat";
+        } else {
+          workPlan.value = att.progress_kegiatan || "-";
+          imageUrl.value = getStorageUrl(att.clock_out_photo);
+          locationText.value = `Lat: ${att.clock_out_lat || "-"}, Long: ${att.clock_out_long || "-"}`;
+          
+          if (att.clock_out) {
+             const d = new Date(att.clock_out);
+             timestampText.value = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + " • " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+          } else {
+             timestampText.value = "-";
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Gagal mengambil data attendance:", err);
+  }
+};
+
+onMounted(() => {
+  fetchAttendanceData();
+});
+
 const saveChanges = () => {
-  alert("Perubahan berhasil disimpan! (Dummy)");
+  alert("Perubahan berhasil disimpan! (Dummy - Update fitur tidak tersedia di backend)");
 };
 </script>
 
 <template>
-  <div class="main-wrapper">
-    <div class="mobile-frame">
+  <div class="screen-container">
       <div class="top-fixed-area">
         <div class="header">
           <button class="btn-back" @click="$emit('navigate', 'history')">
@@ -46,10 +100,14 @@ const saveChanges = () => {
           </div>
           <div class="photo-wrapper">
             <img
-              src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=600"
-              alt="Camera placeholder"
+              v-if="imageUrl"
+              :src="imageUrl"
+              alt="Camera photo"
               class="captured-photo"
             />
+            <div v-else class="captured-photo empty-photo flex items-center justify-center bg-gray-200">
+               <span class="text-gray-500">No Photo</span>
+            </div>
           </div>
 
           <div class="info-card-container">
@@ -60,7 +118,7 @@ const saveChanges = () => {
               <div class="card-content">
                 <p class="label">CURRENT LOCATION</p>
                 <p class="value text-left">
-                  Building 4, Tech Innovation Hub, Science Park Drive, Singapore 118222
+                  {{ locationText }}
                 </p>
               </div>
             </div>
@@ -74,9 +132,11 @@ const saveChanges = () => {
               <div class="card-content time-row">
                 <div>
                   <p class="label text-left">TIMESTAMP</p>
-                  <p class="value">Oct 24, 2023 • 09:41 AM</p>
+                  <p class="value">{{ timestampText }}</p>
                 </div>
-                <span class="badge-ontime">ON TIME</span>
+                <span v-if="props.type === 'in' && isLate" class="badge-late">LATE</span>
+                <span v-else-if="props.type === 'in'" class="badge-ontime">ON TIME</span>
+                <span v-else class="badge-out">DONE</span>
               </div>
             </div>
           </div>
@@ -130,38 +190,26 @@ const saveChanges = () => {
         </div>
       </div>
 
-    </div>
   </div>
 </template>
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
-/* --- MAIN LAYOUT (Mengikuti standarmu) --- */
-.main-wrapper {
-  background-color: #e2e8f0;
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  margin: 0;
-  font-family: "Inter", sans-serif;
-}
-
-.mobile-frame {
-  width: 100%;
-  max-width: 430px;
-  height: 100vh;
-  background-color: #fdfdfd; /* Warna bg abu sangat muda */
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
+/* --- MAIN LAYOUT (Sama seperti Dashboard) --- */
+.screen-container {
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  background-color: #f8fafc;
+  overflow: hidden;
+  font-family: "Inter", sans-serif;
+  position: relative;
 }
 
 /* --- TOP FIXED AREA --- */
 .top-fixed-area {
-  background-color: #fdfdfd;
+  background-color: #f8fafc;
   padding: 20px 20px 0 20px;
   z-index: 10;
   flex-shrink: 0;
@@ -310,6 +358,36 @@ const saveChanges = () => {
   padding: 6px 12px;
   border-radius: 20px;
   letter-spacing: 0.5px;
+}
+.badge-late {
+  background: #fef9c3;
+  color: #a16207;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+.badge-out {
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+.empty-photo {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f1f5f9;
+  border-radius: 24px;
+}
+.text-gray-500 {
+  color: #64748b;
+  font-weight: 600;
 }
 
 /* Work Plan */

@@ -11,7 +11,13 @@ class LeaveController extends Controller
 {
     public function index(Request $request)
     {
-        $leaves = Leave::with('user.intern')->orderBy('created_at', 'desc')->get();
+        $query = Leave::with('user.intern')->orderBy('created_at', 'desc');
+        
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        $leaves = $query->get();
         return response()->json([
             'message' => 'Daftar pengajuan cuti',
             'data' => $leaves

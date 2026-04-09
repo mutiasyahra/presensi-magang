@@ -18,6 +18,7 @@ const selectedDate = ref(props.attendance?.attendance_date || new Date().toISOSt
 // Calendar State
 const showCalendar = ref(false);
 const activeDates = ref([]);
+const leaveDates = ref([]);
 const calendarDate = ref(new Date(selectedDate.value));
 
 const fetchActiveDates = async () => {
@@ -41,6 +42,34 @@ const fetchActiveDates = async () => {
         .filter(Boolean);
       activeDates.value = [...new Set(activeDates.value)];
     }
+
+    // Fetch leaves
+    try {
+      const leaveRes = await axios.get("http://localhost:8000/api/leaves", {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { user_id: props.attendance.user_id },
+      });
+      if (leaveRes.data.data) {
+        const lDates = [];
+        leaveRes.data.data.forEach(l => {
+          if (l.status === 'approved' && l.start_date && l.end_date) {
+            let curr = new Date(l.start_date);
+            const end = new Date(l.end_date);
+            while (curr <= end) {
+              const y = curr.getFullYear();
+              const m = String(curr.getMonth() + 1).padStart(2, '0');
+              const d = String(curr.getDate()).padStart(2, '0');
+              lDates.push(`${y}-${m}-${d}`);
+              curr.setDate(curr.getDate() + 1);
+            }
+          }
+        });
+        leaveDates.value = [...new Set(lDates)];
+      }
+    } catch(err) {
+      console.error("Failed to fetch leaves", err);
+    }
+
   } catch (error) {
     console.error("Failed to fetch active dates", error);
   }
@@ -100,10 +129,14 @@ const calendarDays = computed(() => {
   // Actual days
   for (let i = 1; i <= lastDay.getDate(); i++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+    const isActive = activeDates.value.includes(dateStr);
+    const isLeave = leaveDates.value.includes(dateStr);
+    
     days.push({
       day: i,
       date: dateStr,
-      isActive: activeDates.value.includes(dateStr),
+      isActive: isActive && !isLeave, // Prevent overlapping colors if both exist
+      isLeave: isLeave,
       isSelected: selectedDate.value === dateStr,
       isToday: todayStr === dateStr
     });
@@ -243,12 +276,13 @@ const handleVerify = async (status, isVerified) => {
                 :class="{ 
                   'empty': !dateObj.day, 
                   'selected': dateObj.isSelected,
-                  'has-activity': dateObj.isActive
+                  'has-activity': dateObj.isActive,
+                  'is-leave': dateObj.isLeave
                 }"
                 @click.stop="selectDate(dateObj.date)"
               >
                 {{ dateObj.day }}
-                <span class="activity-dot" v-if="dateObj.isActive"></span>
+                <span class="activity-dot" :class="{'leave-dot': dateObj.isLeave}" v-if="dateObj.isActive || dateObj.isLeave"></span>
               </div>
             </div>
           </div>
@@ -802,6 +836,10 @@ const handleVerify = async (status, isVerified) => {
   border-radius: 50%;
 }
 
+.activity-dot.leave-dot {
+  background: #a855f7;
+}
+
 .selected .activity-dot {
   background: white;
 }
@@ -810,6 +848,12 @@ const handleVerify = async (status, isVerified) => {
   color: #10b981;
   font-weight: 800;
   background: rgba(16, 185, 129, 0.05);
+}
+
+.calendar-day.is-leave:not(.selected) {
+  color: #a855f7;
+  font-weight: 800;
+  background: rgba(168, 85, 247, 0.05);
 }
 
 /* --- EMPTY STATE --- */

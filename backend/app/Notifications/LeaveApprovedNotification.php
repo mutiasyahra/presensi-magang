@@ -25,7 +25,7 @@ class LeaveApprovedNotification extends Notification
     {
         return [
             'message' => 'Pengajuan ' . $this->leave->type . 
-                        ' tanggal ' . $this->leave->date . 
+                        ' tanggal ' . $this->leave->start_date . 
                         ' telah ' . $this->leave->status,
             'leave_id' => $this->leave->id
         ];

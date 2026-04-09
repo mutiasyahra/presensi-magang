@@ -66,13 +66,36 @@ const fetchData = async () => {
 };
 
 
+import Swal from 'sweetalert2';
+
 const approveLeave = async (id, status) => {
   try {
-    await api.patch(`/leave/${id}`, { status });
-    alert(`Leave request ${status}`);
-    fetchData();
+    // Tampilkan konfirmasi
+    const confirm = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: `Anda akan me-${status === 'approved' ? 'nyetujui' : 'nolak'} permintaan cuti ini.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: status === 'approved' ? '#3B82F6' : '#EF4444',
+      cancelButtonColor: '#64748B',
+      confirmButtonText: 'Ya, lanjutkan!'
+    });
+
+    if (confirm.isConfirmed) {
+      await api.patch(`/leave/${id}`, { status });
+      Swal.fire(
+        'Berhasil!',
+        `Permintaan cuti telah di-${status === 'approved' ? 'setujui' : 'tolak'}.`,
+        'success'
+      );
+      fetchData();
+    }
   } catch (error) {
-    alert("Action failed.");
+    Swal.fire(
+      'Gagal!',
+      error.response?.data?.message || 'Terjadi kesalahan saat memproses permintaan.',
+      'error'
+    );
   }
 };
 
@@ -212,6 +235,7 @@ onMounted(fetchData);
   background: #f8fafc;
   font-family: "Plus Jakarta Sans", sans-serif;
   overflow: hidden;
+  position: relative;
 }
 
 .main-content {

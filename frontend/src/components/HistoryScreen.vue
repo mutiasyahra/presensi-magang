@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import api from "../api/axios";
 
 const emit = defineEmits(["navigate", "go-back"]);
 
@@ -7,45 +8,72 @@ const getImageUrl = (name) => {
   return new URL(`../assets/${name}`, import.meta.url).href;
 };
 
-// --- DATA DUMMY ---
-const historyData = ref([
-  {
-    id: 1,
-    day: "Thursday",
-    date: "Oct 24, 2023",
-    time: "08:41 AM",
-    status: "PRESENT",
-    type: "clock-in",
-    noteTitle: "DAILY WORK PLAN",
-    note: "Menyelesaikan slicing UI untuk modul laporan harian dan sinkronisasi berkas magang...",
-    icon: "icon present.png",
-    noteIcon: "daily plan.png",
-  },
-  {
-    id: 2,
-    day: "Tuesday",
-    date: "Oct 17, 2023",
-    time: "17:15 PM",
-    status: "DONE",
-    type: "clock-out",
-    noteTitle: "DAILY ACTIVITY",
-    note: "Menyelesaikan slicing UI untuk modul laporan harian dan sinkronisasi berkas magang...",
-    icon: "icon done.png",
-    noteIcon: "daily activity.png",
-  },
-  {
-    id: 3,
-    day: "Tuesday",
-    date: "Oct 17, 2023",
-    time: "09:15 AM",
-    status: "LATE",
-    type: "clock-in",
-    noteTitle: "DAILY WORK PLAN",
-    note: "Menyelesaikan slicing UI untuk modul laporan harian dan sinkronisasi berkas magang...",
-    icon: "icon late.png",
-    noteIcon: "daily plan.png",
-  },
-]);
+const historyData = ref([]);
+
+const fetchHistoryData = async () => {
+  try {
+    const res = await api.get("/calendar");
+    if (res.data && res.data.attendance) {
+      const attendances = res.data.attendance;
+      const historyList = [];
+
+      attendances.forEach(att => {
+        if (att.clock_in) {
+          const inDate = new Date(att.clock_in);
+          
+          let statusText = "PRESENT";
+          let icon = "icon present.png";
+          if (att.status === "terlambat") {
+             statusText = "LATE";
+             icon = "icon late.png";
+          }
+          
+          historyList.push({
+            id: att.id + "-in",
+            attendanceId: att.id,
+            rawDate: inDate,
+            day: inDate.toLocaleDateString("en-US", { weekday: "long" }),
+            date: inDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+            time: inDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+            status: statusText,
+            type: "clock-in",
+            noteTitle: "DAILY WORK PLAN",
+            note: att.rencana_kegiatan || "-",
+            icon: icon,
+            noteIcon: "daily plan.png",
+          });
+        }
+        
+        if (att.clock_out) {
+          const outDate = new Date(att.clock_out);
+          historyList.push({
+            id: att.id + "-out",
+            attendanceId: att.id,
+            rawDate: outDate,
+            day: outDate.toLocaleDateString("en-US", { weekday: "long" }),
+            date: outDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+            time: outDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+            status: "DONE",
+            type: "clock-out",
+            noteTitle: "DAILY ACTIVITY",
+            note: att.progress_kegiatan || "-",
+            icon: "icon done.png",
+            noteIcon: "daily activity.png",
+          });
+        }
+      });
+      
+      historyList.sort((a, b) => b.rawDate - a.rawDate);
+      historyData.value = historyList;
+    }
+  } catch (err) {
+    console.error("Gagal mengambil data history:", err);
+  }
+};
+
+onMounted(() => {
+  fetchHistoryData();
+});
 
 const activeTab = ref("All");
 
@@ -134,7 +162,7 @@ const getStatusClass = (status) => {
                 <span class="badge" :class="getStatusClass(item.status)">{{
                   item.status
                 }}</span>
-                <button class="btn-edit" @click="$emit('navigate', 'edit-attendance', item.type === 'clock-in' ? 'in' : 'out')">
+                <button class="btn-edit" @click="$emit('navigate', 'edit-attendance', item.type === 'clock-in' ? 'in' : 'out', item.attendanceId)">
                 <img src="../assets/pencil.png" alt="Edit" />
                 </button>
               </div>
