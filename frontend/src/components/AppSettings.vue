@@ -4,7 +4,7 @@ import { ref } from "vue";
 const emit = defineEmits(["go-back"]);
 
 // State untuk toggle (simulasi)
-const isDarkMode = ref(false);
+const isDarkMode = ref(document.documentElement.classList.contains("dark"));
 const isNotificationOn = ref(true);
 
 const toggleDarkMode = () => {
@@ -14,6 +14,18 @@ const toggleDarkMode = () => {
     document.documentElement.classList.add("dark");
   } else {
     document.documentElement.classList.remove("dark");
+  }
+  
+  // Save to localStorage immediately so App.vue uses it
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+      try {
+          const userObj = JSON.parse(userStr);
+          userObj.is_dark_mode = isDarkMode.value;
+          localStorage.setItem('user', JSON.stringify(userObj));
+      } catch (e) {
+          console.error("Failed to parse user from localStorage", e);
+      }
   }
 };
 </script>

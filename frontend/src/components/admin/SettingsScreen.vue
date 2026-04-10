@@ -98,9 +98,11 @@
         <h2 class="card-title mb-1">App Theme</h2>
         <p>Switch between light and dark visual modes.</p>
       </div>
-      <button class="theme-toggle-btn" :class="{ 'is-dark': isDarkMode }" @click="isDarkMode = !isDarkMode">
-        <svg v-if="!isDarkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      <button class="theme-slider-switch" :class="{ 'is-dark': isDarkMode }" @click="toggleTheme">
+        <div class="theme-slider-thumb">
+          <svg v-if="!isDarkMode" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        </div>
       </button>
     </div>
 
@@ -112,10 +114,16 @@ import { ref, reactive, onMounted, watch } from 'vue';
 import api from '../../api/axios.js';
 import Swal from 'sweetalert2';
 
+const localUserRaw = localStorage.getItem('user');
+let localUser = {};
+try {
+  if (localUserRaw) localUser = JSON.parse(localUserRaw);
+} catch (e) {}
+
 // Data State
 const account = reactive({
-  fullName: '',
-  email: '',
+  fullName: localUser.name || '',
+  email: localUser.email || '',
   password: ''
 });
 
@@ -126,11 +134,11 @@ const system = reactive({
 });
 
 const notifications = reactive({
-  lateAlerts: true,
-  leaveRequests: false
+  lateAlerts: localUser.notify_late_alerts !== undefined ? !!localUser.notify_late_alerts : true,
+  leaveRequests: localUser.notify_leave_requests !== undefined ? !!localUser.notify_leave_requests : false
 });
 
-const isDarkMode = ref(false);
+const isDarkMode = ref(document.documentElement.classList.contains('dark'));
 const isLoaded = ref(false); // flag to prevent watch from firing during initial load
 
 const loadSettings = async () => {
@@ -141,7 +149,8 @@ const loadSettings = async () => {
             const u = userRes.data.data;
             account.fullName = u.fullName || '';
             account.email = u.email || '';
-            isDarkMode.value = !!u.isDarkMode;
+            // Trust the current document state rather than server state to avoid jarring theme jumps
+            isDarkMode.value = document.documentElement.classList.contains('dark');
             notifications.lateAlerts = !!u.notifyLateAlerts;
             notifications.leaveRequests = !!u.notifyLeaveRequests;
         }
@@ -162,6 +171,27 @@ const loadSettings = async () => {
         setTimeout(() => {
             isLoaded.value = true;
         }, 100);
+    }
+};
+
+const toggleTheme = () => {
+    isDarkMode.value = !isDarkMode.value;
+    if (isDarkMode.value) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+    
+    // Save to localStorage immediately so App.vue uses it
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+        try {
+            const userObj = JSON.parse(userStr);
+            userObj.is_dark_mode = isDarkMode.value;
+            localStorage.setItem('user', JSON.stringify(userObj));
+        } catch (e) {
+            console.error("Failed to parse user from localStorage", e);
+        }
     }
 };
 
@@ -240,14 +270,6 @@ watch([isDarkMode, () => notifications.lateAlerts, () => notifications.leaveRequ
     // Only auto-save after initial load is complete (not during loadSettings)
     if (!isLoaded.value) return;
     saveAccount(true); // silent = true, no popup
-});
-
-watch(isDarkMode, (newVal) => {
-    if (newVal) {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
 });
 
 onMounted(() => {
@@ -499,28 +521,46 @@ input:checked + .slider:before {
   align-items: center;
 }
 
-.theme-toggle-btn {
+.theme-slider-switch {
   background: var(--bg-input);
   border: 1px solid var(--border-color);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  border-radius: 20px;
+  width: 56px;
+  height: 28px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
+  padding: 3px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  outline: none;
 }
 
-.theme-toggle-btn:hover {
+.theme-slider-switch:hover {
   background: var(--border-color);
 }
 
-.theme-toggle-btn.is-dark {
+.theme-slider-switch.is-dark {
+  background: #1e293b;
+  border-color: var(--accent-primary);
+}
+
+.theme-slider-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), background 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  color: #64748b;
+}
+
+.theme-slider-switch.is-dark .theme-slider-thumb {
+  transform: translateX(28px);
   background: #0f1015;
   color: var(--accent-warning);
-  border-color: var(--accent-primary);
 }
 
 /* Responsive */
