@@ -21,6 +21,9 @@ const imageUrl = ref("");
 const locationText = ref("");
 const timestampText = ref("");
 const isLate = ref(false);
+const evidenceFile = ref(null);
+const evidenceUrl = ref("");
+const isSaving = ref(false);
 
 // Membuat teks otomatis berubah tergantung 'type'
 const pageTitle = computed(() => props.type === 'in' ? 'Edit Clock In' : 'Edit Clock Out');
@@ -62,6 +65,7 @@ const fetchAttendanceData = async () => {
           } else {
              timestampText.value = "-";
           }
+          evidenceUrl.value = att.evidence ? getStorageUrl(att.evidence) : "";
         }
       }
     }
@@ -74,8 +78,42 @@ onMounted(() => {
   fetchAttendanceData();
 });
 
-const saveChanges = () => {
-  alert("Perubahan berhasil disimpan! (Dummy - Update fitur tidak tersedia di backend)");
+const onFileChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    evidenceFile.value = file;
+  }
+};
+
+const saveChanges = async () => {
+  if (isSaving.value) return;
+  isSaving.value = true;
+  
+  try {
+    const formData = new FormData();
+    if (props.type === 'in') {
+      formData.append("rencana_kegiatan", workPlan.value);
+    } else {
+      formData.append("progress_kegiatan", workPlan.value);
+      if (evidenceFile.value) {
+        formData.append("evidence", evidenceFile.value);
+      }
+    }
+
+    const res = await api.post(`/attendances/${props.attendanceId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    alert(res.data.message || "Perubahan berhasil disimpan!");
+    emit("navigate", "history");
+  } catch (err) {
+    console.error("Gagal menyimpan perubahan:", err);
+    alert(err.response?.data?.message || "Gagal menyimpan perubahan. Silakan coba lagi.");
+  } finally {
+    isSaving.value = false;
+  }
 };
 </script>
 
@@ -154,8 +192,36 @@ const saveChanges = () => {
             <img src="../assets/pencil.png" alt="Edit" class="edit-icon-corner" />
           </div>
 
-          <button class="btn-submit" @click="saveChanges">
-            Simpan Perubahan
+          <!-- Section Upload Evidence (Hanya untuk Clock Out) -->
+          <template v-if="props.type === 'out'">
+            <div class="section-title">
+              <img src="../assets/camera.png" alt="Evidence" class="section-icon" />
+              <span>UPLOAD EVIDENCE</span>
+            </div>
+            <div class="evidence-upload-card">
+              <div v-if="evidenceFile || evidenceUrl" class="evidence-preview">
+                <div v-if="evidenceFile" class="file-info">
+                  <p class="file-name">{{ evidenceFile.name }}</p>
+                  <p class="file-size">{{ (evidenceFile.size / 1024).toFixed(1) }} KB</p>
+                </div>
+                <div v-else-if="evidenceUrl" class="file-info">
+                  <p class="file-name">Existing Evidence</p>
+                  <a :href="evidenceUrl" target="_blank" class="view-link">View File</a>
+                </div>
+              </div>
+              
+              <label class="upload-label">
+                <input type="file" @change="onFileChange" accept="image/*,application/pdf" class="hidden-input" />
+                <div class="upload-btn">
+                  <img src="../assets/camera.png" alt="Upload" class="upload-icon" />
+                  <span>{{ (evidenceFile || evidenceUrl) ? 'Ganti File' : 'Pilih File (Gambar/PDF)' }}</span>
+                </div>
+              </label>
+            </div>
+          </template>
+
+          <button class="btn-submit" :disabled="isSaving" @click="saveChanges">
+            {{ isSaving ? 'Menyimpan...' : 'Simpan Perubahan' }}
           </button>
 
           <div style="height: 100px"></div>
@@ -437,6 +503,83 @@ const saveChanges = () => {
 }
 .btn-submit:active {
   transform: scale(0.98);
+}
+.btn-submit:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Evidence Upload Styles */
+.evidence-upload-card {
+  background: white;
+  border-radius: 24px;
+  padding: 20px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.evidence-preview {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+}
+.file-info {
+  display: flex;
+  flex-direction: column;
+}
+.file-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-size {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 2px 0 0 0;
+}
+.view-link {
+  font-size: 12px;
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: 4px;
+  display: inline-block;
+}
+.hidden-input {
+  display: none;
+}
+.upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  padding: 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.upload-btn:hover {
+  background: #dbeafe;
+}
+.upload-icon {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%);
+}
+.upload-btn span {
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* --- BOTTOM NAV (Sama Persis History) --- */

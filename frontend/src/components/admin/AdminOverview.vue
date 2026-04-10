@@ -400,15 +400,10 @@ const liveAmPm = computed(() => {
   margin-top: -20px; /* Menyeimbangkan padding atas jika diperlukan */
 
   /* --- Efek Kaca (Glassmorphism) Aesthetic --- */
-  background: rgba(
-    248,
-    250,
-    252,
-    0.8
-  ); /* Warna dasar semi-transparan (sesuaikan jika background app-mu putih murni) */
+  background: var(--bg-app);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px); /* Dukungan untuk browser Safari */
-  border-bottom: 1px solid rgba(226, 232, 240, 0.5); /* Garis batas tipis transparan */
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .header-left {
@@ -420,13 +415,13 @@ const liveAmPm = computed(() => {
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
 }
 
 .page-subtitle {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -445,34 +440,34 @@ const liveAmPm = computed(() => {
 .search-icon {
   position: absolute;
   left: 14px;
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .search-bar input {
   padding: 10px 16px 10px 38px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 14px;
-  color: #0f172a;
+  color: var(--text-main);
   outline: none;
   width: 260px;
-  background-color: white;
+  background-color: var(--bg-card);
   transition: all 0.2s ease;
 }
 
 .search-bar input::placeholder {
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .search-bar input:focus {
-  border-color: #3b82f6;
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .icon-btn {
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
@@ -483,8 +478,8 @@ const liveAmPm = computed(() => {
 }
 
 .icon-btn:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: var(--bg-input);
+  color: var(--text-main);
 }
 
 /* =========================================
@@ -505,14 +500,14 @@ const liveAmPm = computed(() => {
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-card);
   padding: 20px;
   border-radius: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
@@ -539,20 +534,20 @@ const liveAmPm = computed(() => {
 }
 
 .blue-icon {
-  background: #eff6ff;
-  color: #3b82f6;
+  background: rgba(0, 212, 255, 0.1);
+  color: #00d4ff;
 }
 .green-icon {
-  background: #ecfdf5;
+  background: rgba(16, 185, 129, 0.1);
   color: #10b981;
 }
 .orange-icon {
-  background: #fff7ed;
-  color: #f59e0b;
+  background: rgba(255, 215, 0, 0.1);
+  color: #ffd700;
 }
 .red-icon {
-  background: #fef2f2;
-  color: #ef4444;
+  background: rgba(244, 63, 94, 0.1);
+  color: #f43f5e;
 }
 
 .badge {
@@ -562,22 +557,22 @@ const liveAmPm = computed(() => {
   font-weight: 600;
 }
 .badge-green {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
 }
 .badge-grey {
   background: transparent;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
   font-size: 13px;
 }
 .badge-orange {
-  background: #ffedd5;
-  color: #c2410c;
+  background: rgba(255, 215, 0, 0.1);
+  color: #fcd34d;
 }
 .badge-red {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
 }
 
 .card-body {
@@ -586,7 +581,7 @@ const liveAmPm = computed(() => {
   gap: 4px;
 }
 .label {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
   font-weight: 500;
   margin: 0;
@@ -594,7 +589,7 @@ const liveAmPm = computed(() => {
 .value {
   font-size: 32px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
 }
 
@@ -606,17 +601,17 @@ const liveAmPm = computed(() => {
 }
 
 .content-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 24px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .section-title {
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
 }
 
@@ -624,14 +619,14 @@ const liveAmPm = computed(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
 }
 
 .dropdown-icon {
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .card-header-flex {
@@ -648,7 +643,7 @@ const liveAmPm = computed(() => {
   align-items: flex-end;
   height: 250px;
   padding-bottom: 20px;
-  border-bottom: 1px dashed #e2e8f0;
+  border-bottom: 1px dashed var(--border-color);
 }
 
 .bar-group {
@@ -675,31 +670,31 @@ const liveAmPm = computed(() => {
 }
 
 .bar-present {
-  background-color: #a3c9fe;
+  background-color: var(--bg-input);
 } /* Biru pudar untuk data lama */
 .bar-late {
-  background-color: #a3c9fe;
+  background-color: var(--bg-input);
 } /* Biru pudar untuk data lama */
 
 /* Gaya untuk Hari Ini (Aesthetic kontras) */
 .bar-group:nth-child(4) .bar-present {
-  background-color: #3b82f6;
+  background-color: var(--accent-primary);
 } /* Biru tebal untuk data hari ini */
 .bar-group:nth-child(4) .bar-late {
-  background-color: #3b82f6;
+  background-color: var(--accent-primary);
 } /* Biru tebal untuk data hari ini */
 
 .day-label {
   font-size: 13px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 /* --- Kanan: Status Biru (Informatif, Lucu, Aesthetic) --- */
 .live-status-blue {
-  background: #3b82f6; /* Kotak biru estetis */
+  background: var(--accent-primary); /* Kotak biru estetis */
   color: white;
-  border-color: #3b82f6;
+  border-color: var(--accent-primary);
 }
 
 .live-title {
@@ -806,8 +801,8 @@ const liveAmPm = computed(() => {
   width: 100%;
   margin-top: 20px;
   padding: 12px;
-  background-color: white;
-  color: #3b82f6;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: var(--accent-primary);
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -817,7 +812,7 @@ const liveAmPm = computed(() => {
 }
 
 .view-logs-btn:hover {
-  background-color: #f1f5f9;
+  background-color: white;
 }
 
 /* --- Recent Activity Tabel (Di Bawah Diagram & Live Status) --- */
@@ -826,7 +821,7 @@ const liveAmPm = computed(() => {
 }
 
 .view-all-btn {
-  color: #3b82f6;
+  color: var(--accent-primary);
   font-size: 13px;
   font-weight: 600;
   background: none;
@@ -843,7 +838,7 @@ const liveAmPm = computed(() => {
 .activity-table th {
   text-align: left;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-dim);
   font-weight: 700;
   text-transform: uppercase;
   padding: 16px;
@@ -852,7 +847,7 @@ const liveAmPm = computed(() => {
 
 .activity-table td {
   padding: 16px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .activity-row:last-child td {
@@ -860,7 +855,7 @@ const liveAmPm = computed(() => {
 }
 
 .activity-row:hover {
-  background-color: #f8faf9;
+  background-color: var(--bg-input);
 }
 
 .td-intern {
@@ -874,7 +869,7 @@ const liveAmPm = computed(() => {
   height: 36px;
   border-radius: 50%;
   overflow: hidden;
-  background-color: #f1f5f9;
+  background-color: var(--bg-input);
 }
 
 .avatar-box img {
@@ -891,8 +886,8 @@ const liveAmPm = computed(() => {
   justify-content: center;
   font-size: 16px;
   font-weight: 700;
-  color: #3b82f6;
-  background: #eff6ff;
+  color: var(--accent-primary);
+  background: var(--bg-input);
   border-radius: 50%;
 }
 
@@ -903,7 +898,7 @@ const liveAmPm = computed(() => {
   justify-content: center;
   gap: 12px;
   padding: 48px 0;
-  color: #94a3b8;
+  color: var(--text-dim);
   font-size: 14px;
 }
 
@@ -917,13 +912,13 @@ const liveAmPm = computed(() => {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .activity-role {
   margin: 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .td-event {
@@ -947,20 +942,20 @@ const liveAmPm = computed(() => {
   margin: 0;
   font-size: 13px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .td-timestamp {
   font-size: 13px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .td-location {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 13px;
 }
 

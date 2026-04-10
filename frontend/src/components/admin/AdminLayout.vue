@@ -161,13 +161,13 @@ onMounted(fetchData);
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
 }
 
 .page-subtitle {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -186,34 +186,34 @@ onMounted(fetchData);
 .search-icon {
   position: absolute;
   left: 14px;
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .search-bar input {
   padding: 10px 16px 10px 38px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 14px;
-  color: #0f172a;
+  color: var(--text-main);
   outline: none;
   width: 260px;
-  background-color: white;
+  background-color: var(--bg-input);
   transition: all 0.2s ease;
 }
 
 .search-bar input::placeholder {
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .search-bar input:focus {
-  border-color: #3b82f6;
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .icon-btn {
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
@@ -224,16 +224,16 @@ onMounted(fetchData);
 }
 
 .icon-btn:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: var(--bg-input);
+  color: var(--text-main);
 }
 
 .admin-shell {
   display: flex;
   height: 100vh;
   width: 100vw;
-  background: #f8fafc;
-  font-family: "Plus Jakarta Sans", sans-serif;
+  background: var(--bg-app);
+  font-family: var(--font-main);
   overflow: hidden;
   position: relative;
 }
@@ -276,7 +276,7 @@ onMounted(fetchData);
 
 .breadcrumb {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 2px;
   font-weight: 700;
@@ -286,21 +286,21 @@ onMounted(fetchData);
 
 .top-header h1 {
   font-size: 34px;
-  color: #0f172a;
+  color: var(--text-main);
   font-weight: 800;
   letter-spacing: -1px;
   margin: 0;
 }
 
 .user-pill {
-  background: white;
+  background: var(--bg-card);
   padding: 10px 20px;
   border-radius: 20px;
   display: flex;
   align-items: center;
   gap: 15px;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border-color);
   transition: all 0.3s ease;
 }
 
@@ -323,7 +323,7 @@ onMounted(fetchData);
 
 .admin-name {
   font-weight: 700;
-  color: #334155;
+  color: var(--text-main);
   font-size: 14px;
 }
 

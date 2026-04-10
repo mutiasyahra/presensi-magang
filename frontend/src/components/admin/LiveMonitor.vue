@@ -34,14 +34,22 @@ const fetchAttendances = async () => {
         item.user?.avatar ||
         `https://ui-avatars.com/api/?name=${item.user?.name || "User"}`,
       statusDisplay: item.status ? item.status.toUpperCase() : "UNKNOWN",
-      timeDisplay: item.clock_in
-        ? new Date(item.clock_in).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        : "-",
+      periodDisplay: item.user?.intern?.start_date && item.user?.intern?.end_date
+        ? `${new Date(item.user.intern.start_date).toLocaleDateString("id-ID", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })} - ${new Date(item.user.intern.end_date).toLocaleDateString("id-ID", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })}`
+        : "No period set",
       locationInfo: item.clock_in_lat
-        ? `${item.clock_in_lat.substring(0, 8)}, ${item.clock_in_long.substring(0, 8)}`
+        ? `${item.clock_in_lat.substring(0, 8)}, ${item.clock_in_long.substring(
+            0,
+            8
+          )}`
         : "Remote",
     }));
   } catch (error) {
@@ -239,10 +247,12 @@ const getStatusClass = (status) => {
               stroke-linecap="round"
               stroke-linejoin="round"
             >
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
-            <span class="time-text">{{ intern.timeDisplay }}</span>
+            <span class="time-text">{{ intern.periodDisplay }}</span>
           </div>
 
           <div class="divider"></div>
@@ -393,15 +403,15 @@ const getStatusClass = (status) => {
   position: sticky;
   top: 0;
   z-index: 20;
-  background-color: #f8fafc; /* Sesuaikan warna background aplikasimu */
+  background-color: var(--bg-app);
   padding-bottom: 16px;
-  padding-top: 16px; /* Biar ada jarak saat di-scroll */
+  padding-top: 16px;
 }
 
 .main-title {
   font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
 }
 
@@ -415,14 +425,14 @@ const getStatusClass = (status) => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: white;
+  background: var(--bg-card);
   padding: 8px 16px;
   border-radius: 20px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   width: 260px;
 }
 .search-box .icon {
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 .search-box input {
   border: none;
@@ -430,10 +440,10 @@ const getStatusClass = (status) => {
   background: transparent;
   font-size: 14px;
   width: 100%;
-  color: #0f172a;
+  color: var(--text-main);
 }
 .search-box input::placeholder {
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .btn-icon {
@@ -443,15 +453,15 @@ const getStatusClass = (status) => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: white;
-  border: none;
-  color: #64748b;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
   cursor: pointer;
   transition: background 0.2s;
 }
 .btn-icon:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--bg-input);
+  color: var(--text-main);
 }
 
 /* Controls Section */
@@ -463,7 +473,7 @@ const getStatusClass = (status) => {
 
 .view-toggles {
   display: flex;
-  background: #f1f5f9;
+  background: var(--bg-input);
   padding: 4px;
   border-radius: 12px;
 }
@@ -475,14 +485,14 @@ const getStatusClass = (status) => {
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 .toggle-btn.active {
-  background: white;
-  color: #0f172a;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background: var(--bg-card);
+  color: var(--text-main);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .right-controls {
@@ -509,8 +519,8 @@ const getStatusClass = (status) => {
   color: #166534;
 }
 .indicator.grey {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--bg-input);
+  color: var(--text-muted);
 }
 .dot {
   width: 8px;
@@ -524,12 +534,12 @@ const getStatusClass = (status) => {
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-main);
   cursor: pointer;
 }
 
@@ -541,17 +551,17 @@ const getStatusClass = (status) => {
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-card);
   padding: 20px;
   border-radius: 16px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
 }
 
 .stat-label {
   font-size: 12px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0 0 12px 0;
 }
 .stat-row {
@@ -562,7 +572,7 @@ const getStatusClass = (status) => {
 .stat-value {
   font-size: 32px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
   line-height: 1;
 }
@@ -598,10 +608,10 @@ const getStatusClass = (status) => {
 }
 
 .attendance-card {
-  background: white;
+  background: var(--bg-card);
   padding: 24px;
   border-radius: 16px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
   display: flex;
   flex-direction: column;
@@ -609,7 +619,7 @@ const getStatusClass = (status) => {
 }
 
 .border-dashed {
-  border: 2px dashed #e2e8f0;
+  border: 2px dashed var(--border-color);
   background: transparent;
   justify-content: center;
   align-items: center;
@@ -619,7 +629,7 @@ const getStatusClass = (status) => {
   min-height: 120px;
 }
 .border-dashed:hover {
-  border-color: #cbd5e1;
+  border-color: var(--text-dim);
 }
 
 .manual-entry-content {
@@ -629,8 +639,8 @@ const getStatusClass = (status) => {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #f1f5f9;
-  color: #94a3b8;
+  background: var(--bg-input);
+  color: var(--text-dim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -639,12 +649,12 @@ const getStatusClass = (status) => {
 .manual-entry-content h4 {
   margin: 0 0 4px 0;
   font-size: 15px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 .manual-entry-content p {
   margin: 0;
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 /* Card Content Details */
@@ -690,7 +700,7 @@ const getStatusClass = (status) => {
   margin: 0;
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .verify-badge {
@@ -714,7 +724,7 @@ const getStatusClass = (status) => {
 .role {
   margin: 0;
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .time-row {
@@ -725,7 +735,7 @@ const getStatusClass = (status) => {
 .time-text {
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .divider {
@@ -742,7 +752,7 @@ const getStatusClass = (status) => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 .loc-text {
   font-size: 13px;
@@ -774,7 +784,7 @@ const getStatusClass = (status) => {
   padding: 10px;
   border-radius: 8px;
   border: none;
-  background: #3b82f6;
+  background: var(--accent-primary);
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -782,7 +792,7 @@ const getStatusClass = (status) => {
   transition: background 0.2s;
 }
 .btn-primary:hover {
-  background: #2563eb;
+  opacity: 0.9;
 }
 .btn-primary.verify-mode {
   background: #3b82f6;
@@ -790,17 +800,17 @@ const getStatusClass = (status) => {
 
 .btn-more {
   width: 40px;
-  border: 1px solid #e2e8f0;
-  background: white;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
   border-radius: 8px;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .btn-more:hover {
-  background: #f8fafc;
+  background: var(--bg-input);
 }
 
 /* Pagination */
@@ -809,12 +819,12 @@ const getStatusClass = (status) => {
   justify-content: space-between;
   align-items: center;
   padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color);
 }
 .pagination-info {
   margin: 0;
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 .pagination-controls {
   display: flex;
@@ -828,7 +838,7 @@ const getStatusClass = (status) => {
   height: 32px;
   border: none;
   background: transparent;
-  color: #475569;
+  color: var(--text-muted);
   font-size: 14px;
   font-weight: 500;
   border-radius: 8px;
@@ -836,10 +846,10 @@ const getStatusClass = (status) => {
   transition: background 0.2s;
 }
 .page-btn:hover {
-  background: #f1f5f9;
+  background: var(--bg-input);
 }
 .page-btn.active {
-  background: #3b82f6;
+  background: var(--accent-primary);
   color: white;
   font-weight: 600;
 }

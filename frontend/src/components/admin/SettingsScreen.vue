@@ -141,9 +141,9 @@ const loadSettings = async () => {
             const u = userRes.data.data;
             account.fullName = u.fullName || '';
             account.email = u.email || '';
-            isDarkMode.value = u.isDarkMode;
-            notifications.lateAlerts = u.notifyLateAlerts;
-            notifications.leaveRequests = u.notifyLeaveRequests;
+            isDarkMode.value = !!u.isDarkMode;
+            notifications.lateAlerts = !!u.notifyLateAlerts;
+            notifications.leaveRequests = !!u.notifyLeaveRequests;
         }
 
         // Fetch System Settings
@@ -158,8 +158,10 @@ const loadSettings = async () => {
         console.error("Failed to load settings:", error);
         Swal.fire('Error', 'Gagal memuat pengaturan.', 'error');
     } finally {
-        // Mark as loaded AFTER all values are set — watch will now be active
-        isLoaded.value = true;
+        // Mark as loaded AFTER initial values are set and tick has passed
+        setTimeout(() => {
+            isLoaded.value = true;
+        }, 100);
     }
 };
 
@@ -256,10 +258,10 @@ onMounted(() => {
 <style scoped>
 .settings-container {
   padding: 32px;
-  max-width: 1000px; /* Biar ngga terlalu lebar di layar besar */
+  max-width: 1000px;
   margin: 0 auto;
-  color: #1e293b;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-main);
+  font-family: var(--font-main);
 }
 
 .page-header {
@@ -269,29 +271,30 @@ onMounted(() => {
 .main-title {
   font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0 0 8px 0;
 }
 
 .subtitle {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 15px;
   margin: 0;
 }
 
 /* Card Styles */
 .settings-card {
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 24px 32px;
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
 }
 
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-main);
   margin: 0 0 24px 0;
 }
 
@@ -312,7 +315,7 @@ onMounted(() => {
 .form-group label {
   font-size: 14px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-main);
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -320,7 +323,7 @@ onMounted(() => {
 }
 
 .form-group label .icon {
-  color: #3b82f6;
+  color: var(--accent-primary);
 }
 
 .mt-4 { margin-top: 24px; }
@@ -332,25 +335,25 @@ input[type="number"],
 input[type="time"] {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 14px;
-  color: #334155;
-  background-color: #f8fafc;
+  color: var(--text-main);
+  background-color: var(--bg-input);
   transition: all 0.2s;
   box-sizing: border-box;
 }
 
 input:focus {
   outline: none;
-  border-color: #3b82f6;
-  background-color: #ffffff;
+  border-color: var(--accent-primary);
+  background-color: var(--bg-card);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .help-text {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-dim);
   margin-top: 8px;
 }
 
@@ -362,7 +365,7 @@ input:focus {
 }
 
 .to-text {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -379,7 +382,7 @@ input:focus {
 .input-with-suffix .suffix {
   position: absolute;
   right: 14px;
-  color: #94a3b8;
+  color: var(--text-dim);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -391,10 +394,11 @@ input:focus {
   justify-content: flex-end;
   margin-top: 24px;
   padding-top: 24px;
+  border-top: 1px solid var(--border-color);
 }
 
 .btn-primary {
-  background-color: #3b82f6;
+  background-color: var(--accent-primary);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -402,11 +406,11 @@ input:focus {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .btn-primary:hover {
-  background-color: #2563eb;
+  filter: brightness(1.1);
 }
 
 /* Toggles & Lists */
@@ -421,18 +425,18 @@ input:focus {
   font-size: 15px;
   font-weight: 600;
   margin: 0 0 4px 0;
-  color: #1e293b;
+  color: var(--text-main);
 }
 
 .toggle-info p {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
 .divider {
   height: 1px;
-  background-color: #f1f5f9;
+  background-color: var(--border-color);
   margin: 20px 0;
 }
 
@@ -457,7 +461,7 @@ input:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #cbd5e1;
+  background-color: var(--text-dim);
   transition: .4s;
 }
 
@@ -473,7 +477,7 @@ input:focus {
 }
 
 input:checked + .slider {
-  background-color: #3b82f6;
+  background-color: var(--accent-success);
 }
 
 input:checked + .slider:before {
@@ -496,27 +500,27 @@ input:checked + .slider:before {
 }
 
 .theme-toggle-btn {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   border-radius: 50%;
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .theme-toggle-btn:hover {
-  background: #f1f5f9;
+  background: var(--border-color);
 }
 
 .theme-toggle-btn.is-dark {
-  background: #1e293b;
-  color: #fbbf24;
-  border-color: #1e293b;
+  background: #0f1015;
+  color: var(--accent-warning);
+  border-color: var(--accent-primary);
 }
 
 /* Responsive */
