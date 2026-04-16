@@ -172,11 +172,21 @@ const submitLeave = async () => {
 }
 
 /* 2. AREA TENGAH YANG BISA DI-SCROLL */
+/* 2. AREA TENGAH YANG BISA DI-SCROLL */
 .content {
-  flex: 1; /* Penuhi sisa layar antara header dan navbar */
-  overflow-y: auto; /* Hanya area ini yang bisa di-scroll */
+  flex: 1;
+  overflow-y: auto;
   padding: 20px;
-  padding-bottom: 40px; /* Jarak aman sebelum mentok navbar */
+  padding-bottom: 40px;
+  
+  /* --- TAMBAHKAN INI UNTUK HILANGKAN GARIS HITAM/SCROLLBAR --- */
+  -ms-overflow-style: none;  /* Untuk Internet Explorer & Edge */
+  scrollbar-width: none;     /* Untuk Firefox */
+}
+
+/* Untuk Chrome, Safari, dan Opera */
+.content::-webkit-scrollbar {
+  display: none;
 }
 
 /* Styling Komponen Lainnya */
@@ -231,36 +241,83 @@ const submitLeave = async () => {
 .send-icon { width: 20px; height: 20px; }
 
 /* 3. NAVBAR FIX TERKUNCI DI BAWAH */
+/* --- BOTTOM NAV (PENYELARASAN LEAVE) --- */
 .bottom-nav {
-  flex-shrink: 0; /* Pastikan ukurannya tidak mengecil */
+  flex-shrink: 0;
   width: 100%;
-  height: 70px;
+  /* 1. Samakan tinggi dengan Dashboard & History */
+  height: 75px; 
   background-color: #ffffff;
-  display: flex;
-  justify-content: space-around;
+  
+  /* 2. Tambahkan lengkungan khas Dashboard */
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  
+  /* 3. Layout Grid agar presisi 5 kolom */
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   align-items: center;
-  border-top: 1px solid #f1f5f9;
+  
+  /* 4. Shadow halus ke arah atas */
+  box-shadow: 0 -8px 25px rgba(0,0,0,0.06);
   z-index: 100;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+  padding: 0 5px;
 }
 
 .nav-item { 
-  display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; 
-  color: #94A3B8; /* Warna teks abu-abu */
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center;
+  gap: 4px; 
+  cursor: pointer; 
+  color: #94A3B8; 
+  height: 100%;
 }
+
 .nav-item img { 
-  width: 24px; height: 24px; 
-  /* Trik CSS: Paksa semua icon jadi warna abu-abu senada */
+  width: 24px; 
+  height: 24px; 
+  object-fit: contain;
   filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%) hue-rotate(182deg) brightness(87%) contrast(85%);
   transition: all 0.2s ease;
 }
-.nav-item span { font-size: 10px; font-weight: 600; }
-.nav-item.active { 
-  color: #2563EB; /* Warna teks biru untuk yang aktif */
+
+.nav-item span { 
+  font-size: 10px; 
+  font-weight: 600; 
 }
+
+/* Keadaan Aktif (Tab Leave sedang terpilih) */
+.nav-item.active { 
+  color: #2563EB; 
+}
+
 .nav-item.active img { 
-  /* Trik CSS: Paksa icon yang aktif (Leave) jadi warna biru! */
   filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%);
+}
+
+/* --- TOMBOL QR (SQUIRCLE) --- */
+.nav-item.scan-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.scan-circle {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  border-radius: 16px; /* Squircle identik dengan Dashboard */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+  transition: transform 0.2s;
+}
+
+.scan-circle:active {
+  transform: scale(0.92);
 }
 
 .scan-button {
@@ -275,17 +332,9 @@ const submitLeave = async () => {
   border: none; cursor: pointer;
   margin: 0; /* Pastikan tidak ada margin aneh */
 }
-/* 4. PERBAIKAN TOMBOL QR JADI KOTAK (SQUIRCLE) */
-.scan-circle {
-  width: 56px;
-  height: 56px;
-  background-color: #2563EB;
-  border-radius: 16px; /* BUKAN 50% LAGI, SEKARANG KOTAK MELENGKUNG */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
-  /* Border putih dihapus agar persis desain Figma */
+.scan-circle .qr-icon { 
+  width: 26px; 
+  height: 26px; 
+  filter: brightness(0) invert(1) !important; 
 }
-.scan-circle .qr-icon { width: 28px; height: 28px; opacity: 1; filter: brightness(0) invert(1); }
 </style>

@@ -526,14 +526,15 @@ onMounted(() => {
   width: 16px;
   opacity: 0.6;
 }
-
+/* */
 .plan-input {
   width: 100%;
-  height: 80px;
+  height: 100px;
+  box-sizing: border-box; /* PENTING: Kunci agar tidak meleber */
   border: 1px solid #f1f5f9;
   background: #f8fafc;
   border-radius: 16px;
-  padding: 12px;
+  padding: 15px;
   font-family: "Inter", sans-serif;
   font-size: 13px;
   color: #334155;

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import AttendanceDetail from "./components/AttendanceDetail.vue";
 import QRScanner from "./components/QRScanner.vue";
 import PersonalInfoDetail from "./components/PersonalInfoDetail.vue";
 import SplashScreen from "./components/SplashScreen.vue";
@@ -18,6 +19,7 @@ import PrivacyPolicy from "./components/PrivacyPolicy.vue";
 
 // State halaman dan tipe edit
 const currentPage = ref("landing");
+const selectedAttendance = ref(null); // <--- TAMBAHKAN INI
 const editType = ref("in");
 const editId = ref(null);
 const showSplash = ref(false);
@@ -28,8 +30,19 @@ const onSplashDone = () => {
 };
 
 // Fungsi Navigasi yang sudah diperbaiki
-const navigateTo = (page, type = "in", id = null) => {
+const navigateTo = (page, dataOrType = "in", id = null) => {
   currentPage.value = page;
+  
+// 1. Jika pindah ke Attendance Detail, simpan datanya ke selectedAttendance
+  if (page === "attendance-detail") {
+    selectedAttendance.value = dataOrType; // dataOrType di sini adalah objek 'day' dari kalender
+  }
+
+  // 2. Jika pindah ke halaman edit, simpan tipenya (in/out)
+  if (page === "edit-attendance") {
+    editType.value = dataOrType;
+    editId.value = id;
+  }
   
   // Jika pindah ke halaman edit, simpan tipenya (in/out)
   if (page === "edit-attendance") {
@@ -114,6 +127,13 @@ onMounted(() => {
         @open-clock-in="navigateTo('clock-in')"
         @navigate="navigateTo"
         @logout="onLogout"
+        @open-detail="(data) => navigateTo('attendance-detail', data)"
+      />
+
+      <AttendanceDetail 
+        v-else-if="currentPage === 'attendance-detail'"
+        :attendance="selectedAttendance"
+        @go-back="navigateTo('dashboard')"
       />
 
       <EditAttendance 

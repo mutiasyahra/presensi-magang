@@ -456,6 +456,7 @@ const getStatusClass = (status) => {
 }
 
 /* --- BOTTOM NAV (COPY DARI DASHBOARD) --- */
+/* --- BOTTOM NAV (PENYELARASAN HISTORY) --- */
 .bottom-nav {
   position: absolute;
   bottom: 0;
@@ -463,14 +464,22 @@ const getStatusClass = (status) => {
   right: 0;
   z-index: 100;
   background: white;
-  height: 80px;
+  
+  /* 1. Samakan tinggi dengan yang lain */
+  height: 75px; 
+  
+  /* 2. Lengkungan Dashboard */
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
-  box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.08);
+  
+  /* 3. Shadow halus */
+  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.06);
+
+  /* 4. Layout Grid 5 Kolom */
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  align-items: center;
-  padding: 0 10px;
+  align-items: center; 
+  padding: 0 5px;
 }
 
 .nav-item {
@@ -478,19 +487,21 @@ const getStatusClass = (status) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  color: #cbd5e1;
+  gap: 4px;
+  color: #94A3B8; /* Standar warna pasif */
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
   height: 100%;
+  transition: all 0.2s ease;
 }
+
 .nav-item img {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
-  opacity: 0.5;
-  filter: grayscale(100%);
+  /* Filter abu-abu pasif */
+  filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%) hue-rotate(182deg) brightness(87%) contrast(85%);
   transition: 0.3s;
 }
 
@@ -509,28 +520,40 @@ const getStatusClass = (status) => {
 
 .nav-item span { font-size: 10px; font-weight: 600; }
 
-.nav-item.active { 
-  color: #2563EB; /* Warna teks biru untuk yang aktif */
+/* Keadaan Aktif di Halaman History */
+.nav-item.active {
+  color: #2563EB;
 }
 
-.nav-item.active img { 
-  /* Trik CSS: Paksa icon yang aktif (Leave) jadi warna biru! */
+.nav-item.active img {
+  /* Filter warna Biru (#2563EB) */
   filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%);
 }
-.nav-item-scan-wrapper { display: flex; justify-content: center; align-items: center; height: 100%; }
-.scan-button {
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-radius: 16px;
+
+/* --- TOMBOL QR (SQUIRCLE) --- */
+.nav-item-scan-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+  height: 100%;
 }
+
+.scan-button {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  border-radius: 16px; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+  border: none;
+  cursor: pointer;
+}
+
 .scan-button img {
-  width: 24px;
-  height: 24px;
-  filter: brightness(0) invert(1);
+  width: 26px;
+  height: 26px;
+  filter: brightness(0) invert(1) !important;
 }
 </style>

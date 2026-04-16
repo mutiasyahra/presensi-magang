@@ -304,7 +304,23 @@ onUnmounted(() => {
             <span class="stat-label">Absent</span>
           </div>
           <div class="stat-card">
-            <svg style="margin-bottom: 6px; color: #a855f7; display: inline-block;" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4h-3V2h-2v2h-4V2H8v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/><path d="M7 12h10v2H7z"/></svg>
+            <div class="icon-square leave-bg-clean">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                stroke-width="1.8" 
+                stroke-linecap="round" 
+                stroke-linejoin="round" 
+                class="icon-svg-leave"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
             <span class="stat-num">{{ leaveCount < 10 && leaveCount > 0 ? '0' + leaveCount : leaveCount }}</span>
             <span class="stat-label">Leave</span>
           </div>
@@ -328,6 +344,7 @@ onUnmounted(() => {
               v-for="(item, index) in calendarDays"
               :key="index"
               class="cal-cell"
+              @click="item.type === 'date' ? $emit('open-detail', item) : null"
             >
               <div
                 v-if="item.type === 'date'"
@@ -843,6 +860,7 @@ onUnmounted(() => {
 }
 
 /* --- BOTTOM NAV (Fokus: QR Sejajar & Rapi) --- */
+/* --- BOTTOM NAV (PENYELARASAN FINAL) --- */
 .bottom-nav {
   position: absolute;
   bottom: 0;
@@ -850,49 +868,60 @@ onUnmounted(() => {
   right: 0;
   z-index: 100;
   background: white;
-  height: 80px;
+  
+  /* 1. Ukuran Tinggi Disamakan (70px-80px) */
+  height: 75px; 
+  
+  /* 2. Lengkungan Dashboard yang kamu suka */
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
-  box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.08);
+  
+  /* 3. Shadow Halus agar tidak tampak "nempel" */
+  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.06);
 
-  /* GRID 5 Kolom agar icon terbagi rata */
+  /* 4. Layout Grid 5 Kolom (Rata Kiri-Kanan) */
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  align-items: center; /* Vertikal center (sejajar) */
-  padding: 0 10px;
+  align-items: center; 
+  padding: 0 5px;
 }
 
-/* Item Navigasi Biasa */
+/* Item Navigasi (Teks & Icon) */
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  color: #cbd5e1;
+  gap: 4px;
+  color: #94A3B8; /* Warna abu-abu standar Leave */
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
   height: 100%;
-}
-.nav-item img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  opacity: 0.5;
-  filter: grayscale(100%);
-  transition: 0.3s;
-}
-.nav-item.active {
-  color: #2563eb;
-}
-.nav-item.active img {
-  opacity: 1;
-  filter: grayscale(0%);
-  transform: translateY(-2px);
+  transition: all 0.2s ease;
 }
 
-/* Wrapper Tombol Tengah */
+/* Styling Icon Biasa */
+.nav-item img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  /* Filter agar warna icon konsisten abu-abu saat tidak aktif */
+  filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%) hue-rotate(182deg) brightness(87%) contrast(85%);
+  transition: 0.3s;
+}
+
+/* Keadaan Aktif (Biru Dashboard) */
+.nav-item.active {
+  color: #2563EB;
+}
+
+.nav-item.active img {
+  /* Filter warna Biru (#2563EB) */
+  filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%);
+}
+
+/* --- TOMBOL QR (SQUIRCLE) --- */
 .nav-item-scan-wrapper {
   display: flex;
   justify-content: center;
@@ -900,32 +929,72 @@ onUnmounted(() => {
   height: 100%;
 }
 
-/* Tombol QR (Kotak Sejajar) */
 .scan-button {
-  /* Hapus absolute agar tidak mengambang */
-  position: static;
-
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-radius: 16px;
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  border-radius: 16px; /* Bentuk Kotak Melengkung (Squircle) */
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
   border: none;
   cursor: pointer;
-  margin: 0; /* Pastikan tidak ada margin aneh */
+  transition: transform 0.2s;
 }
 
-/* Efek Klik Halus */
 .scan-button:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
 }
 
 .scan-button img {
-  width: 24px;
-  height: 24px;
-  filter: brightness(0) invert(1);
+  width: 26px;
+  height: 26px;
+  filter: brightness(0) invert(1) !important; /* Paksa Putih Bersih */
+}
+/* Icon Leave Terbaru */
+/* Container stat-card agar tetap rapi */
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px; /* Sesuaikan gap agar rapat seperti ikon lainnya */
+}
+
+/* Membuat kotak persegi melengkung untuk SVG */
+.icon-square {
+  width: 30px;  /* Sesuaikan dengan ukuran pembungkus ikon gambar (.png) */
+  height: 30px; /* Pastikan persegi sempurna */
+  border-radius: 12px; /* Sudut melengkung, cocokan dengan ikon gambar */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 6px;
+  overflow: hidden; /* Pastikan tidak ada yang keluar kotak */
+}
+
+/* Warna ungu transparan khusus Leave (TANPA GARIS/BORDER) */
+.leave-bg-clean {
+  background-color: rgba(168, 85, 247, 0.1); /* Background ungu pudar */
+}
+
+/* Mengontrol ukuran SVG di dalam kotak agar kecil dan presisi */
+.icon-svg-leave {
+  width: 22px;  /* Poin 1: Ikon diperkecil agar tidak memenuhi kotak */
+  height: 22px;
+  color: #a855f7; /* Warna ikon ungu */
+}
+
+/* Menyesuaikan angka dan label agar serasi dengan ikon gambar */
+.stat-num {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.stat-label {
+  font-size: 10px; /* Samakan ukuran teks label dengan ikon lainnya */
+  color: #94a3b8;
+  font-weight: 500;
 }
 </style>
