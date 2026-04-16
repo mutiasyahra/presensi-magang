@@ -120,6 +120,48 @@ class AttendanceController extends Controller
         ]);
     }
 
+    // UPDATE ATTENDANCE (USER EDIT)
+    public function update(Request $request, $id)
+    {
+        $attendance = Attendance::where('id', $id)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if (!$attendance) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        $request->validate([
+            'rencana_kegiatan' => 'nullable|string',
+            'progress_kegiatan' => 'nullable|string',
+            'evidence' => 'nullable|file|mimes:jpeg,png,pdf|max:5120'
+        ]);
+
+        $updateData = [];
+
+        if ($request->has('rencana_kegiatan')) {
+            $updateData['rencana_kegiatan'] = $request->rencana_kegiatan;
+        }
+
+        if ($request->has('progress_kegiatan')) {
+            $updateData['progress_kegiatan'] = $request->progress_kegiatan;
+        }
+
+        if ($request->hasFile('evidence')) {
+            $evidencePath = $request->file('evidence')->store('evidence', 'public');
+            $updateData['evidence'] = $evidencePath;
+        }
+
+        if (!empty($updateData)) {
+            $attendance->update($updateData);
+        }
+
+        return response()->json([
+            'message' => 'Perubahan berhasil disimpan',
+            'data' => $attendance
+        ]);
+    }
+
     //  ADMIN - LIST ATTENDANCE
     public function index(Request $request)
     {
@@ -134,6 +176,13 @@ class AttendanceController extends Controller
                 $request->start_date,
                 $request->end_date
             ]);
+        }
+
+        if ($request->project && $request->project !== 'All Project') {
+            $project = $request->project;
+            $query->whereHas('user.intern', function ($q) use ($project) {
+                $q->where('project', $project);
+            });
         }
 
         if ($request->search) {
@@ -159,6 +208,25 @@ class AttendanceController extends Controller
         return response()->json([
             'message' => 'Data presensi',
             'data' => $data
+        ]);
+    }
+
+    //  ADMIN - GET UNIQUE FILTER OPTIONS
+    public function attendanceFilters()
+    {
+        $projects = Intern::whereNotNull('project')
+            ->distinct()
+            ->pluck('project');
+
+        $periods = Intern::select('start_date', 'end_date')
+            ->whereNotNull('start_date')
+            ->whereNotNull('end_date')
+            ->distinct()
+            ->get();
+
+        return response()->json([
+            'projects' => $projects,
+            'periods' => $periods
         ]);
     }
 

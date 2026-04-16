@@ -209,11 +209,10 @@ const getFileUrl = (filePath) => {
   justify-content: space-between;
   align-items: center;
   
-  /* Mantra Sticky-nya */
   position: sticky;
   top: 0;
-  z-index: 30; /* Harus lebih tinggi dari z-index tabel agar tidak tertimpa */
-  background-color: #F8FAFC; /* Pastikan warnanya sama dengan background halamanmu, biasanya F8FAFC atau putih */
+  z-index: 30;
+  background-color: var(--bg-app);
   padding: 16px 0;
   margin-bottom: 8px;
 }
@@ -222,7 +221,7 @@ const getFileUrl = (filePath) => {
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--text-main);
 }
 
 .header-actions {
@@ -239,14 +238,14 @@ const getFileUrl = (filePath) => {
   border-radius: 50%;
   border: none;
   background: transparent;
-  color: #64748B;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .btn-icon:hover {
-  background: #E2E8F0;
-  color: #0F172A;
+  background: var(--bg-input);
+  color: var(--text-main);
 }
 
 .leave-approval-container {
@@ -263,17 +262,17 @@ const getFileUrl = (filePath) => {
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-card);
   padding: 20px;
   border-radius: 16px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--border-color);
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
 
 .stat-label {
   font-size: 12px;
   font-weight: 700;
-  color: #64748B;
+  color: var(--text-muted);
   letter-spacing: 0.5px;
 }
 
@@ -287,7 +286,7 @@ const getFileUrl = (filePath) => {
 .stat-value-row h2 {
   margin: 0;
   font-size: 28px;
-  color: #0F172A;
+  color: var(--text-main);
 }
 
 .badge {
@@ -303,9 +302,9 @@ const getFileUrl = (filePath) => {
 
 /* 2. Main Card & Header */
 .main-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 16px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--border-color);
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   overflow: hidden;
 }
@@ -315,7 +314,7 @@ const getFileUrl = (filePath) => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .header-left {
@@ -327,14 +326,14 @@ const getFileUrl = (filePath) => {
 .blue-indicator {
   width: 6px;
   height: 24px;
-  background: #3B82F6;
+  background: var(--accent-primary);
   border-radius: 4px;
 }
 
 .header-left h3 {
   margin: 0;
   font-size: 18px;
-  color: #0F172A;
+  color: var(--text-main);
 }
 
 .header-right {
@@ -346,10 +345,10 @@ const getFileUrl = (filePath) => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #F8FAFC;
+  background: var(--bg-input);
   padding: 8px 16px;
   border-radius: 8px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--border-color);
   width: 250px;
 }
 .search-box input {
@@ -359,7 +358,7 @@ const getFileUrl = (filePath) => {
   font-size: 13px;
   width: 100%;
 }
-.search-box .icon { color: #94A3B8; }
+.search-box .icon { color: var(--text-dim); }
 
 .btn-filter {
   display: flex;
@@ -368,9 +367,9 @@ const getFileUrl = (filePath) => {
   width: 38px;
   height: 38px;
   border-radius: 8px;
-  border: 1px solid #E2E8F0;
-  background: white;
-  color: #64748B;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-muted);
   cursor: pointer;
 }
 
@@ -389,14 +388,14 @@ const getFileUrl = (filePath) => {
   padding: 16px 24px;
   font-size: 11px;
   font-weight: 700;
-  color: #94A3B8;
-  border-bottom: 1px solid #E2E8F0;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border-color);
   letter-spacing: 0.5px;
 }
 
 .leaves-table td {
   padding: 16px 24px;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
 }
 
@@ -408,12 +407,12 @@ const getFileUrl = (filePath) => {
 }
 .avatar-placeholder {
   width: 36px; height: 36px;
-  background: #F1F5F9; color: #3B82F6;
+  background: var(--bg-input); color: var(--accent-primary);
   border-radius: 50%; display: flex;
   align-items: center; justify-content: center; font-weight: bold;
 }
-.intern-details .name { margin: 0; font-size: 14px; font-weight: 600; color: #0F172A; }
-.intern-details .id { margin: 0; font-size: 12px; color: #64748B; }
+.intern-details .name { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-main); }
+.intern-details .id { margin: 0; font-size: 12px; color: var(--text-muted); }
 
 .category-badge {
   font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-transform: uppercase;
@@ -421,12 +420,12 @@ const getFileUrl = (filePath) => {
 .category-badge.sick, .category-badge.sick\ leave { background: #FEF3C7; color: #D97706; }
 .category-badge.urgent, .category-badge.personal { background: #EFF6FF; color: #3B82F6; }
 
-.duration-info .dates { margin: 0; font-size: 13px; font-weight: 600; color: #0F172A; }
-.duration-info .days { margin: 0; font-size: 12px; color: #64748B; }
+.duration-info .dates { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-main); }
+.duration-info .days { margin: 0; font-size: 12px; color: var(--text-muted); }
 
-.reason-evidence .reason { margin: 0 0 4px 0; font-size: 13px; font-style: italic; color: #475569; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.evidence-link { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #3B82F6; text-decoration: none; font-weight: 500; }
-.no-evidence { margin: 0; font-size: 12px; color: #94A3B8; font-style: italic; }
+.reason-evidence .reason { margin: 0 0 4px 0; font-size: 13px; font-style: italic; color: var(--text-muted); max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.evidence-link { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--accent-primary); text-decoration: none; font-weight: 500; }
+.no-evidence { margin: 0; font-size: 12px; color: var(--text-dim); font-style: italic; }
 
 .action-buttons {
   display: flex;
@@ -434,12 +433,12 @@ const getFileUrl = (filePath) => {
 }
 .btn-approve {
   display: flex; align-items: center; gap: 6px;
-  background: #3B82F6; color: white; border: none;
+  background: var(--accent-primary); color: white; border: none;
   padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .btn-reject {
   display: flex; align-items: center; justify-content: center;
-  background: white; color: #EF4444; border: 1px solid #FECACA;
+  background: var(--bg-card); color: var(--accent-danger); border: 1px solid var(--accent-danger);
   width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
 }
 
@@ -450,13 +449,13 @@ const getFileUrl = (filePath) => {
   align-items: center;
   padding: 16px 24px;
 }
-.pagination-footer p { margin: 0; font-size: 13px; color: #64748B; }
+.pagination-footer p { margin: 0; font-size: 13px; color: var(--text-muted); }
 .pagination { display: flex; gap: 4px; }
 .page-btn {
-  width: 32px; height: 32px; border: 1px solid #E2E8F0; background: white; border-radius: 6px;
-  color: #64748B; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border: 1px solid var(--border-color); background: var(--bg-card); border-radius: 6px;
+  color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
-.page-btn.active { background: #3B82F6; color: white; border-color: #3B82F6; }
+.page-btn.active { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
 
 /* 3. Bottom Info Box */
 .info-row {
@@ -477,6 +476,6 @@ const getFileUrl = (filePath) => {
 }
 .warning-icon { background: #F59E0B; }
 
-.info-content h4 { margin: 0 0 6px 0; font-size: 14px; color: #0F172A; }
-.info-content p { margin: 0; font-size: 13px; color: #475569; line-height: 1.5; }
+.info-content h4 { margin: 0 0 6px 0; font-size: 14px; color: var(--text-main); }
+.info-content p { margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
 </style>

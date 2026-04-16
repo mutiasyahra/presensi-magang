@@ -6,7 +6,27 @@ const attendanceRecords = ref([]);
 const stats = ref({});
 const isLoading = ref(false);
 const searchQuery = ref('');
-const dateRange = ref(''); // Placeholder for simplified range
+
+// Advanced Filters
+const selectedProject = ref('All Project');
+const selectedPeriod = ref('All Periods');
+
+const filterOptions = ref({
+  projects: [],
+  periods: []
+});
+
+const fetchFilterOptions = async () => {
+  try {
+    const res = await api.get('/attendance-filters');
+    if (res.data) {
+      filterOptions.value.projects = res.data.projects || [];
+      filterOptions.value.periods = res.data.periods || [];
+    }
+  } catch (error) {
+    console.error("[AdminReports] Gagal load filter options:", error);
+  }
+};
 
 const fetchReportData = async () => {
   isLoading.value = true;
@@ -15,10 +35,32 @@ const fetchReportData = async () => {
     const statsRes = await api.get('/stats');
     stats.value = statsRes.data;
 
-    // Fetch attendance list (default all)
-    const params = {};
-    if (searchQuery.value) params.search = searchQuery.value;
+    // Determine dates from selected period
+    let start_date = '';
+    let end_date = '';
     
+    if (selectedPeriod.value !== 'All Periods') {
+      const period = filterOptions.value.periods.find(p => formatPeriod(p) === selectedPeriod.value);
+      if (period) {
+        start_date = period.start_date;
+        end_date = period.end_date;
+      }
+    }
+
+    // Fetch attendance list with filters
+    const params = {
+      search: searchQuery.value,
+      project: selectedProject.value,
+      start_date,
+      end_date
+    };
+
+    // Remove default/empty params
+    if (params.project === 'All Project') delete params.project;
+    Object.keys(params).forEach(key => {
+      if (!params[key]) delete params[key];
+    });
+
     const attRes = await api.get('/attendances', { params });
     attendanceRecords.value = attRes.data?.data || attRes.data || [];
   } catch (error) {
@@ -49,6 +91,13 @@ const formatDate = (dateStr) => {
   return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
 };
 
+const formatPeriod = (period) => {
+  if (!period.start_date || !period.end_date) return 'Invalid Period';
+  const start = formatDate(period.start_date);
+  const end = formatDate(period.end_date);
+  return `${start} - ${end}`;
+};
+
 const formatTimeOnly = (dateTimeStr) => {
   if (!dateTimeStr) return '-';
   const date = new Date(dateTimeStr);
@@ -77,7 +126,10 @@ const getInitials = (name) => {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 };
 
-onMounted(fetchReportData);
+onMounted(() => {
+  fetchReportData();
+  fetchFilterOptions();
+});
 </script>
 
 
@@ -93,38 +145,6 @@ onMounted(fetchReportData);
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         Export Data
       </button>
-    </div>
-
-    <div class="filters-card">
-      <div class="filter-group">
-        <label>DATE RANGE</label>
-        <div class="input-wrapper">
-          <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          <input type="text" v-model="dateRange" placeholder="Future Implementation..." readonly />
-        </div>
-      </div>
-      <div class="filter-group">
-        <label>DEPARTMENT</label>
-        <div class="input-wrapper select-wrapper">
-          <select disabled>
-            <option>All Departments</option>
-          </select>
-        </div>
-      </div>
-      <div class="filter-group">
-        <label>SEARCH INTERN</label>
-        <div class="input-wrapper">
-          <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input type="text" v-model="searchQuery" @keyup.enter="fetchReportData" placeholder="Name or ID..." />
-        </div>
-      </div>
-      <div class="filter-actions">
-        <button class="btn-apply" @click="fetchReportData">
-          <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-          <span v-else>Loading...</span>
-          Apply Filters
-        </button>
-      </div>
     </div>
 
     <div class="stats-row">
@@ -158,6 +178,47 @@ onMounted(fetchReportData);
       </div>
     </div>
 
+    <div class="filters-card">
+      <div class="filter-group">
+        <label>INTERNSHIP PERIOD</label>
+        <div class="input-wrapper select-wrapper">
+          <select v-model="selectedPeriod">
+            <option>All Periods</option>
+            <option v-for="period in filterOptions.periods" :key="period.start_date + period.end_date" :value="formatPeriod(period)">
+              {{ formatPeriod(period) }}
+            </option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="filter-group">
+        <label>PROJECT</label>
+        <div class="input-wrapper select-wrapper">
+          <select v-model="selectedProject">
+            <option>All Project</option>
+            <option v-for="proj in filterOptions.projects" :key="proj" :value="proj">
+              {{ proj }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>SEARCH INTERN</label>
+        <div class="input-wrapper">
+          <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" v-model="searchQuery" @keyup.enter="fetchReportData" placeholder="Name or ID..." />
+        </div>
+      </div>
+      <div class="filter-actions">
+        <button class="btn-apply" @click="fetchReportData">
+          <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+          <span v-else>Loading...</span>
+          Apply Filters
+        </button>
+      </div>
+    </div>
+    
     <div class="main-card">
       <div class="card-header">
         <div class="header-left">
@@ -243,28 +304,28 @@ onMounted(fetchReportData);
   position: sticky;
   top: 0;
   z-index: 30;
-  background-color: #F8FAFC; /* Sesuaikan dengan background utama aplikasi */
+  background-color: var(--bg-app);
   padding: 16px 0;
   margin-bottom: 4px;
 }
 
-.header-titles h2 { margin: 0; font-size: 22px; font-weight: 700; color: #0F172A; }
-.header-titles p { margin: 4px 0 0 0; font-size: 14px; color: #64748B; }
+.header-titles h2 { margin: 0; font-size: 22px; font-weight: 700; color: var(--text-main); }
+.header-titles p { margin: 4px 0 0 0; font-size: 14px; color: var(--text-muted); }
 
 .btn-export {
   display: flex; align-items: center; gap: 8px;
-  background: white; border: 1px solid #E2E8F0; color: #0F172A;
+  background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main);
   padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
   cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
-.btn-export:hover { background: #F1F5F9; }
+.btn-export:hover { background: var(--bg-input); }
 
 /* 2. Filters Card */
 .filters-card {
-  background: white;
+  background: var(--bg-card);
   padding: 20px 24px;
   border-radius: 16px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--border-color);
   display: flex;
   align-items: flex-end;
   gap: 20px;
@@ -279,28 +340,28 @@ onMounted(fetchReportData);
 }
 
 .filter-group label {
-  font-size: 11px; font-weight: 700; color: #64748B; letter-spacing: 0.5px;
+  font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px;
 }
 
 .input-wrapper {
   display: flex; align-items: center; gap: 8px;
-  border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;
-  background: white;
+  border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px;
+  background: var(--bg-input);
 }
-.input-wrapper .icon { color: #94A3B8; flex-shrink: 0; }
-.input-wrapper input { border: none; outline: none; font-size: 13px; width: 100%; color: #0F172A; background: transparent; }
-.input-wrapper input::placeholder { color: #94A3B8; }
+.input-wrapper .icon { color: var(--text-dim); flex-shrink: 0; }
+.input-wrapper input { border: none; outline: none; font-size: 13px; width: 100%; color: var(--text-main); background: transparent; }
+.input-wrapper input::placeholder { color: var(--text-dim); }
 
 .select-wrapper select {
-  border: none; outline: none; font-size: 13px; width: 100%; color: #0F172A; background: transparent; cursor: pointer;
+  border: none; outline: none; font-size: 13px; width: 100%; color: var(--text-main); background: transparent; cursor: pointer;
 }
 
 .btn-apply {
   display: flex; align-items: center; gap: 8px; justify-content: center;
-  background: #3B82F6; color: white; border: none;
+  background: var(--accent-primary); color: white; border: none;
   height: 40px; padding: 0 24px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.btn-apply:hover { background: #2563EB; }
+.btn-apply:hover { opacity: 0.9; }
 
 /* 3. Stats Row */
 .stats-row {
@@ -310,56 +371,56 @@ onMounted(fetchReportData);
 }
 
 .stat-card {
-  background: white; padding: 20px; border-radius: 16px;
-  border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  background: var(--bg-card); padding: 20px; border-radius: 16px;
+  border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
 
-.stat-label { font-size: 13px; color: #64748B; }
+.stat-label { font-size: 13px; color: var(--text-muted); }
 
 .stat-value-row {
   display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
 }
-.stat-value-row h2 { margin: 0; font-size: 26px; font-weight: 700; color: #0F172A; }
+.stat-value-row h2 { margin: 0; font-size: 26px; font-weight: 700; color: var(--text-main); }
 
 .badge { font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px; }
 .badge-trend-up { background: #DCFCE7; color: #10B981; }
 .badge-trend-down { background: #FEF2F2; color: #EF4444; }
-.badge-grey { background: #F1F5F9; color: #64748B; }
+.badge-grey { background: var(--bg-input); color: var(--text-muted); }
 .badge-blue { background: #EFF6FF; color: #3B82F6; }
 
 /* 4. Main Table Card */
 .main-card {
-  background: white; border-radius: 16px; border: 1px solid #E2E8F0;
+  background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color);
   box-shadow: 0 1px 3px rgba(0,0,0,0.02); overflow: hidden;
 }
 
 .card-header {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 20px 24px; border-bottom: 1px solid #E2E8F0;
+  padding: 20px 24px; border-bottom: 1px solid var(--border-color);
 }
-.header-left h3 { margin: 0; font-size: 16px; font-weight: 700; color: #0F172A; }
-.header-left p { margin: 4px 0 0 0; font-size: 13px; color: #64748B; }
+.header-left h3 { margin: 0; font-size: 16px; font-weight: 700; color: var(--text-main); }
+.header-left p { margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted); }
 
 .header-right { display: flex; gap: 8px; }
 .btn-icon {
-  background: white; border: 1px solid #E2E8F0; width: 36px; height: 36px;
-  border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #64748B; cursor: pointer;
+  background: var(--bg-card); border: 1px solid var(--border-color); width: 36px; height: 36px;
+  border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer;
 }
-.btn-icon:hover { background: #F8FAFC; color: #0F172A; }
+.btn-icon:hover { background: var(--bg-input); color: var(--text-main); }
 
 /* Table Styles */
-.table-container { overflow-x: auto; max-height: 500px; /* Opsional: beri tinggi maks jika ingin scroll internal tabel */ }
+.table-container { overflow-x: auto; max-height: 500px; }
 
 .reports-table { width: 100%; border-collapse: collapse; text-align: left; }
 
 .reports-table th {
-  padding: 16px 24px; font-size: 11px; font-weight: 700; color: #94A3B8;
-  border-bottom: 1px solid #E2E8F0; letter-spacing: 0.5px;
-  position: sticky; top: 0; background-color: white; z-index: 10; /* Sticky column header */
+  padding: 16px 24px; font-size: 11px; font-weight: 700; color: var(--text-dim);
+  border-bottom: 1px solid var(--border-color); letter-spacing: 0.5px;
+  position: sticky; top: 0; background-color: var(--bg-card); z-index: 10;
 }
 
 .reports-table td {
-  padding: 16px 24px; border-bottom: 1px solid #E2E8F0; vertical-align: middle;
+  padding: 16px 24px; border-bottom: 1px solid var(--border-color); vertical-align: middle;
 }
 
 /* Column Contents */
@@ -368,10 +429,10 @@ onMounted(fetchReportData);
   width: 36px; height: 36px; border-radius: 50%; display: flex;
   align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
 }
-.intern-details .name { margin: 0; font-size: 14px; font-weight: 600; color: #0F172A; }
-.intern-details .dept { margin: 0; font-size: 12px; color: #64748B; }
+.intern-details .name { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-main); }
+.intern-details .dept { margin: 0; font-size: 12px; color: var(--text-muted); }
 
-.regular-text { font-size: 13px; color: #0F172A; }
+.regular-text { font-size: 13px; color: var(--text-main); }
 
 .status-badge {
   font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 99px;
@@ -384,11 +445,11 @@ onMounted(fetchReportData);
 .pagination-footer {
   display: flex; justify-content: space-between; align-items: center; padding: 16px 24px;
 }
-.pagination-footer p { margin: 0; font-size: 13px; color: #64748B; }
+.pagination-footer p { margin: 0; font-size: 13px; color: var(--text-muted); }
 .pagination { display: flex; gap: 8px; }
 .page-btn {
-  padding: 6px 16px; border: 1px solid #E2E8F0; background: white; border-radius: 6px;
-  font-size: 13px; font-weight: 500; color: #0F172A; cursor: pointer;
+  padding: 6px 16px; border: 1px solid var(--border-color); background: var(--bg-card); border-radius: 6px;
+  font-size: 13px; font-weight: 500; color: var(--text-main); cursor: pointer;
 }
-.page-btn:hover { background: #F8FAFC; }
+.page-btn:hover { background: var(--bg-input); }
 </style>

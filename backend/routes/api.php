@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/clock-in', [AttendanceController::class, 'clockIn']);
     Route::post('/clock-out', [AttendanceController::class, 'clockOut']);
+    Route::post('/attendances/{id}', [AttendanceController::class, 'update']);
     Route::post('/leave', [LeaveController::class, 'store']);
     Route::get('/user', function (Request $request) {
         return $request->user();
@@ -40,6 +41,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/export', [AttendanceController::class, 'exportExcel']);
     Route::get('/recap-monthly', [AttendanceController::class, 'monthlyRecap']);
     Route::get('/attendances', [AttendanceController::class, 'index']);
+    Route::get('/attendance-filters', [AttendanceController::class, 'attendanceFilters']);
     Route::patch('/attendances/{id}/verify', [AttendanceController::class, 'verify']);
     Route::get('/interns', [InternController::class, 'index']);
     Route::post('/interns', [InternController::class, 'store']);

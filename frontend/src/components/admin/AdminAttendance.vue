@@ -844,21 +844,21 @@ const openEditFromDetail = () => {
 .page-header {
   display: flex; justify-content: space-between; align-items: flex-start;
   position: sticky; top: 0; z-index: 100; padding: 20px 0; margin-top: -20px;
-  background: rgba(248, 250, 252, 0.8); backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .main-title {
   font-size: 28px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0 0 4px 0;
   letter-spacing: -0.5px;
 }
 
 .sub-title {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -872,19 +872,19 @@ const openEditFromDetail = () => {
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-weight: 600;
   font-size: 14px;
-  color: #475569;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-export:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: var(--bg-input);
+  border-color: var(--text-dim);
 }
 
 .btn-add {
@@ -903,7 +903,7 @@ const openEditFromDetail = () => {
 }
 
 .btn-add:hover {
-  background: #2563eb;
+  opacity: 0.9;
 }
 
 /* Stats Grid */
@@ -914,10 +914,10 @@ const openEditFromDetail = () => {
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-card);
   padding: 20px 24px;
   border-radius: 16px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
   display: flex;
   flex-direction: column;
@@ -927,7 +927,7 @@ const openEditFromDetail = () => {
 .stat-label {
   font-size: 12px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted);
   letter-spacing: 0.5px;
   margin: 0;
 }
@@ -945,13 +945,13 @@ const openEditFromDetail = () => {
 .stat-value {
   font-size: 32px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
   line-height: 1;
 }
 
 .highlight-orange {
-  color: #f59e0b;
+  color: var(--accent-warning);
 }
 
 .stat-trend {
@@ -963,12 +963,12 @@ const openEditFromDetail = () => {
 }
 
 .trend-up {
-  color: #10b981;
+  color: var(--accent-success);
 }
 
 .stat-subtext {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-dim);
   line-height: 1.3;
 }
 
@@ -977,10 +977,10 @@ const openEditFromDetail = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
+  background: var(--bg-card);
   padding: 16px 24px;
   border-radius: 16px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
 }
 
@@ -988,21 +988,21 @@ const openEditFromDetail = () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #f8fafc;
+  background: var(--bg-input);
   padding: 10px 16px;
   border-radius: 8px;
   width: 320px;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-color);
   transition: border 0.2s;
 }
 
 .search-box:focus-within {
-  border-color: #3b82f6;
-  background: white;
+  border-color: var(--accent-primary);
+  background: var(--bg-card);
 }
 
 .search-icon {
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .search-box input {
@@ -1010,12 +1010,12 @@ const openEditFromDetail = () => {
   background: transparent;
   width: 100%;
   font-size: 14px;
-  color: #0f172a;
+  color: var(--text-main);
   outline: none;
 }
 
 .search-box input::placeholder {
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .filter-actions {
@@ -1030,7 +1030,7 @@ const openEditFromDetail = () => {
   gap: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-muted);
   cursor: pointer;
 }
 
@@ -1040,24 +1040,24 @@ const openEditFromDetail = () => {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-icon:hover {
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--bg-input);
+  color: var(--text-main);
 }
 
 /* Table Section */
 .table-container {
-  background: white;
+  background: var(--bg-card);
   border-radius: 16px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
   overflow: hidden; /* agar border radius terlihat rapi */
   overflow-x: auto; /* Horizontal scroll */
@@ -1074,14 +1074,14 @@ const openEditFromDetail = () => {
   padding: 20px 24px;
   font-size: 12px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-dim);
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .directory-table td {
   padding: 20px 24px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
 }
 
@@ -1089,7 +1089,7 @@ const openEditFromDetail = () => {
   border-bottom: none;
 }
 .directory-table tr:hover td {
-  background: #f8faf9;
+  background: var(--bg-input);
 }
 
 .intern-profile {
@@ -1102,13 +1102,13 @@ const openEditFromDetail = () => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #e2e8f0;
+  background: var(--bg-input);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-dim);
 }
 
 .avatar img {
@@ -1126,12 +1126,12 @@ const openEditFromDetail = () => {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-main);
 }
 .intern-id {
   margin: 0;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .td-text {
@@ -1149,7 +1149,7 @@ const openEditFromDetail = () => {
 .progress-track {
   width: 120px;
   height: 6px;
-  background: #f1f5f9;
+  background: var(--bg-input);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -1165,13 +1165,13 @@ const openEditFromDetail = () => {
   background: #f59e0b;
 }
 .bg-grey {
-  background: #e2e8f0;
+  background: var(--surface-grey);
 }
 
 .attendance-text {
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-main);
   width: 36px;
 }
 
@@ -1210,8 +1210,8 @@ const openEditFromDetail = () => {
 }
 
 .action-btn:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--bg-input);
+  color: var(--text-main);
 }
 
 /* Pagination */
@@ -1220,13 +1220,13 @@ const openEditFromDetail = () => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color);
 }
 
 .pagination-info {
   margin: 0;
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .pagination-controls {
@@ -1252,7 +1252,7 @@ const openEditFromDetail = () => {
 }
 
 .page-btn:hover {
-  background: #f1f5f9;
+  background: var(--bg-input);
 }
 .page-btn.active {
   background: #3b82f6;
@@ -1286,17 +1286,18 @@ const openEditFromDetail = () => {
 /* ================= Modal Styles ================= */
 .modal-overlay {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-  background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center; z-index: 999;
 }
 .modal-content {
-  background: white;
+  background: var(--bg-card);
   width: 100%;
   max-width: 600px;
   border-radius: 16px;
+  border: 1px solid var(--border-color);
   box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    0 20px 25px -5px rgba(0, 0, 0, 0.2),
+    0 10px 10px -5px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
 }
@@ -1307,18 +1308,18 @@ const openEditFromDetail = () => {
   justify-content: space-between;
   align-items: flex-start;
   padding: 24px 24px 16px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .modal-title {
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0 0 4px 0;
 }
 .modal-subtitle {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -1332,8 +1333,8 @@ const openEditFromDetail = () => {
   transition: all 0.2s;
 }
 .btn-close:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--bg-input);
+  color: var(--text-main);
 }
 
 /* Modal Body & Form Grid */
@@ -1359,7 +1360,7 @@ const openEditFromDetail = () => {
 .form-group label {
   font-size: 13px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .form-group input,
@@ -1401,11 +1402,11 @@ const openEditFromDetail = () => {
 .searchable-select input {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 14px;
-  color: #0f172a;
-  background: white;
+  color: var(--text-main);
+  background: var(--bg-input);
   outline: none;
   transition: border-color 0.2s;
   font-family: inherit;
@@ -1413,7 +1414,7 @@ const openEditFromDetail = () => {
 }
 
 .searchable-select input:focus {
-  border-color: #3b82f6;
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -1422,14 +1423,14 @@ const openEditFromDetail = () => {
   top: 100%;
   left: 0;
   right: 0;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-top: none;
   border-radius: 0 0 8px 8px;
   max-height: 200px;
   overflow-y: auto;
   z-index: 9999;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   pointer-events: auto;
 }
 
@@ -1438,24 +1439,24 @@ const openEditFromDetail = () => {
   cursor: pointer;
   transition: background 0.2s;
   font-size: 14px;
-  color: #475569;
+  color: var(--text-muted);
   pointer-events: auto;
   user-select: none;
 }
 
 .dropdown-item:hover {
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--bg-input);
+  color: var(--text-main);
 }
 
 .dropdown-item.add-new {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #3b82f6;
+  color: var(--accent-primary);
   font-weight: 600;
-  border-top: 1px solid #e2e8f0;
-  background: #f0f7ff;
+  border-top: 1px solid var(--border-color);
+  background: var(--surface-info);
 }
 
 .dropdown-item.add-new:hover {
@@ -1463,10 +1464,10 @@ const openEditFromDetail = () => {
 }
 
 .form-group input::placeholder {
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 .form-group input:focus {
-  border-color: #3b82f6;
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -1484,14 +1485,14 @@ const openEditFromDetail = () => {
   border: none;
   font-size: 14px;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 10px 16px;
   border-radius: 8px;
   transition: background 0.2s;
 }
 .btn-cancel:hover {
-  background: #f8fafc;
+  background: var(--bg-input);
 }
 
 .btn-save {
@@ -1506,7 +1507,7 @@ const openEditFromDetail = () => {
   transition: background 0.2s;
 }
 .btn-save:hover {
-  background: #2563eb;
+  opacity: 0.9;
 }
 
 /* ================= MODAL DETAIL STYLES ================= */

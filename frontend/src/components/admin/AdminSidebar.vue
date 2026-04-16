@@ -95,8 +95,8 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
 .sidebar {
   width: 260px;
   height: 100vh;
-  background-color: #ffffff;
-  border-right: 1px solid #f1f5f9;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   padding: 24px 16px;
@@ -120,15 +120,15 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
   width: 22px;
   height: 48px;
   border-radius: 0 30px 30px 0;
-  background: #ffffff;
-  border: 1px solid #e8edf3;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
   border-left: none;
-  color: #94a3b8;
+  color: var(--text-dim);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 4px 0 12px rgba(15, 23, 42, 0.07);
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.07);
   z-index: 10;
   transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   padding: 0;
@@ -136,13 +136,13 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
 }
 
 .toggle-pill:hover {
-  background: #f0f6ff;
-  color: #3b82f6;
-  box-shadow: 4px 0 16px rgba(59, 130, 246, 0.15);
+  background: var(--bg-app);
+  color: var(--accent-primary);
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.15);
 }
 
 .toggle-pill:active {
-  background: #dbeafe;
+  background: var(--bg-sidebar-active);
 }
 
 .toggle-icon {
@@ -182,7 +182,7 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
 .brand-name {
   font-size: 20px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   letter-spacing: -0.5px;
 }
 
@@ -200,7 +200,7 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
   gap: 12px;
   padding: 12px 14px;
   border-radius: 12px;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 15px;
   transition: all 0.2s ease;
@@ -226,33 +226,37 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
 }
 
 .nav-item .icon {
-  color: #94a3b8;
+  color: var(--text-dim);
   transition: color 0.2s ease;
 }
 
 /* Hover Menu Inaktif */
 .nav-item:hover:not(.active) {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--bg-app);
+  color: var(--text-main);
 }
 .nav-item:hover:not(.active) .icon {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
-/* Menu Aktif (Dashboard) */
+/* Menu Aktif */
 .nav-item.active {
-  background-color: #3b82f6;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  background-color: var(--bg-sidebar-active);
+  color: var(--text-active);
+  box-shadow: none;
+  border-left: 3px solid var(--accent-primary);
+  border-radius: 0 12px 12px 0;
+  margin-left: -16px;
+  padding-left: 30px;
 }
 
 .nav-item.active .icon {
-  color: #ffffff;
+  color: var(--accent-primary);
 }
 
 /* Badge Notifikasi Merah */
 .badge {
-  background-color: #ef4444;
+  background-color: var(--accent-danger);
   color: white;
   font-size: 11px;
   font-weight: 700;
@@ -278,7 +282,7 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
   display: flex;
   align-items: center;
   padding: 12px;
-  background-color: #f8fafc;
+  background-color: var(--bg-input);
   border-radius: 16px;
   gap: 12px;
   transition: all 0.3s ease;
@@ -294,12 +298,12 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
 .avatar {
   width: 36px;
   height: 36px;
-  background-color: #e2e8f0;
+  background-color: var(--bg-app);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .user-info {
@@ -311,7 +315,7 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
   margin: 0;
   font-size: 14px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -320,14 +324,14 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
 .role {
   margin: 2px 0 0 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .logout-btn {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--text-dim);
   cursor: pointer;
   padding: 4px;
   display: flex;
@@ -337,6 +341,6 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
 }
 
 .logout-btn:hover {
-  color: #ef4444;
+  color: var(--accent-danger);
 }
 </style>

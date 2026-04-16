@@ -591,7 +591,7 @@ const handleVerify = async (status, isVerified) => {
 }
 
 .verification-wrapper {
-  background: white;
+  background: var(--bg-app);
   min-height: 100vh;
   position: relative;
   display: flex;
@@ -604,10 +604,10 @@ const handleVerify = async (status, isVerified) => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 32px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
-  background: white;
+  background: var(--bg-app);
   z-index: 10;
 }
 
@@ -625,20 +625,20 @@ const handleVerify = async (status, isVerified) => {
   background: transparent;
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-main);
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 8px;
   transition: 0.2s;
 }
 .btn-back:hover {
-  background: #f1f5f9;
+  background: var(--bg-input);
 }
 
 .divider {
   width: 1px;
   height: 32px;
-  background: #e2e8f0;
+  background: var(--border-color);
 }
 
 .profile-info {
@@ -656,12 +656,12 @@ const handleVerify = async (status, isVerified) => {
   margin: 0;
   font-size: 15px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
 }
 .user-details p {
   margin: 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .badge-warning {
@@ -682,7 +682,7 @@ const handleVerify = async (status, isVerified) => {
 .btn-icon {
   background: transparent;
   border: none;
-  color: #64748b;
+  color: var(--text-muted);
   width: 36px;
   height: 36px;
   border-radius: 8px;
@@ -693,8 +693,8 @@ const handleVerify = async (status, isVerified) => {
   transition: 0.2s;
 }
 .btn-icon:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--bg-input);
+  color: var(--text-main);
 }
 
 /* --- CUSTOM CALENDAR --- */
@@ -706,7 +706,7 @@ const handleVerify = async (status, isVerified) => {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #f1f5f9;
+  background: var(--bg-input);
   padding: 8px 16px;
   border-radius: 12px;
   cursor: pointer;
@@ -715,18 +715,18 @@ const handleVerify = async (status, isVerified) => {
 }
 
 .date-selector:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
+  background: var(--bg-input);
+  border-color: var(--border-color);
 }
 
 .calendar-main-icon {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .current-date-text {
   font-size: 14px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .custom-calendar-dropdown {
@@ -734,10 +734,10 @@ const handleVerify = async (status, isVerified) => {
   top: calc(100% + 8px);
   right: 0;
   width: 280px;
-  background: white;
+  background: var(--bg-card);
   border-radius: 16px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
   padding: 16px;
   z-index: 1000;
   user-select: none;
@@ -752,13 +752,13 @@ const handleVerify = async (status, isVerified) => {
 
 .month-label {
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   font-size: 14px;
 }
 
 .nav-btn {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   width: 32px;
   height: 32px;
@@ -766,13 +766,13 @@ const handleVerify = async (status, isVerified) => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 700;
 }
 
 .nav-btn:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--bg-input);
+  color: var(--text-main);
 }
 
 .calendar-grid {
@@ -784,7 +784,7 @@ const handleVerify = async (status, isVerified) => {
 .day-name {
   font-size: 11px;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--text-dim);
   text-align: center;
   padding-bottom: 8px;
 }
@@ -797,7 +797,7 @@ const handleVerify = async (status, isVerified) => {
   justify-content: center;
   font-size: 13px;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
   border-radius: 12px;
   cursor: pointer;
   position: relative;
@@ -806,13 +806,13 @@ const handleVerify = async (status, isVerified) => {
 }
 
 .calendar-day:hover:not(.empty) {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--bg-input);
+  color: var(--text-main);
 }
 
 .calendar-day.is-today:not(.selected) {
-  border: 1px solid #3b82f6;
-  color: #3b82f6;
+  border: 1px solid var(--accent-primary);
+  color: var(--accent-primary);
 }
 
 .calendar-day.empty {
@@ -820,7 +820,7 @@ const handleVerify = async (status, isVerified) => {
 }
 
 .calendar-day.selected {
-  background: #3b82f6;
+  background: var(--accent-primary);
   color: white !important;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
@@ -832,7 +832,7 @@ const handleVerify = async (status, isVerified) => {
   transform: translateX(-50%);
   width: 3px;
   height: 3px;
-  background: #10b981;
+  background: var(--accent-success);
   border-radius: 50%;
 }
 
@@ -845,7 +845,7 @@ const handleVerify = async (status, isVerified) => {
 }
 
 .calendar-day.has-activity:not(.selected) {
-  color: #10b981;
+  color: var(--accent-success);
   font-weight: 800;
   background: rgba(16, 185, 129, 0.05);
 }
@@ -863,7 +863,7 @@ const handleVerify = async (status, isVerified) => {
   align-items: center;
   justify-content: center;
   padding: 64px 32px;
-  background: #f8fafc;
+  background: var(--bg-app);
 }
 
 .empty-content {
@@ -872,20 +872,20 @@ const handleVerify = async (status, isVerified) => {
 }
 
 .empty-icon {
-  color: #cbd5e1;
+  color: var(--text-dim);
   margin-bottom: 24px;
 }
 
 .empty-content h3 {
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0 0 12px 0;
 }
 
 .empty-content p {
   font-size: 15px;
-  color: #64748b;
+  color: var(--text-muted);
   line-height: 1.6;
   margin: 0;
 }
@@ -899,7 +899,7 @@ const handleVerify = async (status, isVerified) => {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
-  padding-bottom: 100px; /* Ruang untuk sticky footer */
+  padding-bottom: 100px;
 }
 
 /* --- KIRI: TIMELINE --- */
@@ -913,11 +913,11 @@ const handleVerify = async (status, isVerified) => {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
 }
 .section-title .date {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -932,7 +932,7 @@ const handleVerify = async (status, isVerified) => {
   top: 8px;
   bottom: 0;
   width: 2px;
-  background: #e2e8f0;
+  background: var(--border-color);
 }
 
 .timeline-item {
@@ -953,17 +953,17 @@ const handleVerify = async (status, isVerified) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
+  background: var(--border-color);
   flex-shrink: 0;
   margin-top: 4px;
 }
 .icon-blue {
-  color: #3b82f6;
-  box-shadow: 0 0 0 4px white;
+  color: var(--accent-primary);
+  box-shadow: 0 0 0 4px var(--bg-app);
 }
 .icon-red {
-  color: #ef4444;
-  box-shadow: 0 0 0 4px white;
+  color: var(--accent-danger);
+  box-shadow: 0 0 0 4px var(--bg-app);
 }
 
 .timeline-content {
@@ -980,16 +980,16 @@ const handleVerify = async (status, isVerified) => {
   margin: 0 0 4px 0;
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
 }
 .event-header .location {
   margin: 0;
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 .event-header .time {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--bg-input);
+  color: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
   padding: 4px 8px;
@@ -997,10 +997,10 @@ const handleVerify = async (status, isVerified) => {
 }
 
 .evidence-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 8px; /* Reduced spacing */
+  margin-bottom: 8px;
 }
 .selfie-placeholder {
   height: 200px;
@@ -1008,30 +1008,30 @@ const handleVerify = async (status, isVerified) => {
   background-position: center;
 }
 .bg-blue {
-  background-color: #0f172a; /* Ganti dgn URL foto asli nanti */
+  background-color: var(--bg-card);
 }
 .bg-red {
-  background-color: #0f172a;
+  background-color: var(--bg-card);
 }
 
 .evidence-footer {
   display: flex;
   justify-content: space-between;
   padding: 12px 16px;
-  background: white;
+  background: var(--bg-card);
   font-size: 13px;
   font-weight: 600;
 }
 .evidence-footer .label {
-  color: #64748b;
+  color: var(--text-muted);
 }
 .text-green {
-  color: #10b981;
+  color: var(--accent-success);
 }
 
 .info-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 16px;
@@ -1040,19 +1040,19 @@ const handleVerify = async (status, isVerified) => {
   margin: 0 0 12px 0;
   font-size: 11px;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--text-dim);
   letter-spacing: 0.5px;
 }
 .info-card ol {
   margin: 0;
   padding-left: 20px;
-  color: #334155;
+  color: var(--text-muted);
   font-size: 14px;
   line-height: 1.6;
 }
 .summary-text {
   margin: 0;
-  color: #334155;
+  color: var(--text-muted);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -1067,7 +1067,7 @@ const handleVerify = async (status, isVerified) => {
 .img-box {
   width: 160px;
   height: 100px;
-  background: #1e293b;
+  background: var(--bg-card);
   border-radius: 8px;
 }
 
@@ -1079,16 +1079,16 @@ const handleVerify = async (status, isVerified) => {
 }
 
 .widget-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 20px;
-  background: white;
+  background: var(--bg-card);
 }
 .widget-card h4 {
   margin: 0 0 16px 0;
   font-size: 14px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .widget-header {
@@ -1102,7 +1102,7 @@ const handleVerify = async (status, isVerified) => {
 }
 .badge-blue {
   background: #eff6ff;
-  color: #3b82f6;
+  color: var(--accent-primary);
   font-size: 10px;
   font-weight: 700;
   padding: 4px 8px;
@@ -1111,7 +1111,7 @@ const handleVerify = async (status, isVerified) => {
 
 .map-placeholder {
   height: 140px;
-  background: #dbeafe;
+  background: var(--bg-input);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -1123,17 +1123,17 @@ const handleVerify = async (status, isVerified) => {
 .map-placeholder .pin {
   width: 40px;
   height: 40px;
-  background: #3b82f6;
+  background: var(--accent-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 .map-placeholder p {
   margin: 0;
   font-size: 12px;
-  color: #60a5fa;
+  color: var(--accent-primary);
   font-weight: 600;
 }
 
@@ -1146,12 +1146,12 @@ const handleVerify = async (status, isVerified) => {
   margin: 0;
   font-size: 13px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-main);
 }
 .accuracy-info .desc {
   margin: 2px 0 0 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .stats-row {
@@ -1160,39 +1160,39 @@ const handleVerify = async (status, isVerified) => {
   gap: 16px;
 }
 .stat-box {
-  background: #f8fafc;
+  background: var(--bg-input);
   padding: 16px;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 .stat-box .label {
   margin: 0 0 8px 0;
   font-size: 11px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted);
 }
 .stat-box .value {
   margin: 0;
   font-size: 14px;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 textarea {
   width: 100%;
   height: 100px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 12px;
   font-family: inherit;
   font-size: 14px;
-  color: #0f172a;
+  color: var(--text-main);
   resize: none;
   outline: none;
   margin-bottom: 16px;
   background: transparent;
 }
 textarea:focus {
-  border-color: #3b82f6;
+  border-color: var(--accent-primary);
 }
 
 .checkbox-container {
@@ -1200,7 +1200,7 @@ textarea:focus {
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #0f172a;
+  color: var(--text-main);
   cursor: pointer;
   background: transparent;
 }
@@ -1210,9 +1210,9 @@ textarea:focus {
   position: fixed;
   bottom: 0;
   right: 0;
-  width: 100%; /* Atau sesuaikan dengan lebar area konten utama */
-  background: white;
-  border-top: 1px solid #e2e8f0;
+  width: 100%;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
   padding: 16px 32px;
   display: flex;
   justify-content: flex-end;
@@ -1221,9 +1221,9 @@ textarea:focus {
 }
 
 .btn-reject {
-  background: white;
-  border: 1px solid #ef4444;
-  color: #ef4444;
+  background: transparent;
+  border: 1px solid var(--accent-danger);
+  color: var(--accent-danger);
   padding: 10px 24px;
   border-radius: 8px;
   font-size: 14px;
@@ -1232,11 +1232,11 @@ textarea:focus {
   transition: 0.2s;
 }
 .btn-reject:hover {
-  background: #fef2f2;
+  background: var(--surface-danger);
 }
 
 .btn-verify {
-  background: #3b82f6;
+  background: var(--accent-primary);
   border: none;
   color: white;
   padding: 10px 24px;
@@ -1250,6 +1250,6 @@ textarea:focus {
   gap: 8px;
 }
 .btn-verify:hover {
-  background: #2563eb;
+  opacity: 0.9;
 }
 </style>

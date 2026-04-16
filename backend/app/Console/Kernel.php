@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('check:attendance')->dailyAt('18:00');
+        $schedule->command('check:late-arrivals')->everyFiveMinutes();
     }
 
     /**

@@ -36,6 +36,14 @@ const userInitial = computed(() => {
   return user.value.name ? user.value.name.charAt(0).toUpperCase() : "U";
 });
 
+const greetingText = computed(() => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 11) return "Selamat Pagi 🌅";
+  if (hour >= 11 && hour < 15) return "Selamat Siang ☀️";
+  if (hour >= 15 && hour < 19) return "Selamat Sore 🌆";
+  return "Selamat Malam 🌙";
+});
+
 // --- LOGIC KALENDER ---
 const currDate = new Date();
 const displayYear = ref(currDate.getFullYear());
@@ -216,15 +224,21 @@ onUnmounted(() => {
   <div class="screen-container">
     <div class="header-section">
       <div class="top-bar">
-        <div class="profile-group">
-          <div class="avatar">{{ userInitial }}</div>
+        <div class="profile-group" @click="$emit('navigate', 'profile')">
+          <div class="avatar-wrapper">
+             <div class="avatar">{{ userInitial }}</div>
+             <div class="active-status"></div>
+          </div>
           <div class="text-info">
-            <p class="welcome">WELCOME BACK,</p>
+            <p class="welcome">{{ greetingText }}</p>
             <h2 class="username">{{ user.name }}</h2>
           </div>
         </div>
         <button class="btn-notif" @click="$emit('navigate', 'profile')">
-          <img src="../assets/notif.png" alt="Notif" />
+          <div class="notif-wrapper">
+            <img src="../assets/notif.png" alt="Notif" />
+            <div class="notif-badge-pulse"></div>
+          </div>
         </button>
       </div>
     </div>
@@ -459,6 +473,17 @@ onUnmounted(() => {
   gap: 12px;
   margin-bottom: 20px;
   box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+.location-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 5px 15px -5px rgba(30, 58, 138, 0.6);
+}
+.location-card:hover {
+  box-shadow: 0 15px 30px -5px rgba(30, 58, 138, 0.5);
 }
 .loc-icon-wrapper {
   width: 40px;
@@ -510,6 +535,17 @@ onUnmounted(() => {
   align-items: center;
   margin-bottom: 20px;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+}
+.stats-simple-card:active {
+  transform: scale(0.97);
+  background-color: #f1f5f9;
+}
+.stats-simple-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 }
 .rate-info {
   text-align: left;
@@ -553,6 +589,8 @@ onUnmounted(() => {
   text-align: center;
   box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.08); /* Shadow halus premium */
   margin-bottom: 25px;
+  position: relative;
+  z-index: 3;
 }
 
 /* Header Tanggal & Pill */
@@ -625,10 +663,13 @@ onUnmounted(() => {
   gap: 8px;
   font-weight: 600;
   font-size: 13px;
-  transition: transform 0.1s;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .action-buttons button:active {
-  transform: scale(0.98);
+  transform: scale(0.95);
+}
+.action-buttons button:hover {
+  transform: translateY(-3px);
 }
 
 .btn-clock-in {
@@ -636,10 +677,24 @@ onUnmounted(() => {
   color: white;
   box-shadow: 0 8px 20px -5px rgba(37, 99, 235, 0.4);
 }
+.btn-clock-in:hover {
+  box-shadow: 0 12px 25px -5px rgba(37, 99, 235, 0.5);
+  filter: brightness(1.1);
+}
 .action-btn.clock-out {
   background: white !important; /* Paksa Background Putih */
   border: 1px solid #cbd5e1 !important; /* Garis pinggir abu-abu */
   color: #64748b !important; /* Paksa Teks Abu-abu */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+.action-btn.clock-out:hover {
+  border-color: #3b82f6 !important;
+  color: #3b82f6 !important;
+  background: #f8fafc !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+.action-btn.clock-out:hover span {
+  color: #3b82f6 !important;
 }
 
 /* 2. Pastikan Teks di dalamnya juga ikut abu-abu */
@@ -665,6 +720,8 @@ onUnmounted(() => {
   display: flex;
   gap: 10px;
   margin-bottom: 25px;
+  position: relative;
+  z-index: 4;
 }
 .stat-card {
   flex: 1;
@@ -673,6 +730,16 @@ onUnmounted(() => {
   border-radius: 20px;
   text-align: center;
   box-shadow: 0 5px 20px -5px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+}
+.stat-card:active {
+  transform: scale(0.92);
+  background-color: #f8fafc;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.08);
 }
 .stat-icon {
   width: 28px;
@@ -696,6 +763,12 @@ onUnmounted(() => {
   border-radius: 24px;
   padding: 20px;
   box-shadow: 0 5px 20px -5px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 5;
+}
+.calendar-card:hover {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06);
 }
 .cal-header {
   display: flex;
@@ -730,6 +803,14 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 18px;
   line-height: 1;
+  transition: all 0.2s;
+}
+.nav-btn:active {
+  transform: scale(0.85);
+  background: #dbeafe;
+}
+.nav-btn:hover {
+  background: #dbeafe;
 }
 .cal-days-name {
   display: grid;
@@ -779,7 +860,11 @@ onUnmounted(() => {
   color: #ef4444;
 }
 
-/* Dots Indicator */
+/* Calendar Dots Indicator and Avatar Wrapper */
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
 .status-dot {
   width: 4px;
   height: 4px;
@@ -822,10 +907,19 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.profile-group:active {
+  transform: scale(0.96);
+  opacity: 0.8;
+}
+.profile-group:active .avatar {
+  transform: scale(0.9);
 }
 .avatar {
-  width: 45px;
-  height: 45px;
+  width: 48px;
+  height: 48px;
   background: #fecaca;
   border-radius: 50%;
   display: flex;
@@ -833,7 +927,31 @@ onUnmounted(() => {
   justify-content: center;
   font-weight: 700;
   color: #7f1d1d;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2), 0 0 15px rgba(0,0,0,0.1);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  z-index: 1;
+}
+.avatar-wrapper::before {
+  content: "";
+  position: absolute;
+  top: -3px; left: -3px; right: -3px; bottom: -3px;
+  background: linear-gradient(45deg, #fbbf24, #ef4444, #3b82f6);
+  border-radius: 50%;
+  z-index: 0;
+  opacity: 0.7;
+}
+.active-status {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background: #22c55e;
+  border: 2px solid white;
+  border-radius: 50%;
+  z-index: 2;
 }
 .text-info h2 {
   margin: 0;
@@ -850,6 +968,35 @@ onUnmounted(() => {
   background: none;
   border: none;
   padding: 0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.btn-notif:active {
+  transform: scale(0.85);
+}
+.notif-wrapper {
+  position: relative;
+}
+.notif-badge-pulse {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 10px;
+  height: 100%; /* Placeholder for aspect ratio circle */
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid #2563eb;
+  animation: pulse-animation 2s infinite;
+}
+@keyframes pulse-animation {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+.btn-notif:hover {
+  transform: translateY(-2px);
 }
 /* PENTING: Ukuran pasti agar tidak menjadi raksasa */
 .btn-notif img {
@@ -898,7 +1045,26 @@ onUnmounted(() => {
   font-weight: 600;
   cursor: pointer;
   height: 100%;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
+}
+.nav-item:active {
+  transform: scale(0.9);
+}
+.nav-item img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  opacity: 0.5;
+  filter: grayscale(100%);
+  transition: 0.3s;
+}
+.nav-item.active {
+  color: #2563eb;
+}
+.nav-item.active img {
+  opacity: 1;
+  filter: grayscale(0%);
+  transform: translateY(-2px);
 }
 
 /* Styling Icon Biasa */
