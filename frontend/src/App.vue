@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import EditProfile from "./components/EditProfile.vue";
 import AttendanceDetail from "./components/AttendanceDetail.vue";
 import QRScanner from "./components/QRScanner.vue";
 import PersonalInfoDetail from "./components/PersonalInfoDetail.vue";
@@ -33,20 +34,14 @@ const onSplashDone = () => {
 const navigateTo = (page, dataOrType = "in", id = null) => {
   currentPage.value = page;
   
-// 1. Jika pindah ke Attendance Detail, simpan datanya ke selectedAttendance
+  // 1. Jika ke Detail
   if (page === "attendance-detail") {
-    selectedAttendance.value = dataOrType; // dataOrType di sini adalah objek 'day' dari kalender
+    selectedAttendance.value = dataOrType;
   }
 
-  // 2. Jika pindah ke halaman edit, simpan tipenya (in/out)
+  // 2. Jika ke Edit Attendance (Ganti 'type' jadi 'dataOrType')
   if (page === "edit-attendance") {
-    editType.value = dataOrType;
-    editId.value = id;
-  }
-  
-  // Jika pindah ke halaman edit, simpan tipenya (in/out)
-  if (page === "edit-attendance") {
-    editType.value = type;
+    editType.value = dataOrType; // Tadi di sini lo nulis 'type', itu yang bikin error
     editId.value = id;
   }
   
@@ -185,9 +180,15 @@ onMounted(() => {
       />
 
       <PersonalInfoDetail 
-        v-else-if="currentPage === 'profile-detail'" 
-        @go-back="currentPage = 'profile'" 
-      />
+  v-else-if="currentPage === 'profile-detail'" 
+  @go-back="navigateTo('profile')" 
+/>
+
+<EditProfile 
+  v-else-if="currentPage === 'edit-profile'" 
+  @go-back="navigateTo('profile')"
+  @profile-updated="() => console.log('Profil Diperbarui!')"
+/>
     </div>
   </div>
 </template>
