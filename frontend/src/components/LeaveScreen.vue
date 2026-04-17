@@ -157,8 +157,9 @@ const submitLeave = async () => {
   display: flex;
   flex-direction: column;
   height: 100vh; /* Kunci tinggi layar */
-  background-color: #F8FAFC;
+  background-color: var(--bg-app);
   overflow: hidden; /* Matikan scroll di layar utama */
+  transition: background-color 0.3s ease;
 }
 
 /* Header tidak ikut scroll */
@@ -167,8 +168,9 @@ const submitLeave = async () => {
   align-items: center;
   justify-content: space-between;
   padding: 20px;
-  background-color: white;
+  background-color: var(--bg-app);
   flex-shrink: 0;
+  transition: background-color 0.3s ease;
 }
 
 /* 2. AREA TENGAH YANG BISA DI-SCROLL */
@@ -191,7 +193,7 @@ const submitLeave = async () => {
 
 /* Styling Komponen Lainnya */
 .back-icon { width: 24px; height: 24px; cursor: pointer; }
-.title { font-size: 18px; font-weight: 700; color: #1E293B; margin: 0; }
+.title { font-size: 18px; font-weight: 700; color: var(--text-main); margin: 0; }
 .spacer { width: 24px; }
 
 .info-alert {
@@ -211,24 +213,24 @@ const submitLeave = async () => {
 .type-container { display: flex; gap: 16px; }
 .type-card {
   flex: 1; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 16px; background-color: white;
-  border: 1px solid #E2E8F0; border-radius: 16px; cursor: pointer; transition: all 0.2s;
+  justify-content: center; padding: 16px; background-color: var(--bg-card);
+  border: 1px solid var(--border-color); border-radius: 16px; cursor: pointer; transition: all 0.2s;
 }
-.type-card.active { border: 2px solid #3B82F6; background-color: #EFF6FF; }
+.type-card.active { border: 2px solid var(--accent-primary); background-color: var(--surface-info); }
 .type-icon { width: 30px; height: 35px; margin-bottom: 8px; }
-.type-card span { font-size: 14px; font-weight: 600; color: #64748B; }
-.type-card.active span { color: #3B82F6; }
+.type-card span { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+.type-card.active span { color: var(--accent-primary); }
 
 .date-row { display: flex; gap: 16px; }
 .date-input-group { flex: 1; }
 .date-label { display: block; font-size: 12px; color: #94A3B8; margin-bottom: 4px; text-align: left; }
-.date-input { width: 100%; padding: 12px; border: 1px solid #E2E8F0; border-radius: 12px; font-family: inherit; font-size: 14px; color: #1E293B; box-sizing: border-box; background-color: white; }
+.date-input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-family: inherit; font-size: 14px; color: var(--text-main); box-sizing: border-box; background-color: var(--bg-input); transition: all 0.3s ease; }
 
-.reason-input { width: 100%; height: 100px; padding: 16px; border: 1px solid #E2E8F0; border-radius: 12px; font-family: inherit; font-size: 14px; color: #1E293B; resize: none; box-sizing: border-box; background-color: white; }
+.reason-input { width: 100%; height: 100px; padding: 16px; border: 1px solid var(--border-color); border-radius: 12px; font-family: inherit; font-size: 14px; color: var(--text-main); resize: none; box-sizing: border-box; background-color: var(--bg-input); transition: all 0.3s ease; }
 .reason-input::placeholder { color: #94A3B8; }
 
-.upload-box { border: 2px dashed #CBD5E1; border-radius: 16px; padding: 24px 16px; text-align: center; background-color: white; cursor: pointer; transition: background-color 0.2s; }
-.upload-box:hover { background-color: #F8FAFC; }
+.upload-box { border: 2px dashed var(--input-border); border-radius: 16px; padding: 24px 16px; text-align: center; background-color: var(--bg-card); cursor: pointer; transition: all 0.2s; }
+.upload-box:hover { background-color: var(--bg-input); }
 .upload-icon { width: 40px; height: 40px; margin-bottom: 12px; }
 .upload-text { font-size: 13px; color: #64748B; margin: 0 0 16px 0; line-height: 1.5; }
 .upload-subtext { font-size: 11px; color: #94A3B8; }

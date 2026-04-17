@@ -42,13 +42,14 @@ const goToLogin = () => {
 
 /* --- MAIN LAYOUT --- */
 .main-wrapper {
-  background-color: #e2e8f0;
+  background-color: var(--bg-mobile-shell, #e2e8f0);
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   margin: 0;
   font-family: "Poppins", sans-serif;
+  transition: background-color 0.3s ease;
 }
 
 .mobile-frame {
@@ -56,8 +57,8 @@ const goToLogin = () => {
   max-width: 430px;
   height: 100vh;
 
-  /* BACKGROUND GRADASI BARU: UNGU (Atas) -> KUNING (Bawah) */
-  background: linear-gradient(180deg, #7c3aed 0%, #d97706 80%, #f59e0b 100%);
+  /* BACKGROUND GRADASI: Tema aware */
+  background: var(--header-gradient, linear-gradient(180deg, #7c3aed 0%, #d97706 80%, #f59e0b 100%));
 
   position: relative;
   overflow: hidden;
@@ -65,6 +66,7 @@ const goToLogin = () => {
   display: flex;
   flex-direction: column;
   color: white; /* Default text putih */
+  transition: background 0.3s ease;
 }
 
 /* --- DECORATION --- */
@@ -153,8 +155,8 @@ const goToLogin = () => {
 }
 
 .btn-next {
-  background: #ffffff;
-  color: #1e293b;
+  background: var(--bg-card, #ffffff);
+  color: var(--text-main, #1e293b);
   border: none;
   padding: 14px 24px;
   border-radius: 12px;
@@ -168,6 +170,7 @@ const goToLogin = () => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   align-self: center;
+  border: 1px solid var(--border-color);
 }
 
 .btn-next:hover {

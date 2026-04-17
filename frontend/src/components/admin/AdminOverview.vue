@@ -18,16 +18,65 @@ import {
 
 const props = defineProps(["stats", "attendanceList"]);
 
-// Data untuk chart mingguan (tetap dummy, tidak ada endpoint khusus untuk ini)
-const weeklyAttendance = [
-  { day: "Mon", present: 85, late: 15 },
-  { day: "Tue", present: 92, late: 8 },
-  { day: "Wed", present: 78, late: 22 },
-  { day: "Thu", present: 95, late: 5 },
-  { day: "Fri", present: 88, late: 12 },
-  { day: "Sat", present: 5, late: 2 },
-  { day: "Sun", present: 10, late: 0 },
-];
+const weeklyAttendance = computed(() => {
+  const list = props.attendanceList || [];
+  
+  // Format day
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const summaryMap = new Map();
+  
+  // Initialize the last 7 days including today
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dayName = days[d.getDay()];
+    // Store date string to ensure correct order
+    const dateStr = [d.getFullYear(), d.getMonth() + 1, d.getDate()].join('-');
+    summaryMap.set(dateStr, { day: dayName, present: 0, late: 0 });
+  }
+
+  // Iterate attendanceList and group them
+  const todayDate = new Date();
+  todayDate.setHours(23, 59, 59, 999);
+  const sevenDaysAgoDate = new Date();
+  sevenDaysAgoDate.setDate(todayDate.getDate() - 6);
+  sevenDaysAgoDate.setHours(0, 0, 0, 0);
+
+  list.forEach(record => {
+    let rawDateStr = record.attendance_date || record.clock_in;
+    if (!rawDateStr) return;
+    
+    let recordDate = new Date(rawDateStr);
+    
+    if (recordDate >= sevenDaysAgoDate && recordDate <= todayDate) {
+       const dateKey = [recordDate.getFullYear(), recordDate.getMonth() + 1, recordDate.getDate()].join('-');
+       
+       if (summaryMap.has(dateKey)) {
+         let stats = summaryMap.get(dateKey);
+         if (record.status === "terlambat") {
+           stats.late++;
+         } else {
+           stats.present++;
+         }
+       }
+    }
+  });
+
+  const rawArray = Array.from(summaryMap.values());
+  let maxTotal = 0;
+  rawArray.forEach(d => {
+     const t = d.present + d.late;
+     if (t > maxTotal) maxTotal = t;
+  });
+  
+  const scaleBase = maxTotal > 0 ? maxTotal : 10; // Default scale if empty
+  
+  return rawArray.map(d => ({
+     day: d.day,
+     present: (d.present / scaleBase) * 100,
+     late: (d.late / scaleBase) * 100
+  }));
+});
 
 // Helper: format waktu dari ISO string ke "DD MMM, HH:MM AM/PM"
 const formatTime = (isoString) => {
@@ -70,11 +119,12 @@ const toLocalDateString = (isoString) => {
 // Helper: tentukan status berdasarkan jenis event (clock-in atau clock-out)
 const getStatus = (record, action) => {
   if (action === "Clocked In") {
-    // terlambat hanya berpengaruh pada saat masuk
-    return record.status === "terlambat" ? "LATE ARRIVAL" : "ON TIME";
+    const status = record.clock_in_status || (record.status === "terlambat" ? "terlambat" : "tepat waktu");
+    return status.toUpperCase();
   }
   if (action === "Clocked Out") {
-    return "CLOCKED OUT";
+    const status = record.clock_out_status || "tepat waktu";
+    return status.toUpperCase();
   }
   return "";
 };
@@ -95,11 +145,11 @@ const recentActivities = computed(() => {
         action: "Clocked In",
         time: formatTime(record.clock_in),
         rawTime: new Date(record.clock_in),
-        location: record.clock_in_lat
+        location: record.clock_in_location || (record.clock_in_lat
           ? `${parseFloat(record.clock_in_lat).toFixed(4)}, ${parseFloat(
               record.clock_in_long,
             ).toFixed(4)}`
-          : "Remote",
+          : "Remote"),
         status: getStatus(record, "Clocked In"),
       });
     }
@@ -113,11 +163,11 @@ const recentActivities = computed(() => {
         action: "Clocked Out",
         time: formatTime(record.clock_out),
         rawTime: new Date(record.clock_out),
-        location: record.clock_out_lat
+        location: record.clock_out_location || (record.clock_out_lat
           ? `${parseFloat(record.clock_out_lat).toFixed(4)}, ${parseFloat(
               record.clock_out_long,
             ).toFixed(4)}`
-          : "Remote",
+          : "Remote"),
         status: getStatus(record, "Clocked Out"),
       });
     }
@@ -366,9 +416,9 @@ const liveAmPm = computed(() => {
                   :class="[
                     'badge-status',
                     {
-                      success: activity.status === 'ON TIME',
-                      warning: activity.status === 'CLOCKED OUT',
-                      late: activity.status === 'LATE ARRIVAL',
+                      success: ['ON TIME', 'TEPAT WAKTU'].includes(activity.status),
+                      warning: activity.status === 'TERLALU CEPAT',
+                      late: ['LATE ARRIVAL', 'TERLAMBAT'].includes(activity.status),
                     },
                   ]"
                   >{{ activity.status }}</span

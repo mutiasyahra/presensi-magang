@@ -93,17 +93,21 @@ const handleLogin = async () => {
   align-items: center;
   min-height: 100vh;
   padding: 20px;
+  background-color: var(--bg-app);
+  transition: background-color 0.3s ease;
 }
 
 /* Kartu Putih (Mirip Desain Figma) */
 .card {
-  background: white;
+  background: var(--bg-card);
   width: 100%;
   max-width: 400px;
   padding: 40px;
   border-radius: 24px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
   text-align: center;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 /* Bagian Logo */
@@ -128,13 +132,13 @@ const handleLogin = async () => {
 .app-name {
   margin: 0;
   font-size: 24px;
-  color: #111827;
+  color: var(--text-main);
   font-weight: 700;
 }
 
 .subtitle {
   margin: 5px 0 30px;
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -147,12 +151,12 @@ const handleLogin = async () => {
 .welcome-text h2 {
   margin: 0;
   font-size: 22px;
-  color: #1f2937;
+  color: var(--text-main);
 }
 
 .welcome-text p {
   margin: 5px 0 0;
-  color: #9ca3af;
+  color: var(--text-dim);
   font-size: 14px;
 }
 
@@ -166,7 +170,7 @@ const handleLogin = async () => {
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: #9ca3af;
+  color: var(--text-dim);
   margin-bottom: 8px;
   letter-spacing: 1px;
 }
@@ -174,12 +178,14 @@ const handleLogin = async () => {
 .input-group input {
   width: 100%;
   padding: 14px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-input);
   border-radius: 12px;
   font-size: 14px;
+  color: var(--text-main);
   outline: none;
   box-sizing: border-box; /* Agar padding gak bikin lebar */
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .input-group input:focus {
@@ -192,7 +198,7 @@ const handleLogin = async () => {
 }
 
 .forgot-pass a {
-  color: #4f46e5;
+  color: var(--accent-primary);
   font-size: 13px;
   text-decoration: none;
   font-weight: 500;
@@ -236,11 +242,11 @@ const handleLogin = async () => {
 .footer {
   margin-top: 30px;
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .footer a {
-  color: #2563eb;
+  color: var(--accent-primary);
   text-decoration: none;
   font-weight: 600;
 }

@@ -305,7 +305,7 @@ onUnmounted(() => {
 .corner {
   position: absolute;
   width: 35px; height: 35px;
-  border: 4px solid #3b82f6; /* Warna biru sesuai dashboard */
+  border: 4px solid var(--accent-primary, #3b82f6); /* Warna biru sesuai dashboard */
 }
 
 .tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-top-left-radius: 15px; }
@@ -317,8 +317,8 @@ onUnmounted(() => {
 .laser-scanner {
   width: 100%;
   height: 2px;
-  background: #3b82f6;
-  box-shadow: 0 0 15px #3b82f6;
+  background: var(--accent-primary, #3b82f6);
+  box-shadow: 0 0 15px var(--accent-primary, #3b82f6);
   position: absolute;
   top: 0;
   animation: scan-move 2.5s infinite ease-in-out;

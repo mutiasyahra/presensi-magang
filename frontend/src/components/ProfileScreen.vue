@@ -156,18 +156,20 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f8fafc;
+  background-color: var(--bg-app);
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 
 /* 2. BACKGROUND BIRU HEADER */
 .blue-header {
-  background-color: #2563eb;
+  background: var(--header-gradient, #2563eb);
   height: 100px;
   border-bottom-left-radius: 40px;
   border-bottom-right-radius: 40px;
   padding: 40px 24px;
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
 .header-top {
@@ -220,12 +222,14 @@ onMounted(() => {
 
 /* 4. KARTU PROFIL UTAMA */
 .profile-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 24px;
   padding: 24px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
   text-align: center;
   margin-bottom: 30px;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 .avatar-container {
@@ -250,7 +254,7 @@ onMounted(() => {
   height: 100%;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border-radius: 24%;
-  border: 4px solid white;
+  border: 4px solid var(--bg-card);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
@@ -286,7 +290,7 @@ onMounted(() => {
 .username {
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-main);
   margin: 0 0 4px;
 }
 
@@ -317,14 +321,14 @@ onMounted(() => {
 }
 
 .badge.gray {
-  background-color: #f8fafc;
-  color: #64748b;
+  background-color: var(--bg-input);
+  color: var(--text-muted);
 }
 
 .company-info {
   display: flex;
   justify-content: space-around;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border-color);
   padding-top: 20px;
 }
 
@@ -345,7 +349,7 @@ onMounted(() => {
 .info-value {
   font-size: 13px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-main);
 }
 
 /* 5. LIST MENU SETTING */
@@ -362,7 +366,7 @@ onMounted(() => {
 .setting-item {
   display: flex;
   align-items: center;
-  background: white;
+  background: var(--bg-card);
   padding: 16px 20px; /* Ditambah padding kanan agar tidak mepet */
   border-radius: 16px;
   margin-bottom: 12px;
@@ -372,6 +376,7 @@ onMounted(() => {
   text-align: left;
   width: 100%;
   box-sizing: border-box; /* Memastikan padding tidak merusak lebar */
+  border: 1px solid var(--border-color);
 }
 
 .setting-item:active {
@@ -381,7 +386,7 @@ onMounted(() => {
 .setting-icon-wrapper {
   width: 40px;
   height: 40px;
-  background: #f8fafc;
+  background: var(--bg-input);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -399,7 +404,7 @@ onMounted(() => {
   flex: 1;
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-main);
   margin-right: 10px;
 }
 
@@ -433,13 +438,16 @@ onMounted(() => {
   flex-shrink: 0;
   width: 100%;
   height: 70px;
-  background-color: #ffffff;
+  background-color: var(--nav-bg, #ffffff);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   justify-content: space-around;
   align-items: center;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border-color);
   z-index: 100;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
 .nav-item {

@@ -267,18 +267,20 @@ const saveChanges = async () => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f8fafc;
+  background-color: var(--bg-app);
   overflow: hidden;
   font-family: "Inter", sans-serif;
   position: relative;
+  transition: background-color 0.3s ease;
 }
 
 /* --- TOP FIXED AREA --- */
 .top-fixed-area {
-  background-color: #f8fafc;
+  background-color: var(--bg-app);
   padding: 20px 20px 0 20px;
   z-index: 10;
   flex-shrink: 0;
+  transition: background-color 0.3s ease;
 }
 
 .header {
@@ -290,7 +292,7 @@ const saveChanges = async () => {
 .header h2 {
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
 }
 .btn-back {
@@ -298,7 +300,7 @@ const saveChanges = async () => {
   background: none;
   font-size: 20px;
   cursor: pointer;
-  color: #2563eb;
+  color: var(--accent-primary);
   font-weight: bold;
 }
 
@@ -332,7 +334,7 @@ const saveChanges = async () => {
 .section-title span {
   font-size: 11px;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--text-dim);
   letter-spacing: 0.5px;
 }
 
@@ -345,19 +347,20 @@ const saveChanges = async () => {
   aspect-ratio: 4/3;
   object-fit: cover;
   border-radius: 30px;
-  border: 4px solid white;
+  border: 4px solid var(--bg-card);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 /* Info Cards Container (Glassmorphism look) */
 .info-card-container {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--bg-card);
   backdrop-filter: blur(10px);
   border-radius: 30px;
   padding: 20px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
   margin-bottom: 24px;
+  transition: all 0.3s ease;
 }
 
 .info-card {
@@ -369,7 +372,7 @@ const saveChanges = async () => {
 .icon-box {
   width: 44px;
   height: 44px;
-  background: #f1f5f9;
+  background: var(--bg-input);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -381,6 +384,7 @@ const saveChanges = async () => {
   height: 22px;
   object-fit: contain;
   filter: brightness(0) saturate(100%) invert(43%) sepia(74%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%); /* Warna biru icon */
+  opacity: var(--icon-opacity, 1);
 }
 
 .card-content {
@@ -393,21 +397,21 @@ const saveChanges = async () => {
 .label {
   font-size: 10px;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--text-dim);
   margin: 0 0 6px 0;
   text-transform: uppercase;
 }
 .value {
   font-size: 13px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-main);
   margin: 0;
   line-height: 1.5;
 }
 
 .divider {
   border: 0;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border-color);
   margin: 16px -20px; /* Tarik garis mentok kiri kanan */
 }
 
@@ -448,22 +452,23 @@ const saveChanges = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f1f5f9;
+  background-color: var(--bg-input);
   border-radius: 24px;
 }
 .text-gray-500 {
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
 /* Work Plan */
 .work-plan-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 24px;
   padding: 20px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
   margin-bottom: 30px;
+  transition: all 0.3s ease;
 }
 .relative-box {
   position: relative;
@@ -474,7 +479,7 @@ const saveChanges = async () => {
   background: transparent;
   font-family: "Inter", sans-serif;
   font-size: 13px;
-  color: #475569;
+  color: var(--text-main);
   line-height: 1.6;
   resize: none;
   outline: none;
@@ -512,21 +517,22 @@ const saveChanges = async () => {
 
 /* Evidence Upload Styles */
 .evidence-upload-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 24px;
   padding: 20px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
   margin-bottom: 30px;
   display: flex;
   flex-direction: column;
   gap: 15px;
+  transition: all 0.3s ease;
 }
 .evidence-preview {
-  background: #f8fafc;
+  background: var(--bg-input);
   padding: 12px;
   border-radius: 12px;
-  border: 1px dashed #cbd5e1;
+  border: 1px dashed var(--input-border);
 }
 .file-info {
   display: flex;
@@ -535,7 +541,7 @@ const saveChanges = async () => {
 .file-name {
   font-size: 13px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-main);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -562,12 +568,12 @@ const saveChanges = async () => {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--bg-input);
+  color: var(--accent-primary);
   padding: 12px;
   border-radius: 16px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 .upload-btn:hover {
   background: #dbeafe;
@@ -589,7 +595,9 @@ const saveChanges = async () => {
   left: 0;
   right: 0;
   z-index: 100;
-  background: white;
+  background: var(--nav-bg, white);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   height: 80px;
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
@@ -598,6 +606,8 @@ const saveChanges = async () => {
   grid-template-columns: repeat(5, 1fr);
   align-items: center;
   padding: 0 10px;
+  border-top: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 .nav-item {
   display: flex;
@@ -622,14 +632,14 @@ const saveChanges = async () => {
 .scan-button {
   width: 50px;
   height: 50px;
-  background: #2563eb;
+  background: var(--accent-primary);
   border-radius: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
   margin-top: -30px;
-  border: 4px solid white;
+  border: 4px solid var(--bg-app);
 }
 .scan-button img {
   width: 24px;

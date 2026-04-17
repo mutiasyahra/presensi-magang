@@ -10,11 +10,84 @@ const interns = ref([]);
 const loading = ref(false);
 const error = ref(null);
 
-// Data untuk options yang bisa dicari dan ditambah
 const universities = ref([]);
 const departments = ref([]);
 const mentors = ref([]);
 const projects = ref([]);
+
+const activeDropdown = ref(null);
+const searchQuery = ref("");
+const selectedUniversity = ref("All Universities");
+const selectedProject = ref("All Projects");
+
+const filteredInterns = computed(() => {
+  let result = interns.value;
+
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase();
+    result = result.filter(i => 
+      (i.name && i.name.toLowerCase().includes(q)) ||
+      (i.id && String(i.id).toLowerCase().includes(q)) ||
+      (i.mentor && i.mentor.toLowerCase().includes(q))
+    );
+  }
+
+  if (selectedUniversity.value && selectedUniversity.value !== "All Universities") {
+    result = result.filter(i => i.university === selectedUniversity.value);
+  }
+
+  if (selectedProject.value && selectedProject.value !== "All Projects") {
+    result = result.filter(i => i.project === selectedProject.value);
+  }
+
+  return result;
+});
+
+const handleExport = () => {
+  const dataToExport = filteredInterns.value;
+  if (!dataToExport.length) return;
+
+  const headers = [
+    "Full Name",
+    "Email Address",
+    "Phone Number",
+    "Intern ID",
+    "University",
+    "Department",
+    "Mentor",
+    "Project",
+    "Start Date",
+    "End Date",
+    "Attendance %"
+  ];
+
+  const rows = dataToExport.map(i => [
+    `"${i.name || ''}"`,
+    `"${i.email || ''}"`,
+    `"${i.phone_number || i.phone || ''}"`,
+    `"${i.id || ''}"`,
+    `"${i.university || ''}"`,
+    `"${i.department || ''}"`,
+    `"${i.mentor || ''}"`,
+    `"${i.project || ''}"`,
+    `"${i.start_date || ''}"`,
+    `"${i.end_date || ''}"`,
+    `"${i.attendance || 0}%"`
+  ]);
+
+  // Gunakan separator titik koma (;) agar otomatis dipisah kolomnya oleh Excel di regional Indonesia
+  // serta tambahkan karakter BOM (\uFEFF) untuk memberitahu Excel bahwa file ini adalah UTF-8.
+  let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + 
+    [headers.join(";"), ...rows.map(e => e.join(";"))].join("\n");
+    
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "interns_export.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
 // Form inputs dengan dropdown
 const formData = ref({
@@ -29,8 +102,6 @@ const formData = ref({
   startDate: "",
   endDate: "",
 });
-
-const activeDropdown = ref(null);
 
 // Helper: extract unique values from interns to populate options (used as fallback)
 const populateOptionsFromInterns = () => {
@@ -206,8 +277,13 @@ const activeAttendancePercentage = computed(() => {
   return 0;
 });
 
-const departmentCount = computed(() => {
-  const set = new Set(interns.value.map((i) => i.department).filter(Boolean));
+const universityCount = computed(() => {
+  const set = new Set(interns.value.map((i) => i.university).filter(Boolean));
+  return set.size;
+});
+
+const projectCount = computed(() => {
+  const set = new Set(interns.value.map((i) => i.project).filter(Boolean));
   return set.size;
 });
 
@@ -241,7 +317,7 @@ const openEditFromDetail = () => {
         </p>
       </div>
       <div class="header-actions">
-        <button class="btn-export">
+        <button class="btn-export" @click="handleExport">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -316,20 +392,20 @@ const openEditFromDetail = () => {
       </div>
 
       <div class="stat-card">
-        <p class="stat-label">PENDING LEAVES</p>
+        <p class="stat-label">UNIVERSITIES</p>
         <div class="stat-value-group align-end">
           <h2 class="stat-value highlight-orange">
-            {{ stats.pending_leaves ?? 0 }}
+            {{ universityCount }}
           </h2>
-          <span class="stat-subtext">Requires action</span>
+          <span class="stat-subtext">Partner universities</span>
         </div>
       </div>
 
       <div class="stat-card">
-        <p class="stat-label">DEPARTMENTS</p>
+        <p class="stat-label">PROJECTS</p>
         <div class="stat-value-group align-end">
-          <h2 class="stat-value">{{ departmentCount }}</h2>
-          <span class="stat-subtext">Active units</span>
+          <h2 class="stat-value">{{ projectCount }}</h2>
+          <span class="stat-subtext">Active projects</span>
         </div>
       </div>
     </div>
@@ -351,42 +427,18 @@ const openEditFromDetail = () => {
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" placeholder="Search by name, ID, or mentor..." />
+        <input type="text" v-model="searchQuery" placeholder="Search by name, ID, or mentor..." />
       </div>
 
       <div class="filter-actions">
-        <div class="dropdown">
-          <span>All Universities</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </div>
-        <div class="dropdown">
-          <span>All Projects</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </div>
+        <select v-model="selectedUniversity" class="filter-select">
+          <option value="All Universities">All Universities</option>
+          <option v-for="uni in universities" :key="uni" :value="uni">{{ uni }}</option>
+        </select>
+        <select v-model="selectedProject" class="filter-select">
+          <option value="All Projects">All Projects</option>
+          <option v-for="proj in projects" :key="proj" :value="proj">{{ proj }}</option>
+        </select>
         <button class="btn-icon">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -427,7 +479,7 @@ const openEditFromDetail = () => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="intern in interns" :key="intern.id">
+          <tr v-for="intern in filteredInterns" :key="intern.id">
             <td>
               <div class="intern-profile">
                 <div class="avatar">
@@ -512,8 +564,8 @@ const openEditFromDetail = () => {
 
       <div class="pagination">
         <p class="pagination-info">
-          Showing 1 to {{ interns.length }} of
-          {{ stats.total_interns ?? interns.length }} interns
+          Showing {{ filteredInterns.length > 0 ? 1 : 0 }} to {{ filteredInterns.length }} of
+          {{ filteredInterns.length }} interns
         </p>
         <div class="pagination-controls">
           <button class="page-btn">
@@ -1556,5 +1608,25 @@ const openEditFromDetail = () => {
   .modal-body {
     overflow-y: auto;
   }
+}
+.filter-select {
+  padding: 10px 38px 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-main);
+  background-color: var(--bg-card);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  transition: all 0.2s ease;
+}
+
+.filter-select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 </style>

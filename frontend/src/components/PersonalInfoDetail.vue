@@ -103,29 +103,31 @@ const userInfo = ref({
 
 /* --- DASAR & LAYOUT (Sama seperti Profile) --- */
 .main-wrapper {
-  background-color: #e2e8f0;
+  background-color: var(--bg-mobile-shell, #e2e8f0);
   display: flex;
   justify-content: center;
   min-height: 100vh;
   margin: 0;
   font-family: "Inter", sans-serif;
+  transition: background-color 0.3s ease;
 }
 
 .mobile-frame {
   width: 100%;
   max-width: 430px;
   height: 100vh;
-  background-color: #f8fafc;
+  background-color: var(--bg-app, #f8fafc);
   position: relative;
   overflow: hidden;
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s ease;
 }
 
 /* --- HEADER BIRU MELENGKUNG (Style Match image_1.png) --- */
 .blue-header {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: var(--header-gradient, linear-gradient(135deg, #3b82f6 0%, #2563eb 100%));
   height: 160px; /* Sedikit lebih pendek karena tidak ada foto besar */
   border-bottom-left-radius: 40px;
   border-bottom-right-radius: 40px;
@@ -133,6 +135,7 @@ const userInfo = ref({
   color: white;
   position: relative;
   z-index: 1;
+  transition: all 0.3s ease;
 }
 
 .header-content {
@@ -180,15 +183,17 @@ const userInfo = ref({
 .content-area::-webkit-scrollbar { display: none; }
 
 .info-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 24px;
   padding: 25px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 .card-desc {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0 0 25px 0;
   line-height: 1.5;
 }
@@ -209,14 +214,14 @@ const userInfo = ref({
 .data-item label {
   font-size: 11px;
   text-transform: uppercase;
-  color: #94a3b8; /* Abu-abu muda untuk label */
+  color: var(--text-dim); /* Abu-abu muda untuk label */
   font-weight: 600;
   letter-spacing: 0.5px;
 }
 
 .data-item p {
   font-size: 14px;
-  color: #1e293b; /* Hitam pekat untuk isi data */
+  color: var(--text-main); /* Hitam pekat untuk isi data */
   font-weight: 500;
   margin: 0;
   line-height: 1.4;
@@ -224,13 +229,13 @@ const userInfo = ref({
 
 /* Spesifik style untuk ID Intern agar menonjol */
 .highlight-text {
-  color: #2563eb !important;
+  color: var(--accent-primary) !important;
   font-weight: 700 !important;
 }
 
 .divider {
   height: 1px;
-  background-color: #f1f5f9;
+  background-color: var(--border-color);
   margin: 5px 0;
 }
 

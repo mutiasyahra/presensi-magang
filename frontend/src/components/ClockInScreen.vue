@@ -101,7 +101,7 @@ const emit = defineEmits(["go-back"]);
 const rencanaKegiatan = ref("");
 const isLoading = ref(false);
 const errorMessage = ref("");
-const locationName = ref("Tech Innovations Hub, Jakarta (Simulated)");
+const locationName = ref("Fetching location...");
 const coords = ref({ lat: null, lng: null });
 const currentTimeStr = ref("");
 
@@ -129,15 +129,30 @@ const updateTime = () => {
 const getLocation = () => {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         coords.value.lat = position.coords.latitude;
         coords.value.lng = position.coords.longitude;
+        
+        // Fetch address name from Nominatim
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.value.lat}&lon=${coords.value.lng}&zoom=18&addressdetails=1`, {
+            headers: { 'Accept-Language': 'id' }
+          });
+          const data = await res.json();
+          locationName.value = data.display_name || "Unknown Location";
+        } catch (err) {
+          console.error("Reverse Geocoding error:", err);
+          locationName.value = "Location detected (Address unavailable)";
+        }
       },
       (err) => {
         console.error("Error getting location:", err);
-        // Fallback or alert
+        locationName.value = "Location access denied";
+        errorMessage.value = "Please enable location access to clock in.";
       },
     );
+  } else {
+    locationName.value = "Geolocation not supported";
   }
 };
 
@@ -275,29 +290,31 @@ onMounted(() => {
 
 /* Container Full Screen HP */
 .clock-in-page {
-  background-color: #f8fafc;
+  background-color: var(--bg-app);
   height: 100vh; /* Tinggi pas layar */
   display: flex;
   flex-direction: column; /* Susun atas-bawah */
   overflow: hidden; /* Kunci scroll body utama */
+  transition: background-color 0.3s ease;
 }
 
 /* Header (Diam di Atas) */
 .header-fixed {
   flex-shrink: 0; /* Tidak boleh mengecil */
-  background-color: #f8fafc;
+  background-color: var(--bg-app);
   padding: 20px 20px 10px 20px;
   display: flex;
   align-items: center;
   gap: 15px;
   z-index: 20;
+  transition: background-color 0.3s ease;
 }
 
 .header-fixed h2 {
   font-size: 18px;
   font-weight: 700;
   margin: 0;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 /* Area Tengah (Bisa Scroll) */
@@ -315,11 +332,13 @@ onMounted(() => {
 /* Footer (Diam di Bawah) */
 .footer-fixed {
   flex-shrink: 0;
-  background: white;
+  background: var(--bg-card);
   padding: 20px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
   text-align: center;
   z-index: 20;
+  border-top: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 /* =========================================
@@ -328,8 +347,8 @@ onMounted(() => {
 
 /* Tombol Back */
 .btn-back {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -337,6 +356,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 .btn-back img {
   width: 20px;
@@ -441,19 +461,21 @@ onMounted(() => {
 }
 
 .info-card {
-  background: white;
+  background: var(--bg-card);
   padding: 16px;
   border-radius: 20px;
   display: flex;
   gap: 15px;
   align-items: flex-start; /* Ikon dan teks sejajar atas */
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 .icon-box {
   width: 40px;
   height: 40px;
-  background: #eff6ff;
+  background: var(--bg-input);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -487,7 +509,7 @@ onMounted(() => {
 .value {
   font-size: 13px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-main);
   margin: 0;
   line-height: 1.4;
 }
@@ -500,8 +522,8 @@ onMounted(() => {
   width: 100%;
 }
 .badge-ontime {
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--surface-success);
+  color: var(--accent-success);
   font-size: 10px;
   font-weight: 700;
   padding: 4px 8px;
@@ -511,10 +533,12 @@ onMounted(() => {
 
 /* Work Plan Input */
 .work-plan-card {
-  background: white;
+  background: var(--bg-card);
   padding: 20px;
   border-radius: 24px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 .plan-header {
   display: flex;
@@ -533,20 +557,24 @@ onMounted(() => {
   box-sizing: border-box; /* PENTING: Kunci agar tidak meleber */
   border: 1px solid #f1f5f9;
   background: #f8fafc;
+  height: 80px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
   border-radius: 16px;
   padding: 15px;
   font-family: "Inter", sans-serif;
   font-size: 13px;
-  color: #334155;
+  color: var(--text-main);
   resize: none;
   outline: none;
+  transition: all 0.3s ease;
 }
 .plan-input:focus {
-  border-color: #bfdbfe;
-  background: white;
+  border-color: var(--accent-primary);
+  background: var(--bg-card);
 }
 .plan-input::placeholder {
-  color: #cbd5e1;
+  color: var(--text-dim);
 }
 
 /* =========================================
@@ -580,7 +608,7 @@ onMounted(() => {
 }
 
 .retake-link {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;

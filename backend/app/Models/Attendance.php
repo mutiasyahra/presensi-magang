@@ -24,6 +24,10 @@ class Attendance extends Model
         'progress_kegiatan',
         'evidence',
         'status',
+        'clock_in_location',
+        'clock_out_location',
+        'clock_in_status',
+        'clock_out_status',
         'is_auto',
         'is_verified'
     ];

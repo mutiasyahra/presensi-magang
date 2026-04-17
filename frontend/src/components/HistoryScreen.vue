@@ -17,14 +17,18 @@ const fetchHistoryData = async () => {
       const attendances = res.data.attendance;
       const historyList = [];
 
+      const todayStr = new Date().toDateString();
+
       attendances.forEach(att => {
+        const attDateStr = new Date(att.attendance_date).toDateString();
+        const isEditable = attDateStr === todayStr;
+
         if (att.clock_in) {
           const inDate = new Date(att.clock_in);
           
-          let statusText = "PRESENT";
+          let label = (att.clock_in_status || 'tepat waktu').toUpperCase();
           let icon = "icon present.png";
-          if (att.status === "terlambat") {
-             statusText = "LATE";
+          if (att.clock_in_status === 'terlambat') {
              icon = "icon late.png";
           }
           
@@ -35,8 +39,10 @@ const fetchHistoryData = async () => {
             day: inDate.toLocaleDateString("en-US", { weekday: "long" }),
             date: inDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
             time: inDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-            status: statusText,
+            status: label,
             type: "clock-in",
+            isEditable: isEditable,
+            location: att.clock_in_location || null,
             noteTitle: "DAILY WORK PLAN",
             note: att.rencana_kegiatan || "-",
             icon: icon,
@@ -46,6 +52,8 @@ const fetchHistoryData = async () => {
         
         if (att.clock_out) {
           const outDate = new Date(att.clock_out);
+          let label = (att.clock_out_status || 'tepat waktu').toUpperCase();
+
           historyList.push({
             id: att.id + "-out",
             attendanceId: att.id,
@@ -53,8 +61,10 @@ const fetchHistoryData = async () => {
             day: outDate.toLocaleDateString("en-US", { weekday: "long" }),
             date: outDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
             time: outDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-            status: "DONE",
+            status: label,
             type: "clock-out",
+            isEditable: isEditable,
+            location: att.clock_out_location || null,
             noteTitle: "DAILY ACTIVITY",
             note: att.progress_kegiatan || "-",
             icon: "icon done.png",
@@ -85,9 +95,10 @@ const filteredHistory = computed(() => {
 });
 
 const getStatusClass = (status) => {
-  if (status === "PRESENT") return "status-present";
-  if (status === "DONE") return "status-done";
-  if (status === "LATE") return "status-late";
+  const s = status.toUpperCase();
+  if (s === "TEPAT WAKTU") return "status-present";
+  if (s === "TERLAMBAT") return "status-late";
+  if (s === "TERLALU CEPAT") return "status-warning";
   return "";
 };
 </script>
@@ -156,13 +167,18 @@ const getStatusClass = (status) => {
                     >{{ item.date }} • {{ item.time }}</span
                   >
                 </div>
+                <!-- Menampilkan Lokasi jika ada -->
+                <div v-if="item.location" class="location-row">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="location-icon"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <span class="location-text">{{ item.location }}</span>
+                </div>
               </div>
 
               <div class="card-actions">
                 <span class="badge" :class="getStatusClass(item.status)">{{
                   item.status
                 }}</span>
-                <button class="btn-edit" @click="$emit('navigate', 'edit-attendance', item.type === 'clock-in' ? 'in' : 'out', item.attendanceId)">
+                <button v-if="item.isEditable" class="btn-edit" @click="$emit('navigate', 'edit-attendance', item.type === 'clock-in' ? 'in' : 'out', item.attendanceId)">
                 <img src="../assets/pencil.png" alt="Edit" />
                 </button>
               </div>
@@ -223,18 +239,20 @@ const getStatusClass = (status) => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f8fafc;
+  background-color: var(--bg-app);
   overflow: hidden;
   font-family: "Inter", sans-serif;
   position: relative;
+  transition: background-color 0.3s ease;
 }
 
 /* --- TOP FIXED AREA --- */
 .top-fixed-area {
-  background-color: #f8fafc;
+  background-color: var(--bg-app);
   padding: 20px 20px 0 20px;
   z-index: 10;
   flex-shrink: 0;
+  transition: background-color 0.3s ease;
 }
 
 .header {
@@ -246,7 +264,7 @@ const getStatusClass = (status) => {
 .header h2 {
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
 }
 .btn-back {
@@ -269,13 +287,14 @@ const getStatusClass = (status) => {
 .search-box input {
   width: 100%;
   box-sizing: border-box;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 12px 12px 12px 45px;
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-main);
   outline: none;
+  transition: all 0.3s ease;
 }
 .search-icon {
   position: absolute;
@@ -296,9 +315,9 @@ const getStatusClass = (status) => {
   flex: 1;
   padding: 10px;
   border-radius: 25px;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #64748b;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -325,20 +344,22 @@ const getStatusClass = (status) => {
 
 /* --- CARD STYLE --- */
 .history-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   border-left: 5px solid transparent;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 .history-card.status-present {
   border-left-color: #22c55e;
 }
-.history-card.status-done {
-  border-left-color: #3b82f6;
-}
 .history-card.status-late {
+  border-left-color: #ef4444;
+}
+.history-card.status-warning {
   border-left-color: #eab308;
 }
 
@@ -365,7 +386,7 @@ const getStatusClass = (status) => {
 .day-name {
   font-weight: 700;
   font-size: 15px;
-  color: #0f172a;
+  color: var(--text-main);
 }
 .time-row {
   display: flex;
@@ -380,6 +401,24 @@ const getStatusClass = (status) => {
   font-size: 12px;
   color: #64748b;
   font-weight: 500;
+}
+
+.location-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 2px;
+}
+.location-icon {
+  color: #ef4444;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.location-text {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.3;
+  text-align: left;
 }
 
 .card-actions {
@@ -399,11 +438,11 @@ const getStatusClass = (status) => {
   background: #dcfce7;
   color: #15803d;
 }
-.badge.status-done {
-  background: #dbeafe;
-  color: #1e40af;
-}
 .badge.status-late {
+  background: #fef2f2;
+  color: #991b1b;
+}
+.badge.status-warning {
   background: #fef9c3;
   color: #a16207;
 }
@@ -420,10 +459,11 @@ const getStatusClass = (status) => {
 }
 
 .dashed-box {
-  border: 1.5px dashed #e2e8f0;
+  border: 1.5px dashed var(--border-color);
   border-radius: 12px;
   padding: 12px;
-  background: #f8fafc;
+  background: var(--bg-input);
+  transition: all 0.3s ease;
 }
 .dashed-header {
   display: flex;

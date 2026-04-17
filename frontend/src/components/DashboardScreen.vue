@@ -424,10 +424,11 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f8fafc;
+  background-color: var(--bg-app);
   overflow: hidden;
   font-family: "Poppins", sans-serif;
   position: relative;
+  transition: background-color 0.3s ease;
 }
 
 /* --- HEADER --- */
@@ -437,12 +438,13 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   z-index: 50;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: var(--header-gradient, linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%));
   color: white;
   padding: 20px 25px 25px 25px;
   border-bottom-left-radius: 35px;
   border-bottom-right-radius: 35px;
   box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+  transition: all 0.3s ease;
 }
 
 /* --- SCROLL CONTENT --- */
@@ -527,7 +529,7 @@ onUnmounted(() => {
 
 /* Stats Simple */
 .stats-simple-card {
-  background: white;
+  background: var(--bg-card);
   padding: 20px;
   border-radius: 24px;
   display: flex;
@@ -539,6 +541,7 @@ onUnmounted(() => {
   cursor: pointer;
   position: relative;
   z-index: 2;
+  border: 1px solid var(--border-color);
 }
 .stats-simple-card:active {
   transform: scale(0.97);
@@ -560,7 +563,7 @@ onUnmounted(() => {
   margin: 5px 0;
   font-size: 28px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-main);
 }
 .rate-desc {
   margin: 0;
@@ -583,7 +586,7 @@ onUnmounted(() => {
 
 /* --- TIME CARD REVISION --- */
 .time-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 30px; /* Lebih bulat */
   padding: 24px;
   text-align: center;
@@ -591,6 +594,8 @@ onUnmounted(() => {
   margin-bottom: 25px;
   position: relative;
   z-index: 3;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 /* Header Tanggal & Pill */
@@ -602,7 +607,7 @@ onUnmounted(() => {
 }
 .date-text {
   font-weight: 700;
-  color: #334155;
+  color: var(--text-main);
   font-size: 13px;
 }
 .work-hours {
@@ -633,7 +638,7 @@ onUnmounted(() => {
 }
 .digital-clock {
   font-size: 56px; /* Ukuran Besar */
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
   font-weight: 700;
   letter-spacing: -2px; /* Huruf rapat biar modern */
@@ -682,19 +687,19 @@ onUnmounted(() => {
   filter: brightness(1.1);
 }
 .action-btn.clock-out {
-  background: white !important; /* Paksa Background Putih */
-  border: 1px solid #cbd5e1 !important; /* Garis pinggir abu-abu */
-  color: #64748b !important; /* Paksa Teks Abu-abu */
+  background: var(--bg-card) !important; /* Paksa Background Putih */
+  border: 1px solid var(--border-color) !important; /* Garis pinggir abu-abu */
+  color: var(--text-muted) !important; /* Paksa Teks Abu-abu */
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 .action-btn.clock-out:hover {
-  border-color: #3b82f6 !important;
-  color: #3b82f6 !important;
-  background: #f8fafc !important;
+  border-color: var(--accent-primary) !important;
+  color: var(--accent-primary) !important;
+  background: var(--bg-input) !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 .action-btn.clock-out:hover span {
-  color: #3b82f6 !important;
+  color: var(--accent-primary) !important;
 }
 
 /* 2. Pastikan Teks di dalamnya juga ikut abu-abu */
@@ -713,7 +718,7 @@ onUnmounted(() => {
 .section-title h3 {
   margin: 0;
   font-size: 15px;
-  color: #1e293b;
+  color: var(--text-main);
   font-weight: 700;
 }
 .stats-grid {
@@ -725,13 +730,14 @@ onUnmounted(() => {
 }
 .stat-card {
   flex: 1;
-  background: white;
+  background: var(--bg-card);
   padding: 14px 6px;
   border-radius: 20px;
   text-align: center;
   box-shadow: 0 5px 20px -5px rgba(0, 0, 0, 0.04);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   cursor: pointer;
+  border: 1px solid var(--border-color);
 }
 .stat-card:active {
   transform: scale(0.92);
@@ -749,7 +755,7 @@ onUnmounted(() => {
   display: block;
   font-size: 16px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-main);
 }
 .stat-label {
   font-size: 10px;
@@ -759,13 +765,14 @@ onUnmounted(() => {
 
 /* --- CALENDAR CARD (NEW) --- */
 .calendar-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 24px;
   padding: 20px;
   box-shadow: 0 5px 20px -5px rgba(0, 0, 0, 0.04);
   transition: all 0.3s ease;
   position: relative;
   z-index: 5;
+  border: 1px solid var(--border-color);
 }
 .calendar-card:hover {
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06);
@@ -779,7 +786,7 @@ onUnmounted(() => {
 .cal-header h3 {
   margin: 0;
   font-size: 16px;
-  color: #1e293b;
+  color: var(--text-main);
   font-weight: 700;
 }
 .cal-nav {
@@ -845,7 +852,7 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 13px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-main);
   border-radius: 50%;
 }
 /* Highlight Hari Ini */
@@ -890,12 +897,13 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   z-index: 50;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: var(--header-gradient, linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%));
   color: white;
   padding: 20px 25px 25px 25px;
   border-bottom-left-radius: 35px;
   border-bottom-right-radius: 35px;
   box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+  transition: all 0.3s ease;
 }
 
 .top-bar {
@@ -1059,11 +1067,11 @@ onUnmounted(() => {
   transition: 0.3s;
 }
 .nav-item.active {
-  color: #2563eb;
+  color: var(--accent-primary, #2563eb);
 }
 .nav-item.active img {
   opacity: 1;
-  filter: grayscale(0%);
+  filter: grayscale(0%) brightness(1.2);
   transform: translateY(-2px);
 }
 

@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Http;
 
 class AttendanceController extends Controller
 {
@@ -42,6 +43,16 @@ class AttendanceController extends Controller
         // store uploaded photo and save path
         $photoPath = $request->file('photo')->store('clock_in', 'public');
 
+        $startSetting = \App\Models\Setting::where('key', 'work_start_time')->first();
+        $startTime = $startSetting ? $startSetting->value : '08:00';
+        $currentTime = now()->format('H:i');
+        
+        $clockInStatus = ($currentTime > $startTime) ? 'terlambat' : 'tepat waktu';
+        // Keep overall status for summary logic
+        $status = ($clockInStatus === 'terlambat') ? 'terlambat' : 'hadir';
+
+        $locationName = $this->getAddressFromCoords($request->lat, $request->long);
+
         Attendance::updateOrCreate(
             [
                 'user_id' => $userId,
@@ -52,8 +63,10 @@ class AttendanceController extends Controller
                 'clock_in_photo' => $photoPath,
                 'clock_in_lat' => $request->lat,
                 'clock_in_long' => $request->long,
+                'clock_in_location' => $locationName,
+                'clock_in_status' => $clockInStatus,
                 'rencana_kegiatan' => $request->rencana_kegiatan,
-                'status' => 'hadir'
+                'status' => $status
             ]
         );
 
@@ -101,11 +114,28 @@ class AttendanceController extends Controller
             $evidencePath = $request->file('evidence')->store('evidence', 'public');
         }
 
+        $locationName = $this->getAddressFromCoords($request->lat, $request->long);
+
+        // Check clock out status against end time
+        $endSetting = \App\Models\Setting::where('key', 'work_end_time')->first();
+        $endTime = $endSetting ? $endSetting->value : '17:00';
+        $currentTime = now()->format('H:i');
+        
+        if ($currentTime < $endTime) {
+            $clockOutStatus = 'terlalu cepat';
+        } elseif ($currentTime > $endTime) {
+            $clockOutStatus = 'terlambat';
+        } else {
+            $clockOutStatus = 'tepat waktu';
+        }
+
         $updateData = [
             'clock_out' => now(),
             'clock_out_photo' => $outPath,
             'clock_out_lat' => $request->lat,
             'clock_out_long' => $request->long,
+            'clock_out_location' => $locationName,
+            'clock_out_status' => $clockOutStatus,
             'progress_kegiatan' => $request->progress_kegiatan,
         ];
 
@@ -129,6 +159,12 @@ class AttendanceController extends Controller
 
         if (!$attendance) {
             return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        if ($attendance->attendance_date !== now()->toDateString()) {
+            return response()->json([
+                'message' => 'Waktu edit telah habis. Progress kegiatan hanya dapat diedit pada hari yang sama sebelum jam 23:59.'
+            ], 403);
         }
 
         $request->validate([
@@ -334,7 +370,7 @@ class AttendanceController extends Controller
 
 
         $present = Attendance::where('user_id', $user->id)
-            ->where('status', 'hadir')
+            ->whereIn('status', ['hadir', 'terlambat'])
             ->where('attendance_date', 'like', $month.'%')
             ->count();
 
@@ -380,5 +416,32 @@ class AttendanceController extends Controller
             'attendance' => Attendance::where('user_id', $user->id)->get(),
             'leave' => Leave::where('user_id', $user->id)->get()
         ]);
+    }
+
+    /**
+     * Helper to get human readable address from coordinates using Nominatim API (OSM)
+     */
+    private function getAddressFromCoords($lat, $lng)
+    {
+        try {
+            $response = Http::withHeaders([
+                'User-Agent' => 'PresensiMagangApp/1.0'
+            ])->get("https://nominatim.openstreetmap.org/reverse", [
+                'format' => 'json',
+                'lat' => $lat,
+                'lon' => $lng,
+                'zoom' => 18,
+                'addressdetails' => 1
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['display_name'] ?? "Unknown Location";
+            }
+        } catch (\Exception $e) {
+            \Log::error("Reverse Geocoding Error: " . $e->getMessage());
+        }
+
+        return "Location name unavailable";
     }
 }

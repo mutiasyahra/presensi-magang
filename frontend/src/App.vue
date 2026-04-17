@@ -92,7 +92,7 @@ const onLogout = () => {
 
 onMounted(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user && user.is_dark_mode) {
+    if (user && user.is_dark_mode && user.role === 'admin') {
         document.documentElement.classList.add("dark");
     } else {
         document.documentElement.classList.remove("dark");
@@ -197,15 +197,16 @@ body {
   margin: 0;
   padding: 0;
   font-family: "Inter", sans-serif;
-  background-color: #f8fafc;
+  background-color: var(--bg-app);
 }
 
 .app-background {
-  background-color: #e2e8f0;
+  background-color: var(--bg-mobile-shell, #e2e8f0);
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  transition: background-color 0.3s ease;
 }
 
 .mobile-frame {
@@ -213,15 +214,16 @@ body {
   max-width: 480px;
   min-width: 360px;
   min-height: 100vh;
-  background-color: #ffffff;
+  background-color: var(--bg-mobile-frame, #ffffff);
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow-x: hidden;
+  transition: background-color 0.3s ease;
 }
 
 @media screen and (max-width: 480px) {
   .app-background {
-    background-color: #ffffff;
+    background-color: var(--bg-mobile-frame, #ffffff);
     display: block;
   }
   .mobile-frame {

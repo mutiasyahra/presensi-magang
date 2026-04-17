@@ -7,6 +7,20 @@ const stats = ref({});
 const isLoading = ref(false);
 const searchQuery = ref('');
 
+// Modal Detail State
+const showDetailModal = ref(false);
+const selectedRecord = ref(null);
+
+const openDetail = (record) => {
+  selectedRecord.value = record;
+  showDetailModal.value = true;
+};
+
+const closeDetail = () => {
+  showDetailModal.value = false;
+  selectedRecord.value = null;
+};
+
 // Advanced Filters
 const selectedProject = ref('All Project');
 const selectedPeriod = ref('All Periods');
@@ -60,6 +74,10 @@ const fetchReportData = async () => {
     Object.keys(params).forEach(key => {
       if (!params[key]) delete params[key];
     });
+
+      if (selectedProject.value && selectedProject.value !== "All Project") {
+      result = result.filter(i => i.project === selectedProject.value);
+    }
 
     const attRes = await api.get('/attendances', { params });
     attendanceRecords.value = attRes.data?.data || attRes.data || [];
@@ -116,14 +134,21 @@ const formatDuration = (start, end) => {
   return `${diffHrs}h ${diffMins}m`;
 };
 
-const formatLocation = (lat, long) => {
-  if (!lat || !long) return 'Remote';
-  return `${parseFloat(lat).toFixed(4)}, ${parseFloat(long).toFixed(4)}`;
+const formatLocation = (record) => {
+  if (record.clock_in_location) return record.clock_in_location;
+  if (!record.clock_in_lat || !record.clock_in_long) return 'Remote';
+  return `${parseFloat(record.clock_in_lat).toFixed(4)}, ${parseFloat(record.clock_in_long).toFixed(4)}`;
 };
 
 const getInitials = (name) => {
   if (!name) return 'U';
   return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+};
+
+const getImageUrl = (path) => {
+  if (!path) return null;
+  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
+  return `${baseUrl}/storage/${path}`;
 };
 
 onMounted(() => {
@@ -238,10 +263,15 @@ onMounted(() => {
               <th>INTERN DETAILS</th>
               <th>DATE</th>
               <th>CLOCK-IN</th>
+              <th>IN STATUS</th>
+              <th>PLANNING</th>
               <th>CLOCK-OUT</th>
+              <th>OUT STATUS</th>
+              <th>WORK REPORT</th>
               <th>TOTAL HOURS</th>
               <th>LOCATION</th>
-              <th>STATUS</th>
+              <th>EVIDENCE</th>
+              <th>ACTIONS</th>
             </tr>
           </thead>
           <tbody>
@@ -260,15 +290,40 @@ onMounted(() => {
                   </div>
                 </div>
               </td>
-              <td><span class="regular-text">{{ formatDate(record.attendance_date) }}</span></td>
+              <td class="td-date"><span class="regular-text">{{ formatDate(record.attendance_date) }}</span></td>
               <td><span class="regular-text">{{ formatTimeOnly(record.clock_in) }}</span></td>
-              <td><span class="regular-text">{{ formatTimeOnly(record.clock_out) }}</span></td>
-              <td><span class="regular-text">{{ formatDuration(record.clock_in, record.clock_out) }}</span></td>
-              <td><span class="regular-text">{{ formatLocation(record.clock_in_lat, record.clock_in_long) }}</span></td>
               <td>
-                <span class="status-badge" :class="record.status === 'terlambat' ? 'late-entry' : (record.status === 'hadir' ? 'present' : 'absent')">
-                  {{ record.status?.toUpperCase() }}
+                <span v-if="record.clock_in" class="status-badge" :class="record.clock_in_status === 'terlambat' ? 'late-entry' : 'present'">
+                  {{ (record.clock_in_status || 'tepat waktu').toUpperCase() }}
                 </span>
+                <span v-else class="status-badge absent">N/A</span>
+              </td>
+              <td class="td-wide"><span class="regular-text">{{ record.rencana_kegiatan || '-' }}</span></td>
+              <td><span class="regular-text">{{ formatTimeOnly(record.clock_out) }}</span></td>
+              <td>
+                <span v-if="record.clock_out" class="status-badge" :class="record.clock_out_status === 'terlambat' ? 'late-entry' : (record.clock_out_status === 'terlalu cepat' ? 'warning-entry' : 'present')">
+                  {{ (record.clock_out_status || 'tepat waktu').toUpperCase() }}
+                </span>
+                <span v-else class="status-badge absent">PENDING</span>
+              </td>
+              <td class="td-wide"><span class="regular-text">{{ record.progress_kegiatan || '-' }}</span></td>
+              <td><span class="regular-text">{{ formatDuration(record.clock_in, record.clock_out) }}</span></td>
+              <td class="td-location"><span class="regular-text">{{ formatLocation(record) }}</span></td>
+              <td>
+                <div v-if="record.evidence" class="evidence-cell">
+                  <a :href="getImageUrl(record.evidence)" target="_blank" class="btn-evidence">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                    View
+                  </a>
+                </div>
+                <span v-else class="regular-text">-</span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-action" @click="openDetail(record)" title="View Details">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -284,7 +339,87 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- Detail Modal -->
+    <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetail">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="header-info">
+            <h3>Attendance Detail</h3>
+            <p>{{ formatDate(selectedRecord.attendance_date) }}</p>
+          </div>
+          <button class="btn-close" @click="closeDetail">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="detail-section user-overview">
+            <div class="avatar-large">
+              {{ getInitials(selectedRecord.user?.name) }}
+            </div>
+            <div class="user-meta">
+              <h4>{{ selectedRecord.user?.name }}</h4>
+              <p>{{ selectedRecord.user?.intern?.intern_id }} • {{ selectedRecord.user?.intern?.department }}</p>
+              <p class="project-tag">{{ selectedRecord.user?.intern?.project }}</p>
+            </div>
+          </div>
 
+          <div class="detail-grid">
+            <div class="grid-item">
+              <label>Clock In</label>
+              <div class="value-row">
+                <span class="time">{{ formatTimeOnly(selectedRecord.clock_in) }}</span>
+                <span class="status-badge" :class="selectedRecord.clock_in_status === 'terlambat' ? 'late-entry' : 'present'">
+                  {{ (selectedRecord.clock_in_status || 'tepat waktu').toUpperCase() }}
+                </span>
+              </div>
+            </div>
+            <div class="grid-item">
+              <label>Clock Out</label>
+              <div class="value-row">
+                <span class="time">{{ formatTimeOnly(selectedRecord.clock_out) }}</span>
+                <span v-if="selectedRecord.clock_out" class="status-badge" :class="selectedRecord.clock_out_status === 'terlambat' ? 'late-entry' : (selectedRecord.clock_out_status === 'terlalu cepat' ? 'warning-entry' : 'present')">
+                  {{ (selectedRecord.clock_out_status || 'tepat waktu').toUpperCase() }}
+                </span>
+                <span v-else class="status-badge absent">PENDING</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <label>Planning (Rencana Kegiatan)</label>
+            <div class="description-box">
+              {{ selectedRecord.rencana_kegiatan || 'No description provided.' }}
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <label>Work Report (Progress Kegiatan)</label>
+            <div class="description-box">
+              {{ selectedRecord.progress_kegiatan || 'No report provided.' }}
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <label>Location</label>
+            <div class="location-box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              {{ formatLocation(selectedRecord) }}
+            </div>
+          </div>
+
+          <div class="detail-section" v-if="selectedRecord.evidence">
+            <label>Evidence</label>
+            <div class="evidence-preview">
+              <img :src="getImageUrl(selectedRecord.evidence)" alt="Evidence" class="preview-img" />
+              <a :href="getImageUrl(selectedRecord.evidence)" target="_blank" class="btn-expand">
+                Open Full Resource
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -347,6 +482,11 @@ onMounted(() => {
   display: flex; align-items: center; gap: 8px;
   border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px;
   background: var(--bg-input);
+  transition: all 0.2s ease;
+}
+.input-wrapper:focus-within {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 .input-wrapper .icon { color: var(--text-dim); flex-shrink: 0; }
 .input-wrapper input { border: none; outline: none; font-size: 13px; width: 100%; color: var(--text-main); background: transparent; }
@@ -354,6 +494,16 @@ onMounted(() => {
 
 .select-wrapper select {
   border: none; outline: none; font-size: 13px; width: 100%; color: var(--text-main); background: transparent; cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0px center;
+  padding-right: 24px;
+}
+
+.select-wrapper select option {
+  background-color: var(--bg-card);
+  color: var(--text-main);
 }
 
 .btn-apply {
@@ -409,22 +559,65 @@ onMounted(() => {
 .btn-icon:hover { background: var(--bg-input); color: var(--text-main); }
 
 /* Table Styles */
-.table-container { overflow-x: auto; max-height: 500px; }
+.table-container { 
+  overflow-x: auto; 
+  max-height: 600px; 
+  border-radius: 0 0 16px 16px; 
+}
 
-.reports-table { width: 100%; border-collapse: collapse; text-align: left; }
+.reports-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  text-align: left; 
+  table-layout: auto;
+  min-width: 1200px; /* Force minimum width to enable scrolling instead of squishing */
+}
 
 .reports-table th {
-  padding: 16px 24px; font-size: 11px; font-weight: 700; color: var(--text-dim);
+  padding: 16px 20px; font-size: 11px; font-weight: 700; color: var(--text-dim);
   border-bottom: 1px solid var(--border-color); letter-spacing: 0.5px;
   position: sticky; top: 0; background-color: var(--bg-card); z-index: 10;
+  white-space: nowrap;
 }
 
 .reports-table td {
-  padding: 16px 24px; border-bottom: 1px solid var(--border-color); vertical-align: middle;
+  padding: 16px 20px; border-bottom: 1px solid var(--border-color); vertical-align: middle;
+}
+
+.td-date {
+  min-width: 140px;
+}
+
+.td-wide {
+  min-width: 180px;
+  max-width: 250px;
+}
+
+.td-wide .regular-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.td-location {
+  min-width: 150px;
+  max-width: 200px;
+}
+
+.td-location .regular-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Column Contents */
-.intern-details { display: flex; align-items: center; gap: 12px; }
+.intern-details { 
+  display: flex; align-items: center; gap: 12px; 
+  min-width: 180px;
+}
 .avatar-placeholder {
   width: 36px; height: 36px; border-radius: 50%; display: flex;
   align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
@@ -436,10 +629,208 @@ onMounted(() => {
 
 .status-badge {
   font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 99px;
+  white-space: nowrap;
 }
-.status-badge.present { background: #DCFCE7; color: #10B981; }
-.status-badge.late-entry { background: #FEFCE8; color: #D97706; border: 1px solid #FEF08A; }
-.status-badge.absent { background: #FEF2F2; color: #EF4444; }
+.status-badge.present { background: #f0fdf4; color: #16a34a; }
+.status-badge.late-entry { background: #fef2f2; color: #dc2626; }
+.status-badge.warning-entry { background: #fffbeb; color: #d97706; }
+.status-badge.absent { background: #f8fafc; color: #64748b; }
+
+.evidence-cell {
+  display: flex;
+}
+
+.btn-evidence {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-evidence:hover {
+  background: var(--border-color);
+  color: var(--accent-primary);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-action {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-action:hover {
+  background: var(--bg-input);
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+/* Modal Styling */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-card {
+  background: var(--bg-card);
+  width: 100%;
+  max-width: 500px;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-info h3 { margin: 0; font-size: 18px; font-weight: 700; color: var(--text-main); }
+.header-info p { margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted); }
+
+.btn-close {
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  padding: 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.btn-close:hover { background: var(--bg-input); color: var(--text-main); }
+
+.modal-body {
+  padding: 24px;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-section label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.user-overview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.avatar-large {
+  width: 50px; height: 50px;
+  background: var(--bg-input);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; color: var(--accent-primary);
+}
+
+.user-meta h4 { margin: 0; font-size: 16px; font-weight: 700; color: var(--text-main); }
+.user-meta p { margin: 2px 0; font-size: 13px; color: var(--text-muted); }
+.project-tag { font-weight: 600; color: var(--accent-primary) !important; font-size: 12px !important; }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.grid-item .value-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grid-item .time {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.description-box {
+  background: var(--bg-input);
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--text-main);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.location-box {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.location-box svg { flex-shrink: 0; margin-top: 2px; color: var(--accent-primary); }
+
+.evidence-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-img {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  max-height: 250px;
+  object-fit: cover;
+}
+
+.btn-expand {
+  display: block;
+  text-align: center;
+  padding: 10px;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 /* Pagination */
 .pagination-footer {
@@ -452,4 +843,4 @@ onMounted(() => {
   font-size: 13px; font-weight: 500; color: var(--text-main); cursor: pointer;
 }
 .page-btn:hover { background: var(--bg-input); }
-</style>
+</style>

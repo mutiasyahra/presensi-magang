@@ -9,13 +9,8 @@ const isNotificationOn = ref(true);
 
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value;
-  // Logika ganti tema bisa ditaruh di sini nanti
-  if (isDarkMode.value) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-  
+  // documentElement theme logic removed for user side
+
   // Save to localStorage immediately so App.vue uses it
   const userStr = localStorage.getItem('user');
   if (userStr) {
@@ -122,33 +117,36 @@ const toggleDarkMode = () => {
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 .main-wrapper { 
-  background-color: #e2e8f0; 
+  background-color: var(--bg-mobile-shell, #e2e8f0); 
   display: flex; 
   justify-content: center; 
   min-height: 100vh; 
   font-family: "Inter", sans-serif; 
+  transition: background-color 0.3s ease;
 }
 
 .mobile-frame { 
   width: 100%; 
   max-width: 480px; 
   height: 100vh; 
-  background-color: #f8fafc; 
+  background-color: var(--bg-app, #f8fafc); 
   position: relative; 
   overflow: hidden; 
   display: flex; 
   flex-direction: column; 
+  transition: background-color 0.3s ease;
 }
 
 /* HEADER BIRU */
 .blue-header {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: var(--header-gradient, linear-gradient(135deg, #3b82f6 0%, #2563eb 100%));
   height: 140px; 
   border-bottom-left-radius: 40px; 
   border-bottom-right-radius: 40px;
   padding: 20px 25px; 
   color: white; 
   z-index: 1;
+  transition: all 0.3s ease;
 }
 
 .header-content { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
@@ -168,16 +166,18 @@ const toggleDarkMode = () => {
 .content-area { flex: 1; padding: 0 20px; margin-top: -50px; z-index: 2; overflow-y: auto; }
 
 .settings-card { 
-  background: white; 
+  background: var(--bg-card, white); 
   border-radius: 24px; 
   padding: 20px; 
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); 
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 .section-label { 
   font-size: 11px; 
   font-weight: 700; 
-  color: #94a3b8; 
+  color: var(--text-dim, #94a3b8); 
   letter-spacing: 1px; 
   margin: 15px 0 10px 5px; 
   text-transform: uppercase;
@@ -192,7 +192,7 @@ const toggleDarkMode = () => {
 }
 
 .row-left { display: flex; align-items: center; gap: 15px; }
-.row-left span { font-size: 14px; font-weight: 500; color: #1e293b; }
+.row-left span { font-size: 14px; font-weight: 500; color: var(--text-main, #1e293b); }
 
 /* --- HAPUS STYLE ICON LAMA, GANTI DENGAN INI --- */
 
@@ -201,21 +201,23 @@ const toggleDarkMode = () => {
   height: 36px;
   border-radius: 10px;
   /* Pakai warna biru muda transparan yang seragam kayak di Profile */
-  background-color: #eff6ff; 
+  background-color: var(--bg-input, #eff6ff); 
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 0.3s ease;
 }
 
 .icon-svg {
   width: 18px;
   height: 18px;
   /* Warna biru utama yang estetik */
-  stroke: #3b82f6; 
+  stroke: var(--accent-primary, #3b82f6); 
   stroke-width: 2; /* Ketebalan garis icon */
   fill: none; /* Biar cuma garis, gak ada isinya (estetik) */
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: stroke 0.3s ease;
 }
 
 /* --- JANGAN LUPA CSS TOGGLE & CARD LAINNYA TETAP SAMA --- */
@@ -224,13 +226,13 @@ const toggleDarkMode = () => {
 .toggle-switch {
   width: 44px; 
   height: 24px; 
-  background: #cbd5e1; 
+  background: var(--input-border, #cbd5e1); 
   border-radius: 20px;
   position: relative; 
   transition: 0.3s;
 }
 
-.toggle-switch.active { background: #3b82f6; }
+.toggle-switch.active { background: var(--accent-primary, #3b82f6); }
 
 .ball {
   width: 18px; 
@@ -245,8 +247,8 @@ const toggleDarkMode = () => {
 
 .active .ball { left: 23px; }
 
-.lang-text, .version-tag { font-size: 13px; color: #64748b; font-weight: 500; }
-.divider { height: 1px; background: #f1f5f9; margin: 10px 0; }
+.lang-text, .version-tag { font-size: 13px; color: var(--text-muted, #64748b); font-weight: 500; }
+.divider { height: 1px; background: var(--border-color, #f1f5f9); margin: 10px 0; }
 
 .footer-note {
   font-size: 11px;
