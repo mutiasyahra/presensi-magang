@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import {
   LogIn,
   LogOut,
@@ -14,6 +14,8 @@ import {
   ChevronDown,
   Wifi,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-vue-next";
 
 const props = defineProps(["stats", "attendanceList"]);
@@ -129,14 +131,15 @@ const getStatus = (record, action) => {
   return "";
 };
 
-// Computed: ambil 10 activity terbaru dari attendanceList nyata
-// Sekarang menghasilkan entri terpisah untuk clock-in dan clock-out
-const recentActivities = computed(() => {
+const currentPage = ref(1);
+const itemsPerPage = 6;
+
+// Computed: ambil semua activity sorted
+const allRecentEvents = computed(() => {
   const list = props.attendanceList || [];
   const allEvents = [];
 
   list.forEach((record, index) => {
-    // Add clock-in event (always exists in record)
     if (record.clock_in) {
       allEvents.push({
         id: `${record.id || index}-in`,
@@ -154,7 +157,6 @@ const recentActivities = computed(() => {
       });
     }
 
-    // Add clock-out event if it exists
     if (record.clock_out) {
       allEvents.push({
         id: `${record.id || index}-out`,
@@ -173,11 +175,144 @@ const recentActivities = computed(() => {
     }
   });
 
-  // Sort by rawTime descending (latest first) and take top 10
-  return allEvents
-    .sort((a, b) => b.rawTime - a.rawTime)
-    .slice(0, 10);
+  return allEvents.sort((a, b) => b.rawTime - a.rawTime);
 });
+
+const totalPages = computed(() => Math.ceil(filteredEvents.value.length / itemsPerPage));
+
+const recentActivities = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return filteredEvents.value.slice(start, start + itemsPerPage);
+});
+
+
+const activityFilter = ref("All");
+const selectedDate = ref("");
+
+const setFilter = (filter) => {
+  activityFilter.value = filter;
+  currentPage.value = 1;
+};
+
+const resetDate = () => {
+  selectedDate.value = "";
+  currentPage.value = 1;
+  showCalendar.value = false;
+};
+
+const filteredEvents = computed(() => {
+  let all = allRecentEvents.value;
+
+  // Phase 1: Time/Date Filter
+  if (!selectedDate.value) {
+    // Default: Last 24 hours
+    const limit = Date.now() - 24 * 60 * 60 * 1000;
+    all = all.filter((e) => e.rawTime.getTime() >= limit);
+  } else {
+    // Specific Date
+    all = all.filter((e) => toLocalDateString(e.rawTime) === selectedDate.value);
+  }
+
+  // Phase 2: Action Type Filter
+  if (activityFilter.value === "Clock-in")
+    all = all.filter((e) => e.action === "Clocked In");
+  if (activityFilter.value === "Clock-out")
+    all = all.filter((e) => e.action === "Clocked Out");
+
+  return all;
+});
+
+// Calendar State
+const showCalendar = ref(false);
+const calendarDate = ref(new Date());
+
+// Holiday Logic
+const holidays = ref([]);
+
+const fetchHolidays = async (year) => {
+  try {
+    const res = await fetch(
+      `https://date.nager.at/api/v3/PublicHolidays/${year}/ID`,
+    );
+    if (res.ok) {
+      holidays.value = await res.json();
+    }
+  } catch (err) {
+    console.error("Failed to fetch holidays", err);
+  }
+};
+
+watch(
+  () => calendarDate.value.getFullYear(),
+  (newYear) => {
+    fetchHolidays(newYear);
+  },
+  { immediate: true },
+);
+
+const calendarMonthYear = computed(() => {
+  return calendarDate.value.toLocaleString("default", {
+    month: "long",
+    year: "numeric",
+  });
+});
+
+const calendarDays = computed(() => {
+  const year = calendarDate.value.getFullYear();
+  const month = calendarDate.value.getMonth();
+  const todayStr = toLocalDateString(new Date());
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+
+  const days = [];
+  const startPadding = firstDay.getDay();
+  for (let i = 0; i < startPadding; i++) {
+    days.push({ day: null });
+  }
+
+  for (let i = 1; i <= lastDay.getDate(); i++) {
+    const dObj = new Date(year, month, i);
+    const dayOfWeek = dObj.getDay();
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
+
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const isNationalHoliday = holidays.value.some((h) => h.date === dateStr);
+
+    days.push({
+      day: i,
+      date: dateStr,
+      isSelected: selectedDate.value === dateStr,
+      isToday: todayStr === dateStr,
+      isHoliday: isWeekend || isNationalHoliday,
+    });
+  }
+  return days;
+});
+
+const changeMonth = (offset) => {
+  const newDate = new Date(calendarDate.value);
+  newDate.setMonth(newDate.getMonth() + offset);
+  calendarDate.value = newDate;
+};
+
+const selectDate = (date) => {
+  if (!date) return;
+  selectedDate.value = date;
+  showCalendar.value = false;
+  currentPage.value = 1;
+};
+
+const toggleCalendar = () => {
+  showCalendar.value = !showCalendar.value;
+  if (showCalendar.value && selectedDate.value) {
+    calendarDate.value = new Date(selectedDate.value);
+  }
+};
+
+
+
+
 
 // Computed: hitung jumlah clock-in hari ini
 const todayCheckins = computed(() => {
@@ -202,6 +337,94 @@ const liveTime = computed(() => {
 const liveAmPm = computed(() => {
   const now = new Date();
   return now.getHours() < 12 ? "AM" : "PM";
+});
+
+const attendanceStatusToday = computed(() => {
+  const list = props.attendanceList || [];
+  const today = toLocalDateString(new Date().toISOString());
+  const todayList = list.filter(r => (r.attendance_date || toLocalDateString(r.clock_in)) === today);
+  
+  const total = props.stats?.total_interns || 0;
+  const onTime = todayList.filter(r => r.clock_in_status === 'tepat waktu').length;
+  const late = todayList.filter(r => r.clock_in_status === 'terlambat').length;
+  const leave = todayList.filter(r => r.status === 'izin').length;
+  const absent = total - (onTime + late + leave);
+
+  return [
+    { label: "On Time", value: onTime, color: "#10b981" },
+    { label: "Late", value: late, color: "#f59e0b" },
+    { label: "Leave", value: leave, color: "#3b82f6" },
+    { label: "Absent", value: Math.max(0, absent), color: "#f43f5e" },
+  ];
+});
+
+const projectPerformance = computed(() => {
+  const list = props.attendanceList || [];
+  const projectMap = new Map();
+
+  list.forEach(record => {
+    const project = record.user?.intern?.project || "Unassigned";
+    if (!projectMap.has(project)) {
+      projectMap.set(project, { name: project, present: 0, total: 0 });
+    }
+    const stats = projectMap.get(project);
+    stats.total++;
+    if (["hadir", "terlambat"].includes(record.status)) {
+      stats.present++;
+    }
+  });
+
+  return Array.from(projectMap.values())
+    .map(p => ({
+      ...p,
+      rate: p.total > 0 ? Math.round((p.present / p.total) * 100) : 0
+    }))
+    .sort((a, b) => b.rate - a.rate)
+    .slice(0, 5);
+});
+
+const chartGradient = computed(() => {
+  const list = attendanceStatusToday.value;
+  const total = props.stats?.total_interns || 1;
+  let cumulative = 0;
+  const stops = [];
+
+  list.forEach((item) => {
+    if (item.value <= 0) return;
+    const start = (cumulative / total) * 100;
+    cumulative += item.value;
+    const end = (cumulative / total) * 100;
+    stops.push(`${item.color} ${start}% ${end}%`);
+  });
+
+  if (stops.length === 0) return "conic-gradient(#e2e8f0 0% 100%)";
+  return `conic-gradient(${stops.join(", ")})`;
+});
+
+const internPerformance = computed(() => {
+  const list = props.attendanceList || [];
+  const internMap = new Map();
+
+  list.forEach(record => {
+    const userId = record.user_id;
+    if (!record.user) return;
+    
+    if (!internMap.has(userId)) {
+      internMap.set(userId, { 
+        name: record.user.name || "Unknown", 
+        email: record.user.email || "",
+        present: 0 
+      });
+    }
+    const stats = internMap.get(userId);
+    if (["hadir", "terlambat"].includes(record.status)) {
+      stats.present++;
+    }
+  });
+
+  return Array.from(internMap.values())
+    .sort((a, b) => b.present - a.present)
+    .slice(0, 5);
 });
 </script>
 
@@ -286,6 +509,91 @@ const liveAmPm = computed(() => {
       </div>
     </section>
 
+    <section class="dashboard-content performance-row">
+      <div class="content-card status-card">
+        <h3 class="section-title">Attendance Status (Today)</h3>
+        <div class="status-chart-container">
+          <div class="chart-visual-box">
+            <div
+              class="chart-circle"
+              :style="{ background: chartGradient }"
+            ></div>
+            <div class="chart-center">
+              <span class="center-label">Total</span>
+              <span class="center-value">{{
+                props.stats?.total_interns || 0
+              }}</span>
+            </div>
+          </div>
+
+          <div class="chart-legend">
+            <div
+              v-for="item in attendanceStatusToday"
+              :key="item.label"
+              class="legend-item"
+            >
+              <div class="legend-row">
+                <div
+                  class="legend-dot"
+                  :style="{ backgroundColor: item.color }"
+                ></div>
+                <span class="legend-label">{{ item.label }}</span>
+                <span class="legend-value">{{ item.value }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card performance-card">
+        <h3 class="section-title">Project Performance</h3>
+        <div class="project-list">
+          <div
+            v-for="project in projectPerformance"
+            :key="project.name"
+            class="project-item"
+          >
+            <div class="project-name-row">
+              <span class="project-name">{{ project.name }}</span>
+              <span class="project-rate">{{ project.rate }}%</span>
+            </div>
+            <div class="progress-container">
+              <div
+                class="progress-fill"
+                :style="{ width: project.rate + '%' }"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card intern-card">
+        <h3 class="section-title">Intern Performance</h3>
+        <div class="intern-performance-list">
+          <div
+            v-for="(intern, idx) in internPerformance"
+            :key="intern.email"
+            class="intern-perf-item"
+          >
+            <div class="intern-perf-info">
+              <div class="intern-perf-avatar">
+                {{ intern.name.charAt(0).toUpperCase() }}
+              </div>
+              <div class="intern-perf-details">
+                <span class="intern-perf-name">{{ intern.name }}</span>
+                <span class="intern-perf-subtext"
+                  >{{ intern.present }} Present Days</span
+                >
+              </div>
+            </div>
+            <div class="perf-rank">
+              <span class="rank-badge">#{{ idx + 1 }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="dashboard-content">
       <div class="content-card chart-area">
         <div class="card-header-flex">
@@ -359,7 +667,89 @@ const liveAmPm = computed(() => {
       <div class="content-card recent-activity">
         <div class="card-header-flex">
           <h3 class="section-title">Recent Activity</h3>
-          <button class="view-all-btn">View All →</button>
+          <div class="activity-filters">
+            <button
+              v-for="f in ['All', 'Clock-in', 'Clock-out']"
+              :key="f"
+              :class="['filter-pill', { active: activityFilter === f }]"
+              @click="setFilter(f)"
+            >
+              {{ f }}
+            </button>
+          </div>
+        </div>
+
+        <div class="calendar-filter-bar">
+          <div v-if="!selectedDate" class="live-indicator-small">
+            <span class="pulse-dot"></span>
+            Showing only last 24h
+          </div>
+          <div v-else class="history-label">
+            <Clock size="14" />
+            <span>Viewing Historical Record</span>
+          </div>
+
+          <div class="calendar-picker-container">
+            <div
+              :class="['date-selector', { active: showCalendar }]"
+              @click="toggleCalendar"
+            >
+              <Calendar class="cal-main-icon" size="18" />
+              <span class="current-date-text">{{
+                selectedDate
+                  ? new Date(selectedDate).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })
+                  : "Select Date"
+              }}</span>
+            </div>
+
+            <!-- Custom Calendar Dropdown -->
+            <transition name="fade">
+              <div class="custom-calendar-dropdown" v-if="showCalendar">
+                <div class="calendar-header">
+                  <button @click.stop="changeMonth(-1)" class="nav-btn">
+                    &lt;
+                  </button>
+                  <span class="month-label">{{ calendarMonthYear }}</span>
+                  <button @click.stop="changeMonth(1)" class="nav-btn">
+                    &gt;
+                  </button>
+                </div>
+                <div class="calendar-grid">
+                  <span
+                    v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']"
+                    :key="day"
+                    class="day-name"
+                  >
+                    {{ day }}
+                  </span>
+                  <div
+                    v-for="(dateObj, index) in calendarDays"
+                    :key="index"
+                    class="calendar-day"
+                    :class="{
+                      empty: !dateObj.day,
+                      selected: dateObj.isSelected,
+                      'is-today': dateObj.isToday,
+                      'is-holiday': dateObj.isHoliday,
+                      'is-weekday': dateObj.day && !dateObj.isHoliday,
+                    }"
+                    @click.stop="selectDate(dateObj.date)"
+                  >
+                    {{ dateObj.day }}
+                  </div>
+                </div>
+                <div class="calendar-footer" v-if="selectedDate">
+                  <button class="reset-link" @click.stop="resetDate">
+                    Show Recent (24h)
+                  </button>
+                </div>
+              </div>
+            </transition>
+          </div>
         </div>
 
         <!-- Empty state jika belum ada data presensi -->
@@ -427,6 +817,32 @@ const liveAmPm = computed(() => {
             </tr>
           </tbody>
         </table>
+
+        <!-- Pagination Controls -->
+        <div v-if="filteredEvents.length > itemsPerPage" class="pagination-area">
+          <p class="pagination-info">
+            Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to
+            {{ Math.min(currentPage * itemsPerPage, filteredEvents.length) }} of
+            {{ filteredEvents.length }} Activities
+          </p>
+          <div class="pagination-btns">
+            <button 
+              class="page-nav-btn" 
+              :disabled="currentPage === 1" 
+              @click="currentPage--"
+            >
+              <ChevronLeft size="18" />
+            </button>
+            <span class="page-indicator">Page {{ currentPage }} of {{ totalPages }}</span>
+            <button 
+              class="page-nav-btn" 
+              :disabled="currentPage === totalPages" 
+              @click="currentPage++"
+            >
+              <ChevronRight size="18" />
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -879,6 +1295,241 @@ const liveAmPm = computed(() => {
   cursor: pointer;
 }
 
+.activity-filters {
+  display: flex;
+  background: var(--bg-input);
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
+}
+
+.filter-pill {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-pill:hover {
+  color: var(--text-main);
+}
+
+.filter-pill.active {
+  background: var(--bg-card);
+  color: var(--accent-primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Calendar Filter Styles */
+.calendar-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 0 4px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 14px;
+}
+
+.history-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.calendar-picker-container {
+  position: relative;
+}
+
+.date-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-input);
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.date-selector:hover,
+.date-selector.active {
+  background: var(--bg-input);
+  border-color: var(--accent-primary);
+}
+
+.cal-main-icon {
+  color: var(--text-muted);
+}
+
+.current-date-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.custom-calendar-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 280px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  padding: 16px;
+  z-index: 1000;
+  user-select: none;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.month-label {
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.nav-btn {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.day-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: center;
+  padding-bottom: 8px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.calendar-day:not(.empty):hover {
+  background: var(--bg-input);
+  color: var(--text-main);
+}
+
+.calendar-day.selected {
+  background: var(--accent-primary) !important;
+  color: white !important;
+}
+
+.calendar-day.is-today {
+  color: var(--accent-primary);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.calendar-day.is-holiday:not(.selected) {
+  color: #ef4444 !important; /* Indonesia Holiday Red */
+}
+
+.calendar-day.is-weekday:not(.selected):not(.is-today) {
+  color: #10b981 !important; /* Active Weekday Green */
+}
+
+.calendar-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+}
+
+.reset-link {
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.reset-link:hover {
+  text-decoration: underline;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.live-indicator-small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse-small 2s infinite ease-out;
+}
+
+@keyframes pulse-small {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
 .activity-table {
   width: 100%;
   border-collapse: collapse;
@@ -1033,6 +1684,311 @@ const liveAmPm = computed(() => {
 .badge-status.late {
   background-color: #fee2e2;
   color: #b91c1c;
+}
+
+/* Pagination Area Styles */
+.pagination-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin: 0;
+}
+
+.pagination-btns {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-nav-btn:hover:not(:disabled) {
+  background: var(--bg-input);
+  border-color: var(--text-dim);
+}
+
+.page-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* New Section Styles */
+.performance-row {
+  margin-bottom: 0px;
+  grid-template-columns: repeat(3, 1fr) !important;
+}
+
+.status-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.status-chart-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+@media (min-width: 1400px) {
+  .status-chart-container {
+    flex-direction: row;
+    gap: 32px;
+  }
+}
+
+.chart-visual-box {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  flex-shrink: 0;
+}
+
+.chart-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transition: background 0.5s ease;
+}
+
+.chart-center {
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 70%;
+  height: 70%;
+  background: var(--bg-card);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.center-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.center-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.chart-legend {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.legend-item {
+  padding: 2px 0;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.legend-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.intern-performance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.intern-perf-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.intern-perf-item:last-child {
+  border-bottom: none;
+}
+
+.intern-perf-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.intern-perf-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg-input);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.intern-perf-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.intern-perf-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.intern-perf-subtext {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.rank-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  background: rgba(59, 130, 246, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.status-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.status-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.status-bar-bg {
+  height: 8px;
+  background: var(--bg-input);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.status-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.project-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.project-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.project-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.project-rate {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.progress-container {
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: 3px;
+  transition: width 0.5s ease;
 }
 
 /* Responsif */

@@ -63,6 +63,9 @@ onMounted(() => {
           <div class="edit-icon">
             <img src="../assets/pencil.png" alt="Edit" />
           </div>
+          <div class="edit-icon" @click="$emit('navigate', 'edit-profile')">
+            <img src="../assets/pencil.png" alt="Edit Profile" />
+          </div>
         </div>
 
         <h3 class="username">{{ user.name }}</h3>
@@ -126,14 +129,15 @@ onMounted(() => {
         <img src="../assets/home.png" alt="Home" />
         <span>Home</span>
       </div>
+
       <div class="nav-item" @click="$emit('navigate', 'history')">
         <img src="../assets/history.png" alt="History" />
         <span>History</span>
       </div>
 
-      <div class="nav-item scan-btn" @click="$emit('navigate', 'qr-scan')">
-        <div class="scan-circle">
-          <img src="../assets/qr.png" alt="Scan QR" class="qr-icon" />
+      <div class="nav-item-scan-wrapper" @click="$emit('navigate', 'qr-scan')">
+        <div class="scan-button">
+          <img src="../assets/qr.png" alt="Scan" />
         </div>
       </div>
 
@@ -215,6 +219,9 @@ onMounted(() => {
   margin-top: -50px;
   z-index: 2;
   scrollbar-width: none;
+  padding-bottom: 120px;
+  scrollbar-width: none; 
+  -ms-overflow-style: none;
 }
 .content::-webkit-scrollbar {
   display: none;
@@ -434,69 +441,81 @@ onMounted(() => {
 }
 
 /* 6. NAVBAR FIX TERKUNCI DI BAWAH */
+/* --- BOTTOM NAV (PENYELARASAN TOTAL DENGAN HISTORY) --- */
 .bottom-nav {
-  flex-shrink: 0;
-  width: 100%;
-  height: 70px;
-  background-color: var(--nav-bg, #ffffff);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  border-top: 1px solid var(--border-color);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  background: white;
+  height: 75px; /* Sinkron 75px */
+  border-top-left-radius: 30px; /* Sinkron radius 30px */
+  border-top-right-radius: 30px;
+  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.06);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* Wajib Grid agar posisi ikon simetris */
+  align-items: center;
+  padding: 0 5px;
 }
 
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
+  color: #94A3B8;
   cursor: pointer;
-  color: #94a3b8;
+  height: 100%;
 }
+
 .nav-item img {
   width: 24px;
   height: 24px;
-  filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%)
-    hue-rotate(182deg) brightness(87%) contrast(85%);
+  object-fit: contain;
+  /* Filter abu-abu pasif agar seragam di semua halaman */
+  filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%) hue-rotate(182deg) brightness(87%) contrast(85%);
   transition: all 0.2s ease;
 }
+
 .nav-item span {
   font-size: 10px;
   font-weight: 600;
 }
 
-/* STATE AKTIF UNTUK PROFILE */
+/* State Aktif (Warna Biru Presisi) */
 .nav-item.active {
-  color: #2563eb;
+  color: #2563EB;
 }
+
 .nav-item.active img {
-  filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%)
-    hue-rotate(213deg) brightness(96%) contrast(97%);
+  filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%);
 }
 
-.scan-btn {
-  position: static;
-}
-
-.scan-circle {
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-radius: 16px;
+/* --- TOMBOL QR (SQUIRCLE VERSION) --- */
+.nav-item-scan-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
-  margin: 0;
+  height: 100%;
 }
-.scan-circle .qr-icon {
-  width: 24px;
-  height: 24px;
-  filter: brightness(0) invert(1);
+
+.scan-button {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  border-radius: 16px; /* Squircle style */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+  cursor: pointer;
+}
+
+.scan-button img {
+  width: 26px;
+  height: 26px;
+  filter: brightness(0) invert(1) !important; /* Paksa tetap putih */
 }
 </style>

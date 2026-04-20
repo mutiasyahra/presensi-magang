@@ -20,120 +20,107 @@ const userInfo = ref({
 </script>
 
 <template>
-  <div class="main-wrapper">
-    <div class="mobile-frame">
-      
-      <div class="blue-header">
-        <div class="header-content">
-          <button class="btn-back" @click="$emit('go-back')">❮</button>
-          <h2>Personal Information</h2>
-          <div style="width: 24px"></div> </div>
+  <div class="screen-container">
+    <div class="blue-header">
+      <div class="header-content">
+        <button class="btn-back" @click="$emit('go-back')">❮</button>
+        <h2>Personal Information</h2>
+        <div style="width: 24px"></div>
       </div>
+    </div>
 
-      <div class="content-area">
-        <div class="info-card">
-          
-          <p class="card-desc">Berikut adalah detail informasi data diri Anda yang terdaftar di sistem.</p>
+    <div class="content-area">
+      <div class="info-card">
+        <p class="card-desc">Berikut adalah detail informasi data diri Anda yang terdaftar di sistem.</p>
 
-          <div class="data-group">
-            
+        <div class="data-group">
+          <div class="data-item">
+            <label>Full Name</label>
+            <p>{{ userInfo.fullName }}</p>
+          </div>
+
+          <div class="data-item">
+            <label>Email Address</label>
+            <p>{{ userInfo.email }}</p>
+          </div>
+
+          <div class="data-item">
+            <label>Phone Number</label>
+            <p>{{ userInfo.phoneNumber }}</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="data-item">
+            <label>Intern ID</label>
+            <p class="highlight-text">{{ userInfo.internId }}</p>
+          </div>
+
+          <div class="data-item">
+            <label>University</label>
+            <p>{{ userInfo.university }}</p>
+          </div>
+
+          <div class="data-item">
+            <label>Department</label>
+            <p>{{ userInfo.department }}</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="data-item">
+            <label>Mentor</label>
+            <p>{{ userInfo.mentor }}</p>
+          </div>
+
+          <div class="data-item">
+            <label>Project</label>
+            <p>{{ userInfo.project }}</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="date-grid">
             <div class="data-item">
-              <label>Full Name</label>
-              <p>{{ userInfo.fullName }}</p>
+              <label>Start Date</label>
+              <p>{{ userInfo.startDate }}</p>
             </div>
-
             <div class="data-item">
-              <label>Email Address</label>
-              <p>{{ userInfo.email }}</p>
+              <label>End Date</label>
+              <p>{{ userInfo.endDate }}</p>
             </div>
-
-            <div class="data-item">
-              <label>Phone Number</label>
-              <p>{{ userInfo.phoneNumber }}</p>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="data-item">
-              <label>Intern ID</label>
-              <p class="highlight-text">{{ userInfo.internId }}</p>
-            </div>
-
-            <div class="data-item">
-              <label>University</label>
-              <p>{{ userInfo.university }}</p>
-            </div>
-
-            <div class="data-item">
-              <label>Department</label>
-              <p>{{ userInfo.department }}</p>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="data-item">
-              <label>Mentor</label>
-              <p>{{ userInfo.mentor }}</p>
-            </div>
-
-            <div class="data-item">
-              <label>Project</label>
-              <p>{{ userInfo.project }}</p>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="date-grid">
-              <div class="data-item">
-                <label>Start Date</label>
-                <p>{{ userInfo.startDate }}</p>
-              </div>
-              <div class="data-item">
-                <label>End Date</label>
-                <p>{{ userInfo.endDate }}</p>
-              </div>
-            </div>
-
-          </div> </div> </div> </div>
+          </div>
+        </div>
+      </div>
+      <div style="height: 40px"></div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
-/* --- DASAR & LAYOUT (Sama seperti Profile) --- */
-.main-wrapper {
-  background-color: var(--bg-mobile-shell, #e2e8f0);
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  margin: 0;
-  font-family: "Inter", sans-serif;
-  transition: background-color 0.3s ease;
-}
-
-.mobile-frame {
-  width: 100%;
-  max-width: 430px;
-  height: 100vh;
-  background-color: var(--bg-app, #f8fafc);
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
+/* --- LAYOUT UTAMA (Full Screen) --- */
+.screen-container {
   display: flex;
   flex-direction: column;
-  transition: background-color 0.3s ease;
+  height: 100vh;
+  width: 100%;
+  background-color: #f8fafc;
+  font-family: "Inter", sans-serif;
+  overflow: hidden;
+  position: relative;
 }
 
-/* --- HEADER BIRU MELENGKUNG (Style Match image_1.png) --- */
+/* --- HEADER BIRU --- */
 .blue-header {
-  background: var(--header-gradient, linear-gradient(135deg, #3b82f6 0%, #2563eb 100%));
-  height: 160px; /* Sedikit lebih pendek karena tidak ada foto besar */
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  height: 140px;
   border-bottom-left-radius: 40px;
   border-bottom-right-radius: 40px;
-  padding: 10px 25px;
+  padding: 20px 25px;
   color: white;
-  position: relative;
+  flex-shrink: 0;
   z-index: 1;
   transition: all 0.3s ease;
 }
@@ -164,45 +151,41 @@ const userInfo = ref({
   transition: 0.2s;
 }
 
-.btn-back:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* --- AREA KONTEN (Floating Card) --- */
+/* --- AREA KARTU MELAYANG --- */
 .content-area {
   flex: 1;
   padding: 0 20px;
-  margin-top: -60px; /* Nempel naik ke header biru */
+  margin-top: -70px; /* Menaikkan kartu ke atas area biru */
   position: relative;
   z-index: 2;
-  overflow-y: auto; /* Bisa di-scroll kalau datanya panjang */
-  padding-bottom: 40px;
-  scrollbar-width: none; /* Hide scrollbar UI */
+  overflow-y: auto;
+  scrollbar-width: none; /* Sembunyikan scrollbar Firefox */
 }
 
-.content-area::-webkit-scrollbar { display: none; }
+.content-area::-webkit-scrollbar {
+  display: none; /* Sembunyikan scrollbar Chrome/Safari */
+}
 
 .info-card {
   background: var(--bg-card);
   border-radius: 24px;
   padding: 25px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--border-color);
-  transition: all 0.3s ease;
+  text-align: left;
 }
 
 .card-desc {
   font-size: 13px;
-  color: var(--text-muted);
-  margin: 0 0 25px 0;
+  color: #64748b;
+  margin-bottom: 25px;
   line-height: 1.5;
 }
 
-/* --- DATA STYLING (The core info) --- */
+/* --- STYLING DATA --- */
 .data-group {
   display: flex;
   flex-direction: column;
-  gap: 18px; /* Jarak antar field */
+  gap: 18px;
 }
 
 .data-item {
@@ -214,20 +197,18 @@ const userInfo = ref({
 .data-item label {
   font-size: 11px;
   text-transform: uppercase;
-  color: var(--text-dim); /* Abu-abu muda untuk label */
+  color: #94a3b8;
   font-weight: 600;
   letter-spacing: 0.5px;
 }
 
 .data-item p {
   font-size: 14px;
-  color: var(--text-main); /* Hitam pekat untuk isi data */
+  color: #1e293b;
   font-weight: 500;
   margin: 0;
-  line-height: 1.4;
 }
 
-/* Spesifik style untuk ID Intern agar menonjol */
 .highlight-text {
   color: var(--accent-primary) !important;
   font-weight: 700 !important;
@@ -239,7 +220,6 @@ const userInfo = ref({
   margin: 5px 0;
 }
 
-/* Grid 2 kolom untuk Tanggal */
 .date-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

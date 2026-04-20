@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import axios from "axios";
 import VerificationScreen from "./VerificationScreen.vue";
 
@@ -70,6 +70,35 @@ const openVerification = (record) => {
 const getStatusClass = (status) => {
   return status === "ON TIME" ? "badge-success" : "badge-warning";
 };
+
+const stats = computed(() => {
+  const total = attendanceCards.value.length;
+  if (total === 0) {
+    return {
+      onTime: 0, onTimePct: '0%',
+      late: 0, latePct: '0%',
+      office: 0, officePct: '0%',
+      remote: 0, remotePct: '0%',
+      active: 0,
+      pending: 0
+    };
+  }
+
+  const onTime = attendanceCards.value.filter(c => c.clock_in_status === 'tepat waktu').length;
+  const late = attendanceCards.value.filter(c => c.clock_in_status === 'terlambat').length;
+  const office = attendanceCards.value.filter(c => c.clock_in_lat).length;
+  const remote = total - office;
+  const pending = attendanceCards.value.filter(c => !c.is_verified).length;
+
+  return {
+    onTime, onTimePct: Math.round((onTime / total) * 100) + '%',
+    late, latePct: Math.round((late / total) * 100) + '%',
+    office, officePct: Math.round((office / total) * 100) + '%',
+    remote, remotePct: Math.round((remote / total) * 100) + '%',
+    active: total,
+    pending
+  };
+});
 </script>
 
 <template>
@@ -131,29 +160,16 @@ const getStatusClass = (status) => {
       </div>
 
       <div class="controls-section">
-        <div class="view-toggles">
-          <button
-            class="toggle-btn"
-            :class="{ active: activeView === 'clock-in' }"
-            @click="activeView = 'clock-in'"
-          >
-            Clock-in View
-          </button>
-          <button
-            class="toggle-btn"
-            :class="{ active: activeView === 'clock-out' }"
-            @click="activeView = 'clock-out'"
-          >
-            Clock-out View
-          </button>
+        <div class="left-stats-placeholder">
+          <!-- Toggles removed based on user request -->
         </div>
 
         <div class="right-controls">
           <div class="status-indicators">
             <span class="indicator green"
-              ><span class="dot"></span> 42 Active</span
+              ><span class="dot"></span> {{ stats.active }} Active</span
             >
-            <span class="indicator grey">8 Pending</span>
+            <span class="indicator grey">{{ stats.pending }} Pending</span>
           </div>
           <button class="btn-filter">
             <svg
@@ -186,29 +202,29 @@ const getStatusClass = (status) => {
         <div class="stat-card">
           <p class="stat-label">ON TIME</p>
           <div class="stat-row">
-            <h2 class="stat-value">38</h2>
-            <span class="stat-percent text-green">90%</span>
+            <h2 class="stat-value">{{ stats.onTime }}</h2>
+            <span class="stat-percent text-green">{{ stats.onTimePct }}</span>
           </div>
         </div>
         <div class="stat-card">
           <p class="stat-label">LATE ARRIVALS</p>
           <div class="stat-row">
-            <h2 class="stat-value">4</h2>
-            <span class="stat-percent text-orange">10%</span>
+            <h2 class="stat-value">{{ stats.late }}</h2>
+            <span class="stat-percent text-orange">{{ stats.latePct }}</span>
           </div>
         </div>
         <div class="stat-card">
           <p class="stat-label">OFFICE</p>
           <div class="stat-row">
-            <h2 class="stat-value">32</h2>
-            <span class="stat-percent text-blue">76%</span>
+            <h2 class="stat-value">{{ stats.office }}</h2>
+            <span class="stat-percent text-blue">{{ stats.officePct }}</span>
           </div>
         </div>
         <div class="stat-card">
           <p class="stat-label">REMOTE</p>
           <div class="stat-row">
-            <h2 class="stat-value">10</h2>
-            <span class="stat-percent text-grey">24%</span>
+            <h2 class="stat-value">{{ stats.remote }}</h2>
+            <span class="stat-percent text-grey">{{ stats.remotePct }}</span>
           </div>
         </div>
       </div>
@@ -337,7 +353,7 @@ const getStatusClass = (status) => {
       </div>
 
       <div class="pagination">
-        <p class="pagination-info">Showing 1 to 5 of 42 Interns</p>
+        <p class="pagination-info">Showing {{ attendanceCards.length }} Interns Today</p>
         <div class="pagination-controls">
           <button class="page-btn">
             <svg
@@ -585,19 +601,19 @@ const getStatusClass = (status) => {
 
 .text-green {
   color: #10b981;
-  background: #dcfce7;
+  background: rgba(16, 185, 129, 0.1);
 }
 .text-orange {
   color: #f59e0b;
-  background: #fef3c7;
+  background: rgba(245, 158, 11, 0.1);
 }
 .text-blue {
   color: #3b82f6;
-  background: #eff6ff;
+  background: rgba(59, 130, 246, 0.1);
 }
 .text-grey {
   color: #64748b;
-  background: #f1f5f9;
+  background: rgba(100, 116, 139, 0.1);
 }
 
 /* Cards Grid */

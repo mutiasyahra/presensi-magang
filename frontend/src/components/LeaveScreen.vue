@@ -123,31 +123,31 @@ const submitLeave = async () => {
       </div>
     </div>
 
-    <div class="bottom-nav">
-      <div class="nav-item" @click="$emit('navigate', 'dashboard')">
-        <img src="../assets/home.png" alt="Home">
-        <span>Home</span>
-      </div>
-      <div class="nav-item" @click="$emit('navigate', 'history')">
-        <img src="../assets/history.png" alt="History">
-        <span>History</span>
-      </div>
-      
-      <div class="nav-item scan-btn" @click="$emit('navigate', 'scan')">
-        <div class="scan-circle">
-          <img src="../assets/qr.png" alt="Scan QR" class="qr-icon">
-        </div>
-      </div>
-      
-      <div class="nav-item active" @click="$emit('navigate', 'leave')">
-        <img src="../assets/leave.png" alt="Leave">
-        <span>Leave</span>
-      </div>
-      <div class="nav-item" @click="$emit('navigate', 'profile')">
-        <img src="../assets/profile.png" alt="Profile"> 
-        <span>Profile</span>
-      </div>
+<div class="bottom-nav">
+  <div class="nav-item" @click="$emit('navigate', 'dashboard')">
+    <img src="../assets/home.png" alt="Home">
+    <span>Home</span>
+  </div>
+  <div class="nav-item" @click="$emit('navigate', 'history')">
+    <img src="../assets/history.png" alt="History">
+    <span>History</span>
+  </div>
+  
+  <div class="nav-item-scan-wrapper" @click="$emit('navigate', 'qr-scan')">
+    <div class="scan-button">
+      <img src="../assets/qr.png" alt="Scan QR" class="qr-icon">
     </div>
+  </div>
+  
+  <div class="nav-item active" @click="$emit('navigate', 'leave')">
+    <img src="../assets/leave.png" alt="Leave">
+    <span>Leave</span>
+  </div>
+  <div class="nav-item" @click="$emit('navigate', 'profile')">
+    <img src="../assets/profile.png" alt="Profile"> 
+    <span>Profile</span>
+  </div>
+</div>
   </div>
 </template>
 
@@ -179,11 +179,9 @@ const submitLeave = async () => {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  padding-bottom: 40px;
-  
-  /* --- TAMBAHKAN INI UNTUK HILANGKAN GARIS HITAM/SCROLLBAR --- */
-  -ms-overflow-style: none;  /* Untuk Internet Explorer & Edge */
-  scrollbar-width: none;     /* Untuk Firefox */
+  padding-bottom: 100px; /* Ditambah agar tidak tertutup Navbar melayang */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Untuk Chrome, Safari, dan Opera */
@@ -243,100 +241,83 @@ const submitLeave = async () => {
 .send-icon { width: 20px; height: 20px; }
 
 /* 3. NAVBAR FIX TERKUNCI DI BAWAH */
-/* --- BOTTOM NAV (PENYELARASAN LEAVE) --- */
+/* --- BOTTOM NAV (PENYELARASAN TOTAL) --- */
+/* --- BOTTOM NAV (PENYELARASAN TOTAL DENGAN HISTORY) --- */
 .bottom-nav {
-  flex-shrink: 0;
-  width: 100%;
-  /* 1. Samakan tinggi dengan Dashboard & History */
-  height: 75px; 
-  background-color: #ffffff;
-  
-  /* 2. Tambahkan lengkungan khas Dashboard */
-  border-top-left-radius: 30px;
-  border-top-right-radius: 30px;
-  
-  /* 3. Layout Grid agar presisi 5 kolom */
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  align-items: center;
-  
-  /* 4. Shadow halus ke arah atas */
-  box-shadow: 0 -8px 25px rgba(0,0,0,0.06);
+  position: absolute; /* KUNCI: Membuatnya melayang di atas scroll area */
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
+  background: white;
+  height: 75px; /* Standar History */
+  border-top-left-radius: 30px; /* Standar History */
+  border-top-right-radius: 30px;
+  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.06);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* Grid 5 kolom presisi */
+  align-items: center;
   padding: 0 5px;
 }
 
-.nav-item { 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 4px; 
-  cursor: pointer; 
-  color: #94A3B8; 
+  gap: 4px;
+  color: #94A3B8;
+  cursor: pointer;
   height: 100%;
+  transition: all 0.2s ease;
 }
 
-.nav-item img { 
-  width: 24px; 
-  height: 24px; 
+.nav-item img {
+  width: 24px;
+  height: 24px;
   object-fit: contain;
   filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%) hue-rotate(182deg) brightness(87%) contrast(85%);
   transition: all 0.2s ease;
 }
 
-.nav-item span { 
-  font-size: 10px; 
-  font-weight: 600; 
+.nav-item span {
+  font-size: 10px;
+  font-weight: 600;
 }
 
-/* Keadaan Aktif (Tab Leave sedang terpilih) */
-.nav-item.active { 
-  color: #2563EB; 
+/* State Aktif (Leave Screen) */
+.nav-item.active {
+  color: #2563EB;
 }
 
-.nav-item.active img { 
+.nav-item.active img {
   filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%);
 }
 
-/* --- TOMBOL QR (SQUIRCLE) --- */
-.nav-item.scan-btn {
+/* --- TOMBOL QR (SQUIRCLE VERSION) --- */
+.nav-item-scan-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
+  height: 100%;
 }
 
-.scan-circle {
+.scan-button {
   width: 52px;
   height: 52px;
   background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-  border-radius: 16px; /* Squircle identik dengan Dashboard */
+  border-radius: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
   box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
-  transition: transform 0.2s;
+  cursor: pointer;
+  border: none;
 }
 
-.scan-circle:active {
-  transform: scale(0.92);
-}
-
-.scan-button {
-  /* Hapus absolute agar tidak mengambang */
-  position: static; 
-  
-  width: 50px; height: 50px; 
-  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-  border-radius: 16px; 
-  display: flex; justify-content: center; align-items: center;
-  box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
-  border: none; cursor: pointer;
-  margin: 0; /* Pastikan tidak ada margin aneh */
-}
-.scan-circle .qr-icon { 
-  width: 26px; 
-  height: 26px; 
-  filter: brightness(0) invert(1) !important; 
+.scan-button .qr-icon {
+  width: 26px;
+  height: 26px;
+  filter: brightness(0) invert(1) !important;
 }
 </style>

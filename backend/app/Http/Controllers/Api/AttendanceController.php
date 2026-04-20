@@ -214,10 +214,19 @@ class AttendanceController extends Controller
             ]);
         }
 
-        if ($request->project && $request->project !== 'All Project') {
+        if ($request->project && $request->project !== "All Project") {
             $project = $request->project;
-            $query->whereHas('user.intern', function ($q) use ($project) {
-                $q->where('project', $project);
+            $query->whereHas("user.intern", function ($q) use ($project) {
+                $q->where("project", $project);
+            });
+        }
+
+        if ($request->university && $request->university !== "All Universities") {
+            $university = $request->university;
+            $query->whereHas("user.intern", function ($q) use (
+                $university
+            ) {
+                $q->where("university", $university);
             });
         }
 
@@ -250,19 +259,24 @@ class AttendanceController extends Controller
     //  ADMIN - GET UNIQUE FILTER OPTIONS
     public function attendanceFilters()
     {
-        $projects = Intern::whereNotNull('project')
+        $projects = Intern::whereNotNull("project")
             ->distinct()
-            ->pluck('project');
+            ->pluck("project");
 
-        $periods = Intern::select('start_date', 'end_date')
-            ->whereNotNull('start_date')
-            ->whereNotNull('end_date')
+        $universities = Intern::whereNotNull("university")
+            ->distinct()
+            ->pluck("university");
+
+        $periods = Intern::select("start_date", "end_date")
+            ->whereNotNull("start_date")
+            ->whereNotNull("end_date")
             ->distinct()
             ->get();
 
         return response()->json([
-            'projects' => $projects,
-            'periods' => $periods
+            "projects" => $projects,
+            "universities" => $universities,
+            "periods" => $periods,
         ]);
     }
 

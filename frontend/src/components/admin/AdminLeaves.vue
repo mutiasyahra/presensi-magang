@@ -13,8 +13,8 @@ const isToday = (dateString) => {
   return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
 };
 
-const approvedTodayCount = computed(() => props.leaveRequests?.filter(l => l.status === 'approved' && isToday(l.updated_at)).length || 0);
-const rejectedTodayCount = computed(() => props.leaveRequests?.filter(l => l.status === 'rejected' && isToday(l.updated_at)).length || 0);
+const approvedTotalCount = computed(() => props.leaveRequests?.filter(l => l.status === 'approved').length || 0);
+const rejectedTotalCount = computed(() => props.leaveRequests?.filter(l => l.status === 'rejected').length || 0);
 
 const totalLeaveRate = computed(() => {
   if (!props.leaveRequests?.length) return '0%';
@@ -68,17 +68,17 @@ const getFileUrl = (filePath) => {
         </div>
       </div>
       <div class="stat-card">
-        <span class="stat-label">APPROVED TODAY</span>
+        <span class="stat-label">TOTAL APPROVED</span>
         <div class="stat-value-row">
-          <h2>{{ approvedTodayCount < 10 && approvedTodayCount > 0 ? '0' + approvedTodayCount : approvedTodayCount }}</h2>
-          <span class="badge badge-green">Good pace</span>
+          <h2>{{ approvedTotalCount < 10 && approvedTotalCount > 0 ? '0' + approvedTotalCount : approvedTotalCount }}</h2>
+          <span class="badge badge-green">Cumulative</span>
         </div>
       </div>
       <div class="stat-card">
-        <span class="stat-label">REJECTED TODAY</span>
+        <span class="stat-label">TOTAL REJECTED</span>
         <div class="stat-value-row">
-          <h2>{{ rejectedTodayCount < 10 && rejectedTodayCount > 0 ? '0' + rejectedTodayCount : rejectedTodayCount }}</h2>
-          <span class="badge badge-red">Low quota</span>
+          <h2>{{ rejectedTotalCount < 10 && rejectedTotalCount > 0 ? '0' + rejectedTotalCount : rejectedTotalCount }}</h2>
+          <span class="badge badge-red">Overall</span>
         </div>
       </div>
       <div class="stat-card">
@@ -115,11 +115,12 @@ const getFileUrl = (filePath) => {
               <th>CATEGORY</th>
               <th>DURATION</th>
               <th>REASON & EVIDENCE</th>
+              <th>STATUS</th>
               <th>ACTIONS</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="leave in leaveRequests.filter(l => l.status === 'pending')" :key="leave.id">
+            <tr v-for="leave in leaveRequests" :key="leave.id">
               
               <td>
                 <div class="intern-details">
@@ -156,7 +157,17 @@ const getFileUrl = (filePath) => {
               </td>
 
               <td>
-                <div class="action-buttons">
+                <span class="badge" :class="{
+                  'badge-blue': leave.status === 'pending',
+                  'badge-green': leave.status === 'approved',
+                  'badge-red': leave.status === 'rejected'
+                }">
+                  {{ leave.status.toUpperCase() }}
+                </span>
+              </td>
+
+              <td>
+                <div class="action-buttons" v-if="leave.status === 'pending'">
                   <button class="btn-approve" @click="$emit('approve', leave.id, 'approved')">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     Approve
@@ -165,6 +176,9 @@ const getFileUrl = (filePath) => {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                   </button>
                 </div>
+                <div v-else class="action-done">
+                  <span class="text-muted">No actions needed</span>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -172,7 +186,7 @@ const getFileUrl = (filePath) => {
       </div>
 
       <div class="pagination-footer">
-        <p>Showing {{ leaveRequests.filter(l => l.status === 'pending').length }} pending requests</p>
+        <p>Showing {{ leaveRequests.length }} total requests</p>
         <div class="pagination">
           <button class="page-btn">&lt;</button>
           <button class="page-btn active">1</button>

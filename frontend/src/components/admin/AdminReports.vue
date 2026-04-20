@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import api from '../../api/axios.js';
 
 const attendanceRecords = ref([]);
@@ -23,18 +23,21 @@ const closeDetail = () => {
 
 // Advanced Filters
 const selectedProject = ref('All Project');
+const selectedUniversity = ref('All Universities');
 const selectedPeriod = ref('All Periods');
 
 const filterOptions = ref({
   projects: [],
+  universities: [],
   periods: []
 });
 
 const fetchFilterOptions = async () => {
   try {
-    const res = await api.get('/attendance-filters');
+    const res = await api.get("/attendance-filters");
     if (res.data) {
       filterOptions.value.projects = res.data.projects || [];
+      filterOptions.value.universities = res.data.universities || [];
       filterOptions.value.periods = res.data.periods || [];
     }
   } catch (error) {
@@ -65,19 +68,18 @@ const fetchReportData = async () => {
     const params = {
       search: searchQuery.value,
       project: selectedProject.value,
+      university: selectedUniversity.value,
       start_date,
       end_date
     };
 
     // Remove default/empty params
     if (params.project === 'All Project') delete params.project;
+    if (params.university === 'All Universities') delete params.university;
+
     Object.keys(params).forEach(key => {
       if (!params[key]) delete params[key];
     });
-
-      if (selectedProject.value && selectedProject.value !== "All Project") {
-      result = result.filter(i => i.project === selectedProject.value);
-    }
 
     const attRes = await api.get('/attendances', { params });
     attendanceRecords.value = attRes.data?.data || attRes.data || [];
@@ -147,9 +149,14 @@ const getInitials = (name) => {
 
 const getImageUrl = (path) => {
   if (!path) return null;
-  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
+  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
   return `${baseUrl}/storage/${path}`;
 };
+
+// Automatic Refresh on Filter Change
+watch([selectedProject, selectedUniversity, selectedPeriod], () => {
+  fetchReportData();
+});
 
 onMounted(() => {
   fetchReportData();
@@ -221,7 +228,11 @@ onMounted(() => {
         <div class="input-wrapper select-wrapper">
           <select v-model="selectedProject">
             <option>All Project</option>
-            <option v-for="proj in filterOptions.projects" :key="proj" :value="proj">
+            <option
+              v-for="proj in filterOptions.projects"
+              :key="proj"
+              :value="proj"
+            >
               {{ proj }}
             </option>
           </select>
@@ -229,18 +240,46 @@ onMounted(() => {
       </div>
 
       <div class="filter-group">
-        <label>SEARCH INTERN</label>
-        <div class="input-wrapper">
-          <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input type="text" v-model="searchQuery" @keyup.enter="fetchReportData" placeholder="Name or ID..." />
+        <label>UNIVERSITY</label>
+        <div class="input-wrapper select-wrapper">
+          <select v-model="selectedUniversity">
+            <option>All Universities</option>
+            <option
+              v-for="univ in filterOptions.universities"
+              :key="univ"
+              :value="univ"
+            >
+              {{ univ }}
+            </option>
+          </select>
         </div>
       </div>
-      <div class="filter-actions">
-        <button class="btn-apply" @click="fetchReportData">
-          <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-          <span v-else>Loading...</span>
-          Apply Filters
-        </button>
+
+      <div class="filter-group" style="flex: 1.5">
+        <label>SEARCH INTERN</label>
+        <div class="input-wrapper">
+          <svg
+            class="icon"
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            v-model="searchQuery"
+            @keyup.enter="fetchReportData"
+            placeholder="Name or ID..."
+          />
+        </div>
       </div>
     </div>
     
