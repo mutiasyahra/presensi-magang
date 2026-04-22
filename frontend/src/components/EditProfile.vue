@@ -133,10 +133,10 @@ const saveChanges = () => {
 .form-input {
   width: 100%; padding: 14px 14px 14px 45px; 
   border-radius: 14px; border: 1.5px solid #e2e8f0;
-  font-size: 14px; color: #1e293b; background-color: #ffffff !important; /* Paksa Putih */
+  font-size: 14px; color: #1e293b; background-color: var(--bg-card) !important; /* Paksa Putih */
   box-sizing: border-box; transition: 0.2s;
 }
-.form-input:focus { border-color: #3b82f6; outline: none; background-color: #ffffff; }
+.form-input:focus { border-color: #3b82f6; outline: none; background-color: var(--bg-card); }
 .input-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; opacity: 0.4; }
 
 /* Tombol Save Baru */

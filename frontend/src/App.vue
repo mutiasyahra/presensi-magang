@@ -194,15 +194,37 @@ onMounted(() => {
 </template>
 
 <style>
+  /* Warna Default (Light Mode) */
+:root {
+  --bg-screen: #f8fafc;       /* Warna layar paling belakang */
+  --bg-card: #ffffff;         /* Warna kotak/card utama */
+  --text-main: #1e293b;       /* Warna font utama (gelap) */
+  --text-muted: #64748b;     /* Warna font sekunder */
+  --border-color: #e2e8f0;    /* Warna garis border/input */
+}
+
+/* Warna saat Dark Mode aktif */
+.dark {
+  --bg-screen: #0f172a;       /* Layar belakang jadi biru sangat gelap */
+  --bg-card: #1e293b;         /* Kotak/card lebih terang sedikit dari layar (seperti di image_06ee44.png) */
+  --text-main: #f8fafc;       /* Font jadi putih/terang agar terbaca */
+  --text-muted: #94a3b8;     /* Font sekunder jadi abu-abu terang */
+  --border-color: #334155;    /* Border jadi lebih gelap agar tidak kontras */
+}
+/* Di bawah selector .dark { ... } lo tadi */
+
 body {
   margin: 0;
   padding: 0;
   font-family: "Inter", sans-serif;
-  background-color: #f8fafc;
+  /* GANTI INI: panggil variabelnya */
+  background-color: var(--bg-screen); 
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .app-background {
-  background-color: #e2e8f0;
+  background-color: #e2e8f0; /* Biarkan ini untuk tampilan desktop */
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -212,24 +234,11 @@ body {
 .mobile-frame {
   width: 100%;
   max-width: 480px;
-  min-width: 360px;
   min-height: 100vh;
-  background-color: #ffffff;
+  /* GANTI INI: Pakai bg-screen supaya layar putihnya hilang */
+  background-color: var(--bg-screen); 
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow-x: hidden;
-}
-
-@media screen and (max-width: 480px) {
-  .app-background {
-    background-color: #ffffff;
-    display: block;
-  }
-  .mobile-frame {
-    max-width: 100%;
-    min-width: 100%;
-    box-shadow: none;
-    min-height: 100vh;
-  }
 }
 </style>

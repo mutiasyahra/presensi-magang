@@ -223,7 +223,7 @@ const getStatusClass = (status) => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f8fafc;
+background-color: var(--bg-screen);
   overflow: hidden;
   font-family: "Inter", sans-serif;
   position: relative;
@@ -231,7 +231,7 @@ const getStatusClass = (status) => {
 
 /* --- TOP FIXED AREA --- */
 .top-fixed-area {
-  background-color: #f8fafc;
+  background-color: var(--bg-screen);
   padding: 20px 20px 0 20px;
   z-index: 10;
   flex-shrink: 0;
@@ -246,9 +246,10 @@ const getStatusClass = (status) => {
 .header h2 {
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
 }
+
 .btn-back {
   border: none;
   background: none;
@@ -269,14 +270,15 @@ const getStatusClass = (status) => {
 .search-box input {
   width: 100%;
   box-sizing: border-box;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--bg-card); /* Sudah benar, pastikan variabel terdefinisi */
+  border: 1px solid var(--border-color); /* GANTI dari #e2e8f0 */
   border-radius: 12px;
   padding: 12px 12px 12px 45px;
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-main); /* GANTI agar teks input terbaca */
   outline: none;
 }
+
 .search-icon {
   position: absolute;
   left: 15px;
@@ -292,18 +294,20 @@ const getStatusClass = (status) => {
   gap: 10px;
   margin-bottom: 15px;
 }
+
 .tab-btn {
   flex: 1;
   padding: 10px;
   border-radius: 25px;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #64748b;
+  border: 1px solid var(--border-color); /* GANTI dari #e2e8f0 */
+  background-color: var(--bg-card);
+  color: var(--text-muted); /* GANTI dari #64748b */
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .tab-btn.active {
   background: #2563eb;
   color: white;
@@ -325,7 +329,7 @@ const getStatusClass = (status) => {
 
 /* --- CARD STYLE --- */
 .history-card {
-  background: white;
+  background-color: var(--bg-card);
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 16px;
@@ -365,7 +369,7 @@ const getStatusClass = (status) => {
 .day-name {
   font-weight: 700;
   font-size: 15px;
-  color: #0f172a;
+  color: var(--text-main);
 }
 .time-row {
   display: flex;
@@ -378,7 +382,7 @@ const getStatusClass = (status) => {
 }
 .date-text {
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -420,10 +424,10 @@ const getStatusClass = (status) => {
 }
 
 .dashed-box {
-  border: 1.5px dashed #e2e8f0;
+  border: 1.5px dashed var(--border-color); /* GANTI dari #e2e8f0 */
   border-radius: 12px;
   padding: 12px;
-  background: #f8fafc;
+  background: var(--bg-screen); /* GANTI dari #f8fafc agar lebih gelap dari card */
 }
 .dashed-header {
   display: flex;
@@ -443,7 +447,7 @@ const getStatusClass = (status) => {
 .dashed-content {
   margin: 0;
   font-size: 12px;
-  color: #475569;
+  color: var(--text-muted); /* GANTI dari #475569 */
   font-style: italic;
   line-height: 1.5;
   text-align: left;
@@ -463,19 +467,12 @@ const getStatusClass = (status) => {
   left: 0;
   right: 0;
   z-index: 100;
-  background: white;
-  
-  /* 1. Samakan tinggi dengan yang lain */
+  background: var(--bg-card); /* GANTI dari white */
   height: 75px; 
-  
-  /* 2. Lengkungan Dashboard */
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
-  
-  /* 3. Shadow halus */
-  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.06);
-
-  /* 4. Layout Grid 5 Kolom */
+  border-top: 1px solid var(--border-color); /* Tambahkan border tipis */
+  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.2); /* Gelapkan shadow sedikit */
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   align-items: center; 
@@ -555,5 +552,11 @@ const getStatusClass = (status) => {
   width: 26px;
   height: 26px;
   filter: brightness(0) invert(1) !important;
+}
+
+.dark .btn-edit img,
+.dark .clock-icon,
+.dark .search-icon {
+  filter: brightness(0) invert(1);
 }
 </style>

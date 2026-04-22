@@ -302,43 +302,53 @@ onUnmounted(() => {
         </div>
 
         <div class="stats-grid">
-          <div class="stat-card">
-            <img src="../assets/present.png" class="stat-icon" />
-            <span class="stat-num">{{ presentCount < 10 && presentCount > 0 ? '0' + presentCount : presentCount }}</span>
-            <span class="stat-label">Present</span>
-          </div>
-          <div class="stat-card">
-            <img src="../assets/late.png" class="stat-icon" />
-            <span class="stat-num">{{ lateCount < 10 && lateCount > 0 ? '0' + lateCount : lateCount }}</span>
-            <span class="stat-label">Late</span>
-          </div>
-          <div class="stat-card">
-            <img src="../assets/absent.png" class="stat-icon" />
-            <span class="stat-num">{{ absentCount < 10 && absentCount > 0 ? '0' + absentCount : absentCount }}</span>
-            <span class="stat-label">Absent</span>
-          </div>
-          <div class="stat-card">
-            <div class="icon-square leave-bg-clean">
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                stroke-width="1.8" 
-                stroke-linecap="round" 
-                stroke-linejoin="round" 
-                class="icon-svg-leave"
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-            </div>
-            <span class="stat-num">{{ leaveCount < 10 && leaveCount > 0 ? '0' + leaveCount : leaveCount }}</span>
-            <span class="stat-label">Leave</span>
-          </div>
-        </div>
+  <div class="stat-card">
+    <div class="icon-square present-bg">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+    </div>
+    <span class="stat-num">{{ presentCount < 10 && presentCount > 0 ? '0' + presentCount : presentCount }}</span>
+    <span class="stat-label">Present</span>
+  </div>
+
+  <div class="stat-card">
+    <div class="icon-square late-bg">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+    </div>
+    <span class="stat-num">{{ lateCount < 10 && lateCount > 0 ? '0' + lateCount : lateCount }}</span>
+    <span class="stat-label">Late</span>
+  </div>
+
+  <div class="stat-card">
+    <div class="icon-square absent-bg">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="15" y1="9" x2="9" y2="15"></line>
+        <line x1="9" y1="9" x2="15" y2="15"></line>
+      </svg>
+    </div>
+    <span class="stat-num">{{ absentCount < 10 && absentCount > 0 ? '0' + absentCount : absentCount }}</span>
+    <span class="stat-label">Absent</span>
+  </div>
+
+  <div class="stat-card">
+    <div class="icon-square leave-bg">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+    </div>
+    <span class="stat-num">{{ leaveCount < 10 && leaveCount > 0 ? '0' + leaveCount : leaveCount }}</span>
+    <span class="stat-label">Leave</span>
+  </div>
+</div>
 
         <div class="calendar-card">
           <div class="cal-header">
@@ -424,7 +434,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f8fafc;
+  height: 100dvh;
+  background-color: var(--bg-screen);
   overflow: hidden;
   font-family: "Poppins", sans-serif;
   position: relative;
@@ -432,11 +443,11 @@ onUnmounted(() => {
 
 /* --- HEADER --- */
 .header-section {
-  position: absolute;
+  position: sticky; /* Ganti dari absolute ke sticky */
   top: 0;
   left: 0;
   right: 0;
-  z-index: 50;
+  z-index: 100; /* Pastikan lebih tinggi dari kartu lainnya */
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
   padding: 20px 25px 25px 25px;
@@ -450,13 +461,14 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 .scroll-area::-webkit-scrollbar {
   display: none;
 }
 
 .content-wrapper {
-  padding-top: 115px;
+  padding-top: 20px;
   padding-bottom: 120px;
   padding-left: 24px;
   padding-right: 24px;
@@ -510,6 +522,7 @@ onUnmounted(() => {
   font-size: 10px;
   opacity: 0.8;
   letter-spacing: 0.5px;
+  color: var(--text-muted) !important;
 }
 .loc-name {
   margin: 2px 0 0;
@@ -527,7 +540,8 @@ onUnmounted(() => {
 
 /* Stats Simple */
 .stats-simple-card {
-  background: white;
+  background-color: var(--bg-card) !important;
+  color: var(--text-main);
   padding: 20px;
   border-radius: 24px;
   display: flex;
@@ -538,7 +552,7 @@ onUnmounted(() => {
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 .stats-simple-card:active {
   transform: scale(0.97);
@@ -553,14 +567,14 @@ onUnmounted(() => {
 .rate-label {
   margin: 0;
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-muted) !important;
   font-weight: 600;
 }
 .rate-num {
   margin: 5px 0;
   font-size: 28px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-main) !important;
 }
 .rate-desc {
   margin: 0;
@@ -583,14 +597,15 @@ onUnmounted(() => {
 
 /* --- TIME CARD REVISION --- */
 .time-card {
-  background: white;
+  background-color: var(--bg-card) !important;
+  color: var(--text-main);  padding: 20px;
   border-radius: 30px; /* Lebih bulat */
   padding: 24px;
   text-align: center;
   box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.08); /* Shadow halus premium */
   margin-bottom: 25px;
   position: relative;
-  z-index: 3;
+  z-index: 1;
 }
 
 /* Header Tanggal & Pill */
@@ -602,7 +617,7 @@ onUnmounted(() => {
 }
 .date-text {
   font-weight: 700;
-  color: #334155;
+  color: var(--text-main) !important;
   font-size: 13px;
 }
 .work-hours {
@@ -618,7 +633,7 @@ onUnmounted(() => {
 /* Label "Current Working Time" */
 .working-label {
   font-size: 12px;
-  color: #94a3b8; /* Abu smooth */
+  color: var(--text-muted) !important;
   margin: 0 0 5px 0;
   font-weight: 500;
 }
@@ -633,7 +648,7 @@ onUnmounted(() => {
 }
 .digital-clock {
   font-size: 56px; /* Ukuran Besar */
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
   font-weight: 700;
   letter-spacing: -2px; /* Huruf rapat biar modern */
@@ -682,15 +697,14 @@ onUnmounted(() => {
   filter: brightness(1.1);
 }
 .action-btn.clock-out {
-  background: white !important; /* Paksa Background Putih */
-  border: 1px solid #cbd5e1 !important; /* Garis pinggir abu-abu */
-  color: #64748b !important; /* Paksa Teks Abu-abu */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-muted) !important;  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 .action-btn.clock-out:hover {
   border-color: #3b82f6 !important;
   color: #3b82f6 !important;
-  background: #f8fafc !important;
+  background-color: rgba(59, 130, 246, 0.1) !important; 
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 .action-btn.clock-out:hover span {
@@ -713,7 +727,7 @@ onUnmounted(() => {
 .section-title h3 {
   margin: 0;
   font-size: 15px;
-  color: #1e293b;
+  color: var(--text-main) !important;
   font-weight: 700;
 }
 .stats-grid {
@@ -721,11 +735,12 @@ onUnmounted(() => {
   gap: 10px;
   margin-bottom: 25px;
   position: relative;
-  z-index: 4;
+  z-index: 1;
 }
 .stat-card {
   flex: 1;
-  background: white;
+background-color: var(--bg-card) !important;
+  color: var(--text-main);
   padding: 14px 6px;
   border-radius: 20px;
   text-align: center;
@@ -741,31 +756,55 @@ onUnmounted(() => {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.08);
 }
-.stat-icon {
-  width: 28px;
-  margin-bottom: 6px;
+/* Container Box (Squircle) */
+.icon-square {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+/* Ukuran Ikon SVG di dalam Box */
+.icon-svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Warna Spesifik Tiap Status (Background & Stroke) */
+.present-bg { background-color: rgba(34, 197, 94, 0.15); color: #22c55e; }
+.late-bg    { background-color: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.absent-bg  { background-color: rgba(239, 68, 68, 0.15);  color: #ef4444; }
+.leave-bg   { background-color: rgba(168, 85, 247, 0.15); color: #a855f7; }
+
+/* Pastikan SVG memakai warna dari parent-nya */
+.icon-svg {
+  stroke: currentColor;
 }
 .stat-num {
   display: block;
   font-size: 16px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-main) !important;
 }
 .stat-label {
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--text-muted) !important;
   font-weight: 500;
 }
 
 /* --- CALENDAR CARD (NEW) --- */
 .calendar-card {
-  background: white;
+  background-color: var(--bg-card) !important;
+  color: var(--text-main);
   border-radius: 24px;
   padding: 20px;
   box-shadow: 0 5px 20px -5px rgba(0, 0, 0, 0.04);
   transition: all 0.3s ease;
   position: relative;
-  z-index: 5;
+  z-index: 1;
 }
 .calendar-card:hover {
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06);
@@ -779,15 +818,17 @@ onUnmounted(() => {
 .cal-header h3 {
   margin: 0;
   font-size: 16px;
-  color: #1e293b;
+  color: var(--text-main) !important;
   font-weight: 700;
 }
 .cal-nav {
   display: flex;
   gap: 8px;
+  background: var(--bg-screen); /* Tombol navigasi kalender */
+  color: #3b82f6;
 }
 .nav-btn {
-  background: rgb(229, 234, 249);
+  background: var(--bg-screen);
   border: none;
   width: 30px;
   height: 30px;
@@ -796,7 +837,7 @@ onUnmounted(() => {
   flex-shrink: 0;
   padding: 0;
   border-radius: 50%;
-  color: #098de4;
+  color: #3b82f6;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -820,7 +861,7 @@ onUnmounted(() => {
 }
 .cal-days-name span {
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--text-muted) !important;
   font-weight: 600;
 }
 
@@ -845,7 +886,7 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 13px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-main);
   border-radius: 50%;
 }
 /* Highlight Hari Ini */
@@ -1014,18 +1055,15 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   z-index: 100;
-  background: white;
-  
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
   /* 1. Ukuran Tinggi Disamakan (70px-80px) */
   height: 75px; 
-  
   /* 2. Lengkungan Dashboard yang kamu suka */
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
-  
   /* 3. Shadow Halus agar tidak tampak "nempel" */
   box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.06);
-
   /* 4. Layout Grid 5 Kolom (Rata Kiri-Kanan) */
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -1141,14 +1179,15 @@ onUnmounted(() => {
 
 /* Warna ungu transparan khusus Leave (TANPA GARIS/BORDER) */
 .leave-bg-clean {
-  background-color: rgba(168, 85, 247, 0.1); /* Background ungu pudar */
+  background-color: rgba(168, 85, 247, 0.15) !important; /* Background ungu muda */
 }
 
 /* Mengontrol ukuran SVG di dalam kotak agar kecil dan presisi */
 .icon-svg-leave {
-  width: 22px;  /* Poin 1: Ikon diperkecil agar tidak memenuhi kotak */
+  width: 22px;
   height: 22px;
-  color: #a855f7; /* Warna ikon ungu */
+  color: #a855f7 !important; /* Warna ungu tegas */
+  stroke: #a855f7 !important; /* Paksa warna garisnya juga ungu */
 }
 
 /* Menyesuaikan angka dan label agar serasi dengan ikon gambar */

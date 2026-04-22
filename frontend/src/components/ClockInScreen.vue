@@ -275,7 +275,7 @@ onMounted(() => {
 
 /* Container Full Screen HP */
 .clock-in-page {
-  background-color: #f8fafc;
+background-color: var(--bg-screen);
   height: 100vh; /* Tinggi pas layar */
   display: flex;
   flex-direction: column; /* Susun atas-bawah */
@@ -285,7 +285,7 @@ onMounted(() => {
 /* Header (Diam di Atas) */
 .header-fixed {
   flex-shrink: 0; /* Tidak boleh mengecil */
-  background-color: #f8fafc;
+background-color: var(--bg-screen);
   padding: 20px 20px 10px 20px;
   display: flex;
   align-items: center;
@@ -297,7 +297,7 @@ onMounted(() => {
   font-size: 18px;
   font-weight: 700;
   margin: 0;
-  color: #0f172a;
+color: var(--text-main);
 }
 
 /* Area Tengah (Bisa Scroll) */
@@ -315,7 +315,7 @@ onMounted(() => {
 /* Footer (Diam di Bawah) */
 .footer-fixed {
   flex-shrink: 0;
-  background: white;
+  background-color: var(--bg-card);
   padding: 20px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
   text-align: center;
@@ -328,7 +328,7 @@ onMounted(() => {
 
 /* Tombol Back */
 .btn-back {
-  background: white;
+  background-color: var(--bg-card);
   border: 1px solid #e2e8f0;
   border-radius: 50%;
   width: 40px;
@@ -441,7 +441,7 @@ onMounted(() => {
 }
 
 .info-card {
-  background: white;
+  background-color: var(--bg-card);
   padding: 16px;
   border-radius: 20px;
   display: flex;
@@ -487,7 +487,7 @@ onMounted(() => {
 .value {
   font-size: 13px;
   font-weight: 600;
-  color: #334155;
+color: var(--text-main);
   margin: 0;
   line-height: 1.4;
 }
@@ -511,7 +511,7 @@ onMounted(() => {
 
 /* Work Plan Input */
 .work-plan-card {
-  background: white;
+  background-color: var(--bg-card);
   padding: 20px;
   border-radius: 24px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
@@ -530,20 +530,22 @@ onMounted(() => {
 .plan-input {
   width: 100%;
   height: 100px;
-  box-sizing: border-box; /* PENTING: Kunci agar tidak meleber */
-  border: 1px solid #f1f5f9;
-  background: #f8fafc;
+  box-sizing: border-box;
+  /* Ganti border dan background input agar tidak silau */
+  border: 1px solid var(--border-color);
+  background: var(--bg-screen); 
   border-radius: 16px;
   padding: 15px;
   font-family: "Inter", sans-serif;
   font-size: 13px;
-  color: #334155;
+  /* Teks yang diketik user harus var(--text-main) */
+  color: var(--text-main); 
   resize: none;
   outline: none;
 }
 .plan-input:focus {
   border-color: #bfdbfe;
-  background: white;
+  background-color: var(--bg-card);
 }
 .plan-input::placeholder {
   color: #cbd5e1;

@@ -367,7 +367,7 @@ onMounted(() => {
 <style scoped>
 /* --- 1. LAYOUT UTAMA --- */
 .clock-out-page {
-  background-color: #f8fafc;
+background-color: var(--bg-screen);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -387,7 +387,7 @@ onMounted(() => {
   font-size: 18px;
   font-weight: 700;
   margin: 0;
-  color: #0f172a;
+color: var(--text-main);
 }
 
 /* Scroll Area */
@@ -404,7 +404,7 @@ onMounted(() => {
 /* Footer */
 .footer-fixed {
   flex-shrink: 0;
-  background: white;
+background-color: var(--bg-card);
   padding: 20px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
   text-align: center;
@@ -413,8 +413,8 @@ onMounted(() => {
 
 /* --- 2. KAMERA & INFO --- */
 .btn-back {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -521,7 +521,7 @@ onMounted(() => {
 
 .info-card,
 .form-card {
-  background: white;
+background-color: var(--bg-card);
   padding: 16px;
   border-radius: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
@@ -538,7 +538,7 @@ onMounted(() => {
 .icon-box {
   width: 40px;
   height: 40px;
-  background: #eff6ff;
+  background: var(--bg-screen);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -565,7 +565,7 @@ onMounted(() => {
 .value {
   font-size: 13px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-main);
   margin: 0;
   line-height: 1.4;
 }
@@ -576,7 +576,7 @@ onMounted(() => {
   width: 100%;
 }
 .badge-ontime {
-  background: #eff6ff;
+  background: rgba(37, 99, 235, 0.2);
   color: #2563eb;
   font-size: 10px;
   font-weight: 700;
@@ -608,30 +608,30 @@ onMounted(() => {
   width: 100%;
   height: 100px;
   box-sizing: border-box; /* PENTING: Kunci agar tidak meleber */
-  border: 1px solid #f1f5f9;
-  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  background: var(--bg-screen);
   border-radius: 16px;
   padding: 15px;
   font-family: "Inter", sans-serif;
   font-size: 13px;
-  color: #334155;
+  color: var(--text-main);
   resize: none;
   outline: none;
 }
 .custom-textarea:focus {
   border-color: #bfdbfe;
-  background: white;
+  background-color: var(--bg-card);
 }
 
 /* FIX UPLOAD AREA MELEBER */
 .upload-area {
   width: 100%;
   box-sizing: border-box; /* PENTING */
-  border: 2px dashed #e2e8f0;
+  border: 2px dashed var(--border-color);
   border-radius: 16px;
   padding: 25px 15px;
   text-align: center;
-  background-color: #f8fafc;
+  background-color: var(--bg-screen);
   transition: all 0.2s;
 }
 .upload-icon {
@@ -647,8 +647,8 @@ onMounted(() => {
 }
 .btn-pilih-file {
   margin-top: 10px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color); /* GANTI: Border button */
   color: #3b82f6;
   font-size: 12px;
   font-weight: 600;

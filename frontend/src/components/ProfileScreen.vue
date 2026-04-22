@@ -160,7 +160,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f8fafc;
+  background-color: var(--bg-screen);
   overflow: hidden;
 }
 
@@ -227,10 +227,11 @@ onMounted(() => {
 
 /* 4. KARTU PROFIL UTAMA */
 .profile-card {
-  background: white;
+  background-color: var(--bg-card); /* GANTI INI */
   border-radius: 24px;
   padding: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); 
+  border: 1px solid var(--border-color); /* Tambahkan border */
   text-align: center;
   margin-bottom: 30px;
 }
@@ -257,8 +258,7 @@ onMounted(() => {
   height: 100%;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border-radius: 24%;
-  border: 4px solid white;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+border: 4px solid var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -279,7 +279,7 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 3px solid white;
+  border: 3px solid var(--bg-card);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   cursor: pointer;
 }
@@ -293,7 +293,7 @@ onMounted(() => {
 .username {
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-main);
   margin: 0 0 4px;
 }
 
@@ -319,19 +319,19 @@ onMounted(() => {
 }
 
 .badge.blue {
-  background-color: #eff6ff;
+background-color: rgba(59, 130, 246, 0.15);
   color: #3b82f6;
 }
 
 .badge.gray {
-  background-color: #f8fafc;
-  color: #64748b;
+  background-color: var(--bg-screen);
+  color: var(--text-main);
 }
 
 .company-info {
   display: flex;
   justify-content: space-around;
-  border-top: 1px solid #f1f5f9;
+border-top: 1px solid var(--border-color);
   padding-top: 20px;
 }
 
@@ -352,7 +352,7 @@ onMounted(() => {
 .info-value {
   font-size: 13px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-main);
 }
 
 /* 5. LIST MENU SETTING */
@@ -369,7 +369,8 @@ onMounted(() => {
 .setting-item {
   display: flex;
   align-items: center;
-  background: white;
+  background-color: var(--bg-card); /* GANTI INI */
+  border: 1px solid var(--border-color); /* Tambahkan border tipis */
   padding: 16px 20px; /* Ditambah padding kanan agar tidak mepet */
   border-radius: 16px;
   margin-bottom: 12px;
@@ -388,7 +389,7 @@ onMounted(() => {
 .setting-icon-wrapper {
   width: 40px;
   height: 40px;
-  background: #f8fafc;
+background-color: var(--bg-screen);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -406,13 +407,13 @@ onMounted(() => {
   flex: 1;
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+color: var(--text-main);
   margin-right: 10px;
 }
 
 .chevron {
   font-size: 18px;
-  color: #cbd5e1;
+  color: var(--text-muted);
   font-weight: 600;
   width: 20px; /* Beri lebar tetap */
   display: flex;
@@ -422,7 +423,8 @@ onMounted(() => {
 
 /* Tombol Logout Khusus */
 .logout-item {
-  background: #fef2f2;
+background-color: rgba(239, 68, 68, 0.1); /* Merah transparan */
+  border: 1px solid rgba(239, 68, 68, 0.2);
   box-shadow: none;
   margin-top: 24px;
 }
@@ -443,12 +445,12 @@ onMounted(() => {
   left: 0;
   right: 0;
   z-index: 100;
-  background: white;
+  background-color: var(--bg-card); /* GANTI INI */
+  border-top: 1px solid var(--border-color);
   height: 75px; /* Sinkron 75px */
   border-top-left-radius: 30px; /* Sinkron radius 30px */
   border-top-right-radius: 30px;
-  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.06);
-  display: grid;
+box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.2);  display: grid;
   grid-template-columns: repeat(5, 1fr); /* Wajib Grid agar posisi ikon simetris */
   align-items: center;
   padding: 0 5px;
@@ -481,7 +483,7 @@ onMounted(() => {
 
 /* State Aktif (Warna Biru Presisi) */
 .nav-item.active {
-  color: #2563EB;
+  color: #3b82f6; /* Warna biru lebih terang sedikit agar pop up */
 }
 
 .nav-item.active img {
