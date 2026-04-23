@@ -15,7 +15,15 @@ const user = ref({
   name: "User",
   email: "",
   id: "",
+  profile_photo: null,
 });
+
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
+  return `${baseUrl}/storage/${path}`;
+};
 
 const userInitial = computed(() => {
   return user.value.name ? user.value.name.charAt(0).toUpperCase() : "U";
@@ -63,11 +71,9 @@ onMounted(() => {
     <div class="content">
       <div class="profile-card">
         <div class="avatar-container">
-          <div class="avatar-circle-profile">{{ userInitial }}</div>
+          <img v-if="user.profile_photo" :src="getImageUrl(user.profile_photo)" class="avatar-img" />
+          <div v-else class="avatar-circle-profile">{{ userInitial }}</div>
 
-          <div class="edit-icon">
-            <img src="../assets/pencil.png" alt="Edit" />
-          </div>
           <div class="edit-icon" @click="$emit('navigate', 'edit-profile')">
             <img src="../assets/pencil.png" alt="Edit Profile" />
           </div>

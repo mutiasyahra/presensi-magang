@@ -22,6 +22,7 @@ const stats = ref({
 const attendanceList = ref([]);
 const leaveRequests = ref([]);
 const isLoading = ref(false);
+const adminUser = ref(JSON.parse(localStorage.getItem("user") || "{}"));
 
 const fetchData = async () => {
   isLoading.value = true;
@@ -107,6 +108,7 @@ onMounted(fetchData);
     <AdminSidebar
       v-model:activeTab="activeTab"
       :pendingLeaves="stats.pending_leaves"
+      :user="adminUser"
       @logout="$emit('logout')"
     />
 

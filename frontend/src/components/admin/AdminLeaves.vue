@@ -43,6 +43,13 @@ const getFileUrl = (filePath) => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://127.0.0.1:8000';
   return `${baseUrl}/storage/${filePath}`;
 };
+
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://127.0.0.1:8000';
+  return `${baseUrl}/storage/${path}`;
+};
 </script>
 
 <template>
@@ -124,7 +131,10 @@ const getFileUrl = (filePath) => {
               
               <td>
                 <div class="intern-details">
-                  <div class="avatar-placeholder">{{ leave.user?.name?.charAt(0) || 'U' }}</div>
+                  <div class="avatar-placeholder">
+                    <img v-if="leave.user?.profile_photo" :src="getImageUrl(leave.user.profile_photo)" class="avatar-img" />
+                    <span v-else>{{ leave.user?.name?.charAt(0) || 'U' }}</span>
+                  </div>
                   <div class="info">
                     <p class="name">{{ leave.user?.name || 'Unknown Intern' }}</p>
                     <p class="id">ID: {{ leave.user?.intern?.intern_id || leave.user?.id || '202308000' }}</p>
@@ -420,10 +430,27 @@ const getFileUrl = (filePath) => {
   gap: 12px;
 }
 .avatar-placeholder {
-  width: 36px; height: 36px;
-  background: var(--bg-input); color: var(--accent-primary);
-  border-radius: 50%; display: flex;
-  align-items: center; justify-content: center; font-weight: bold;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  background: var(--bg-input);
+  color: var(--accent-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar-placeholder .avatar-img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 .intern-details .name { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-main); }
 .intern-details .id { margin: 0; font-size: 12px; color: var(--text-muted); }

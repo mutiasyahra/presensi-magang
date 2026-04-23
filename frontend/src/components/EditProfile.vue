@@ -1,32 +1,117 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import api from '../api/axios.js';
 
 const emit = defineEmits(['go-back', 'profile-updated']);
 
-const userInfo = ref({ name: "Aileen" });
+const userInfo = ref({ name: "User", profile_photo: null });
 const currentAvatar = ref(null); 
 const fileInput = ref(null);
+const isLoading = ref(false);
 const userInitial = computed(() => userInfo.value.name ? userInfo.value.name.charAt(0).toUpperCase() : 'U');
 
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
+  return `${baseUrl}/storage/${path}`;
+};
+
 const passwordData = ref({ current: '', new: '', confirm: '' });
+
+onMounted(async () => {
+  try {
+    const response = await api.get('/settings/me');
+    if (response.data && response.data.status === 'success') {
+      userInfo.value = {
+        name: response.data.data.fullName,
+        profile_photo: response.data.data.profile_photo
+      };
+      if (userInfo.value.profile_photo) {
+        currentAvatar.value = userInfo.value.profile_photo;
+      }
+    }
+  } catch (error) {
+    console.error("Gagal mengambil data profil:", error);
+  }
+});
 
 const triggerFileInput = () => { fileInput.value.click(); };
 const handleFileChange = (event) => {
   const file = event.target.files[0];
   if (file && file.type.startsWith('image/')) {
+    userInfo.value.new_photo = file;
     const reader = new FileReader();
     reader.onload = (e) => { currentAvatar.value = e.target.result; };
     reader.readAsDataURL(file);
   }
 };
 
-const saveChanges = () => {
-  if (passwordData.value.new || passwordData.value.confirm) {
-    if (!passwordData.value.current) { alert('Masukkan password saat ini.'); return; }
-    if (passwordData.value.new !== passwordData.value.confirm) { alert('Password baru tidak cocok.'); return; }
+const saveChanges = async () => {
+  if (passwordData.value.new && passwordData.value.new.length < 6) {
+    alert('Password baru minimal 6 karakter.');
+    return;
   }
-  alert('Perubahan disimpan!');
-  emit('go-back'); 
+
+  isLoading.value = true;
+  try {
+    const formData = new FormData();
+    
+    if (passwordData.value.new) {
+      if (!passwordData.value.current) { 
+        alert('Masukkan password saat ini untuk mengubah password.'); 
+        isLoading.value = false;
+        return; 
+      }
+      if (passwordData.value.new !== passwordData.value.confirm) { 
+        alert('Konfirmasi password baru tidak cocok.'); 
+        isLoading.value = false;
+        return; 
+      }
+      formData.append('current_password', passwordData.value.current);
+      formData.append('new_password', passwordData.value.new);
+      formData.append('new_password_confirmation', passwordData.value.confirm);
+    }
+
+    if (userInfo.value.new_photo) {
+      console.log("Appending file to FormData:", userInfo.value.new_photo);
+      formData.append('profile_photo', userInfo.value.new_photo);
+    }
+
+    // We use POST now for better file upload compatibility
+
+    const response = await api.post('/settings/me', formData);
+
+    if (response.data && response.data.status === 'success') {
+      // Update local storage to keep session in sync
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      // Update fields
+      if (response.data.data.fullName) storedUser.name = response.data.data.fullName;
+      if (response.data.data.profile_photo) storedUser.profile_photo = response.data.data.profile_photo;
+      
+      localStorage.setItem('user', JSON.stringify(storedUser));
+      
+      alert('Perubahan berhasil disimpan!');
+      emit('profile-updated', storedUser);
+      emit('go-back');
+    }
+  } catch (error) {
+    console.error("Gagal menyimpan perubahan:", error);
+    let msg = 'Terjadi kesalahan saat menyimpan perubahan.';
+    
+    if (error.response?.data?.errors) {
+      // Handle Laravel validation errors specifically
+      const errors = error.response.data.errors;
+      msg = Object.values(errors).flat().join('\n');
+    } else if (error.response?.data?.message) {
+      msg = error.response.data.message;
+    }
+    
+    alert(msg);
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -44,7 +129,7 @@ const saveChanges = () => {
         
         <div class="editable-avatar-section">
           <div class="avatar-container">
-            <img v-if="currentAvatar" :src="currentAvatar" class="avatar-img-preview" />
+            <img v-if="currentAvatar" :src="getImageUrl(currentAvatar)" class="avatar-img-preview" />
             <div v-else class="avatar-circle-edit">{{ userInitial }}</div>
             <div class="edit-icon-badge" @click="triggerFileInput">
               <img src="../assets/pencil.png" alt="Change" />
@@ -63,7 +148,12 @@ const saveChanges = () => {
             <label>Current Password</label>
             <div class="input-wrapper">
               <input type="password" v-model="passwordData.current" placeholder="Enter current password" class="form-input" />
-              <img src="../assets/lock.png" class="input-icon" />
+              <div class="input-icon-svg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -71,7 +161,12 @@ const saveChanges = () => {
             <label>New Password</label>
             <div class="input-wrapper">
               <input type="password" v-model="passwordData.new" placeholder="Min. 6 characters" class="form-input" />
-              <img src="../assets/lock.png" class="input-icon" />
+              <div class="input-icon-svg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -79,7 +174,12 @@ const saveChanges = () => {
             <label>Confirm New Password</label>
             <div class="input-wrapper">
               <input type="password" v-model="passwordData.confirm" placeholder="Repeat new password" class="form-input" />
-              <img src="../assets/lock.png" class="input-icon" />
+              <div class="input-icon-svg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -136,8 +236,8 @@ const saveChanges = () => {
   font-size: 14px; color: #1e293b; background-color: var(--bg-card) !important; /* Paksa Putih */
   box-sizing: border-box; transition: 0.2s;
 }
-.form-input:focus { border-color: #3b82f6; outline: none; background-color: var(--bg-card); }
-.input-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; opacity: 0.4; }
+.form-input:focus { border-color: #3b82f6; outline: none; background-color: #ffffff; }
+.input-icon-svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; color: #94a3b8; }
 
 /* Tombol Save Baru */
 .btn-save-large {

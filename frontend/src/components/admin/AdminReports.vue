@@ -149,6 +149,7 @@ const getInitials = (name) => {
 
 const getImageUrl = (path) => {
   if (!path) return null;
+  if (path.startsWith('data:') || path.startsWith('http')) return path;
   const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
   return `${baseUrl}/storage/${path}`;
 };
@@ -320,8 +321,9 @@ onMounted(() => {
             <tr v-for="record in attendanceRecords" :key="record.id">
               <td>
                 <div class="intern-details">
-                  <div class="avatar-placeholder" style="background-color: #f1f5f9; color: #3b82f6">
-                    {{ getInitials(record.user?.name) }}
+                  <div class="avatar-placeholder">
+                    <img v-if="record.user?.profile_photo" :src="getImageUrl(record.user.profile_photo)" class="avatar-img-fit" />
+                    <span v-else>{{ getInitials(record.user?.name) }}</span>
                   </div>
                   <div class="info">
                     <p class="name">{{ record.user?.name || 'Unknown' }}</p>
@@ -394,7 +396,8 @@ onMounted(() => {
         <div class="modal-body">
           <div class="detail-section user-overview">
             <div class="avatar-large">
-              {{ getInitials(selectedRecord.user?.name) }}
+              <img v-if="selectedRecord.user?.profile_photo" :src="getImageUrl(selectedRecord.user.profile_photo)" class="avatar-img-fit" />
+              <span v-else>{{ getInitials(selectedRecord.user?.name) }}</span>
             </div>
             <div class="user-meta">
               <h4>{{ selectedRecord.user?.name }}</h4>
@@ -784,6 +787,12 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
+.avatar-placeholder {
+  width: 36px; height: 36px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
+  background-color: #f1f5f9; color: #3b82f6; overflow: hidden;
+}
+
 .user-overview {
   display: flex;
   align-items: center;
@@ -798,7 +807,16 @@ onMounted(() => {
   border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
   font-size: 20px; font-weight: 700; color: var(--accent-primary);
+  overflow: hidden;
 }
+
+.avatar-img-fit {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.intern-details .name { margin: 0; font-size: 14px; font-weight: 600; color: var(--text-main); }
 
 .user-meta h4 { margin: 0; font-size: 16px; font-weight: 700; color: var(--text-main); }
 .user-meta p { margin: 2px 0; font-size: 13px; color: var(--text-muted); }

@@ -16,13 +16,22 @@ class SettingsController extends Controller
      */
     public function getMe(Request $request)
     {
-        $user = Auth::user();
+        $user = Auth::user()->load('intern');
 
         return response()->json([
             'status' => 'success',
             'data' => [
-                'fullName' => $user->name,
+                'fullName' => $user->intern ? $user->intern->full_name : $user->name,
                 'email' => $user->email,
+                'phoneNumber' => $user->intern ? $user->intern->phone_number : '-',
+                'internId' => $user->intern ? $user->intern->intern_id : ('USR-' . $user->id),
+                'university' => $user->intern ? $user->intern->university : '-',
+                'department' => $user->intern ? $user->intern->department : '-',
+                'mentor' => $user->intern ? $user->intern->mentor : '-',
+                'project' => $user->intern ? $user->intern->project : '-',
+                'startDate' => $user->intern ? $user->intern->start_date : null,
+                'endDate' => $user->intern ? $user->intern->end_date : null,
+                'profile_photo' => $user->profile_photo ? asset('storage/' . $user->profile_photo) : null,
                 'isDarkMode' => $user->is_dark_mode,
                 'notifyLateAlerts' => $user->notify_late_alerts,
                 'notifyLeaveRequests' => $user->notify_leave_requests,
@@ -37,20 +46,48 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
 
+        // Debugging: Log the request and files
+        \Illuminate\Support\Facades\Log::info('Update Profile Request Body:', $request->all());
+        \Illuminate\Support\Facades\Log::info('Update Profile Request Files:', $request->allFiles());
+
         $request->validate([
-            'fullName' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8',
-            'isDarkMode' => 'boolean',
-            'notifyLateAlerts' => 'boolean',
-            'notifyLeaveRequests' => 'boolean',
+            'fullName' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'current_password' => 'nullable|string|required_with:new_password',
+            'new_password' => 'nullable|string|min:6|confirmed',
+            'profile_photo' => 'nullable|file|max:5120', // Temporarily more lenient for testing
+            'isDarkMode' => 'sometimes|boolean',
+            'notifyLateAlerts' => 'sometimes|boolean',
+            'notifyLeaveRequests' => 'sometimes|boolean',
         ]);
 
-        $user->name = $request->fullName;
-        $user->email = $request->email;
-        
-        if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
+        if ($request->has('fullName')) {
+            $user->name = $request->fullName;
+        }
+
+        if ($request->has('email')) {
+            $user->email = $request->email;
+        }
+
+        // Handle Password Change
+        if ($request->filled('new_password')) {
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Password saat ini salah.'
+                ], 422);
+            }
+            $user->password = Hash::make($request->new_password);
+        }
+
+        // Handle Profile Photo Upload
+        if ($request->hasFile('profile_photo')) {
+            // Delete old photo if exists
+            if ($user->profile_photo && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_photo)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_photo);
+            }
+            $path = $request->file('profile_photo')->store('profile_photos', 'public');
+            $user->profile_photo = $path;
         }
 
         if ($request->has('isDarkMode')) {
@@ -69,10 +106,11 @@ class SettingsController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Account settings updated successfully.',
+            'message' => 'Profile updated successfully.',
             'data' => [
                 'fullName' => $user->name,
                 'email' => $user->email,
+                'profile_photo' => $user->profile_photo ? asset('storage/' . $user->profile_photo) : null,
                 'isDarkMode' => $user->is_dark_mode,
                 'notifyLateAlerts' => $user->notify_late_alerts,
                 'notifyLeaveRequests' => $user->notify_leave_requests,

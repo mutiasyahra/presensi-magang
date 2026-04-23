@@ -154,6 +154,7 @@ const allRecentEvents = computed(() => {
             ).toFixed(4)}`
           : "Remote"),
         status: getStatus(record, "Clocked In"),
+        photo: record.user?.profile_photo || null,
       });
     }
 
@@ -171,6 +172,7 @@ const allRecentEvents = computed(() => {
             ).toFixed(4)}`
           : "Remote"),
         status: getStatus(record, "Clocked Out"),
+        photo: record.user?.profile_photo || null,
       });
     }
   });
@@ -187,7 +189,34 @@ const recentActivities = computed(() => {
 
 
 const activityFilter = ref("All");
-const selectedDate = ref("");
+const selectedRange = ref("Hari ini"); // Default: Today
+const customStartDate = ref("");
+const customEndDate = ref("");
+const selectedMonth = ref(new Date().toISOString().slice(0, 7)); // Default: Current month YYYY-MM
+const showRangeModal = ref(false);
+
+// Temp state for modal
+const tempRange = ref("Hari ini");
+const tempStartDate = ref("");
+const tempEndDate = ref("");
+const tempMonth = ref(new Date().toISOString().slice(0, 7));
+
+const openRangeModal = () => {
+  tempRange.value = selectedRange.value;
+  tempStartDate.value = customStartDate.value;
+  tempEndDate.value = customEndDate.value;
+  tempMonth.value = selectedMonth.value;
+  showRangeModal.value = true;
+};
+
+const applyRange = () => {
+  selectedRange.value = tempRange.value;
+  customStartDate.value = tempStartDate.value;
+  customEndDate.value = tempEndDate.value;
+  selectedMonth.value = tempMonth.value;
+  showRangeModal.value = false;
+  currentPage.value = 1;
+};
 
 const setFilter = (filter) => {
   activityFilter.value = filter;
@@ -195,22 +224,38 @@ const setFilter = (filter) => {
 };
 
 const resetDate = () => {
-  selectedDate.value = "";
+  selectedRange.value = "Hari ini";
+  customStartDate.value = "";
+  customEndDate.value = "";
   currentPage.value = 1;
-  showCalendar.value = false;
 };
 
 const filteredEvents = computed(() => {
   let all = allRecentEvents.value;
 
-  // Phase 1: Time/Date Filter
-  if (!selectedDate.value) {
-    // Default: Last 24 hours
-    const limit = Date.now() - 24 * 60 * 60 * 1000;
-    all = all.filter((e) => e.rawTime.getTime() >= limit);
-  } else {
-    // Specific Date
-    all = all.filter((e) => toLocalDateString(e.rawTime) === selectedDate.value);
+  // Phase 1: Range Filter
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (selectedRange.value === "Hari ini") {
+    all = all.filter(e => e.rawTime.toDateString() === today.toDateString());
+  } else if (selectedRange.value === "7 Hari Terakhir") {
+    const limit = today.getTime() - 7 * 24 * 60 * 60 * 1000;
+    all = all.filter(e => e.rawTime.getTime() >= limit);
+  } else if (selectedRange.value === "Pilih Bulan") {
+    const [year, month] = selectedMonth.value.split("-").map(Number);
+    all = all.filter(e => {
+      const d = e.rawTime;
+      return d.getFullYear() === year && (d.getMonth() + 1) === month;
+    });
+  } else if (selectedRange.value === "Pilih Tanggal") {
+    if (customStartDate.value && customEndDate.value) {
+      const start = new Date(customStartDate.value);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(customEndDate.value);
+      end.setHours(23, 59, 59, 999);
+      all = all.filter(e => e.rawTime >= start && e.rawTime <= end);
+    }
   }
 
   // Phase 2: Action Type Filter
@@ -222,94 +267,19 @@ const filteredEvents = computed(() => {
   return all;
 });
 
-// Calendar State
-const showCalendar = ref(false);
-const calendarDate = ref(new Date());
-
-// Holiday Logic
-const holidays = ref([]);
-
-const fetchHolidays = async (year) => {
-  try {
-    const res = await fetch(
-      `https://date.nager.at/api/v3/PublicHolidays/${year}/ID`,
-    );
-    if (res.ok) {
-      holidays.value = await res.json();
-    }
-  } catch (err) {
-    console.error("Failed to fetch holidays", err);
-  }
-};
-
-watch(
-  () => calendarDate.value.getFullYear(),
-  (newYear) => {
-    fetchHolidays(newYear);
-  },
-  { immediate: true },
-);
-
-const calendarMonthYear = computed(() => {
-  return calendarDate.value.toLocaleString("default", {
-    month: "long",
-    year: "numeric",
-  });
+// Live Indicator Label
+const rangeLabel = computed(() => {
+  if (selectedRange.value === "Hari ini") return "Showing today's activity";
+  return `Viewing: ${selectedRange.value}`;
 });
-
-const calendarDays = computed(() => {
-  const year = calendarDate.value.getFullYear();
-  const month = calendarDate.value.getMonth();
-  const todayStr = toLocalDateString(new Date());
-
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-
-  const days = [];
-  const startPadding = firstDay.getDay();
-  for (let i = 0; i < startPadding; i++) {
-    days.push({ day: null });
-  }
-
-  for (let i = 1; i <= lastDay.getDate(); i++) {
-    const dObj = new Date(year, month, i);
-    const dayOfWeek = dObj.getDay();
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
-
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    const isNationalHoliday = holidays.value.some((h) => h.date === dateStr);
-
-    days.push({
-      day: i,
-      date: dateStr,
-      isSelected: selectedDate.value === dateStr,
-      isToday: todayStr === dateStr,
-      isHoliday: isWeekend || isNationalHoliday,
-    });
-  }
-  return days;
-});
-
-const changeMonth = (offset) => {
-  const newDate = new Date(calendarDate.value);
-  newDate.setMonth(newDate.getMonth() + offset);
-  calendarDate.value = newDate;
+const getImageUrl = (path) => {
+  if (!path) return null;
+  // If it's already a full URL (data: or http), return as is
+  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  
+  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
+  return `${baseUrl}/storage/${path}`;
 };
-
-const selectDate = (date) => {
-  if (!date) return;
-  selectedDate.value = date;
-  showCalendar.value = false;
-  currentPage.value = 1;
-};
-
-const toggleCalendar = () => {
-  showCalendar.value = !showCalendar.value;
-  if (showCalendar.value && selectedDate.value) {
-    calendarDate.value = new Date(selectedDate.value);
-  }
-};
-
 
 
 
@@ -680,72 +650,55 @@ const internPerformance = computed(() => {
         </div>
 
         <div class="calendar-filter-bar">
-          <div v-if="!selectedDate" class="live-indicator-small">
-            <span class="pulse-dot"></span>
-            Showing only last 24h
-          </div>
-          <div v-else class="history-label">
-            <Clock size="14" />
-            <span>Viewing Historical Record</span>
+          <div class="live-indicator-small">
+            <span :class="['pulse-dot', { active: selectedRange === 'Hari ini' }]"></span>
+            {{ rangeLabel }}
           </div>
 
           <div class="calendar-picker-container">
             <div
-              :class="['date-selector', { active: showCalendar }]"
-              @click="toggleCalendar"
+              :class="['date-selector', { active: showRangeModal }]"
+              @click="openRangeModal"
             >
               <Calendar class="cal-main-icon" size="18" />
-              <span class="current-date-text">{{
-                selectedDate
-                  ? new Date(selectedDate).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })
-                  : "Select Date"
-              }}</span>
+              <span class="current-date-text">{{ selectedRange }}</span>
             </div>
 
-            <!-- Custom Calendar Dropdown -->
+            <!-- Custom Range Modal (Admin Desktop Style) -->
             <transition name="fade">
-              <div class="custom-calendar-dropdown" v-if="showCalendar">
-                <div class="calendar-header">
-                  <button @click.stop="changeMonth(-1)" class="nav-btn">
-                    &lt;
-                  </button>
-                  <span class="month-label">{{ calendarMonthYear }}</span>
-                  <button @click.stop="changeMonth(1)" class="nav-btn">
-                    &gt;
-                  </button>
-                </div>
-                <div class="calendar-grid">
-                  <span
-                    v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']"
-                    :key="day"
-                    class="day-name"
-                  >
-                    {{ day }}
-                  </span>
-                  <div
-                    v-for="(dateObj, index) in calendarDays"
-                    :key="index"
-                    class="calendar-day"
-                    :class="{
-                      empty: !dateObj.day,
-                      selected: dateObj.isSelected,
-                      'is-today': dateObj.isToday,
-                      'is-holiday': dateObj.isHoliday,
-                      'is-weekday': dateObj.day && !dateObj.isHoliday,
-                    }"
-                    @click.stop="selectDate(dateObj.date)"
-                  >
-                    {{ dateObj.day }}
+              <div class="admin-range-modal" v-if="showRangeModal" @click.self="showRangeModal = false">
+                <div class="admin-modal-content">
+                  <div class="admin-modal-header">
+                    <h3>Rentang Waktu</h3>
+                    <button class="close-btn" @click="showRangeModal = false">&times;</button>
                   </div>
-                </div>
-                <div class="calendar-footer" v-if="selectedDate">
-                  <button class="reset-link" @click.stop="resetDate">
-                    Show Recent (24h)
-                  </button>
+                  
+                  <div class="admin-modal-body">
+                    <div class="admin-range-options">
+                      <label v-for="opt in ['Hari ini', '7 Hari Terakhir', 'Pilih Bulan', 'Pilih Tanggal']" :key="opt" class="admin-range-option">
+                        <div class="opt-left">
+                           <span class="opt-text">{{ opt }}</span>
+                           <!-- Inputs for specific options -->
+                           <div v-if="tempRange === 'Pilih Bulan' && opt === 'Pilih Bulan'" class="opt-input-wrapper">
+                             <input type="month" v-model="tempMonth" class="admin-inline-input" />
+                           </div>
+                           <div v-if="tempRange === 'Pilih Tanggal' && opt === 'Pilih Tanggal'" class="opt-input-wrapper date-range">
+                             <input type="date" v-model="tempStartDate" class="admin-inline-input" />
+                             <span>to</span>
+                             <input type="date" v-model="tempEndDate" class="admin-inline-input" />
+                           </div>
+                        </div>
+                        <div class="opt-right">
+                          <input type="radio" :value="opt" v-model="tempRange" name="admin-range" />
+                          <span class="admin-radio-custom"></span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="admin-modal-footer">
+                    <button class="admin-btn-apply" @click="applyRange">Terapkan Filter</button>
+                  </div>
                 </div>
               </div>
             </transition>
@@ -776,7 +729,8 @@ const internPerformance = computed(() => {
             >
               <td class="td-intern">
                 <div class="avatar-box">
-                  <span class="avatar-initial">{{
+                  <img v-if="activity.photo" :src="getImageUrl(activity.photo)" class="activity-avatar-img" />
+                  <span v-else class="avatar-initial">{{
                     activity.name.charAt(0).toUpperCase()
                   }}</span>
                 </div>
@@ -1432,62 +1386,167 @@ const internPerformance = computed(() => {
   padding-bottom: 8px;
 }
 
-.calendar-day {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
+.admin-range-modal {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 320px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideInDown 0.2s ease-out;
 }
 
-.calendar-day:not(.empty):hover {
+@keyframes slideInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-modal-header {
+  padding: 16px 20px;
   background: var(--bg-input);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--text-main);
 }
 
-.calendar-day.selected {
-  background: var(--accent-primary) !important;
-  color: white !important;
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text-dim);
+  cursor: pointer;
 }
 
-.calendar-day.is-today {
-  color: var(--accent-primary);
-  background: rgba(59, 130, 246, 0.1);
+.admin-modal-body {
+  padding: 8px 0;
 }
 
-.calendar-day.is-holiday:not(.selected) {
-  color: #ef4444 !important; /* Indonesia Holiday Red */
-}
-
-.calendar-day.is-weekday:not(.selected):not(.is-today) {
-  color: #10b981 !important; /* Active Weekday Green */
-}
-
-.calendar-footer {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-color);
+.admin-range-options {
   display: flex;
+  flex-direction: column;
+}
+
+.admin-range-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.admin-range-option:hover {
+  background: var(--bg-input);
+}
+
+.opt-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.opt-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 20px;
+}
+
+.opt-input-wrapper {
+  margin-top: 4px;
+}
+
+.admin-inline-input {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 12px;
+  outline: none;
+}
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-range span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.opt-right {
+  display: flex;
+  align-items: center;
+  height: 20px;
+  margin-left: 12px;
+  position: relative;
+}
+
+.admin-radio-custom {
+  height: 18px;
+  width: 18px;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
   justify-content: center;
 }
 
-.reset-link {
-  background: none;
-  border: none;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--accent-primary);
-  cursor: pointer;
-  padding: 4px 8px;
+.admin-range-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
 }
 
-.reset-link:hover {
-  text-decoration: underline;
+.admin-range-option input:checked ~ .admin-radio-custom {
+  border-color: var(--accent-primary);
+}
+
+.admin-range-option input:checked ~ .admin-radio-custom::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+}
+
+.admin-modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.admin-btn-apply {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.admin-btn-apply:hover {
+  opacity: 0.9;
 }
 
 .fade-enter-active,
@@ -1601,6 +1660,13 @@ const internPerformance = computed(() => {
   padding: 48px 0;
   color: var(--text-dim);
   font-size: 14px;
+}
+
+.activity-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .intern-info {

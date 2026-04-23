@@ -45,7 +45,8 @@ class InternController extends Controller
                     'start_date' => $intern ? $intern->start_date : null,
                     'end_date' => $intern ? $intern->end_date : null,
                     'status' => $intern ? $intern->status : 'active',
-                    'attendance_percentage' => $attendancePercentage
+                    'attendance_percentage' => $attendancePercentage,
+                    'profile_photo' => $user->profile_photo ? asset('storage/' . $user->profile_photo) : null,
                 ];
             });
 

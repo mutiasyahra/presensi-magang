@@ -86,12 +86,89 @@ onMounted(() => {
 });
 
 const activeTab = ref("All");
+const searchQuery = ref("");
+const showRangeModal = ref(false);
+const selectedRange = ref("7 Hari Terakhir"); // Default: Last 7 Days
+const customStartDate = ref("");
+const customEndDate = ref("");
+const selectedMonth = ref(new Date().toISOString().slice(0, 7)); // Default: Current month YYYY-MM
+
+// Temp state for modal
+const tempRange = ref("7 Hari Terakhir");
+const tempStartDate = ref("");
+const tempEndDate = ref("");
+const tempMonth = ref(new Date().toISOString().slice(0, 7));
+
+const openRangeModal = () => {
+  tempRange.value = selectedRange.value;
+  tempStartDate.value = customStartDate.value;
+  tempEndDate.value = customEndDate.value;
+  tempMonth.value = selectedMonth.value;
+  showRangeModal.value = true;
+};
+
+const applyRange = () => {
+  selectedRange.value = tempRange.value;
+  customStartDate.value = tempStartDate.value;
+  customEndDate.value = tempEndDate.value;
+  selectedMonth.value = tempMonth.value;
+  showRangeModal.value = false;
+};
 
 // --- LOGIC FILTER ---
 const filteredHistory = computed(() => {
-  if (activeTab.value === "All") return historyData.value;
-  const filterType = activeTab.value === "Clock In" ? "clock-in" : "clock-out";
-  return historyData.value.filter((item) => item.type === filterType);
+  let list = historyData.value;
+
+  // 1. Filter by Tab (Clock In / Clock Out)
+  if (activeTab.value !== "All") {
+    const filterType = activeTab.value === "Clock In" ? "clock-in" : "clock-out";
+    list = list.filter((item) => item.type === filterType);
+  }
+
+  // 2. Filter by Search Query
+  if (searchQuery.value.trim() !== "") {
+    const q = searchQuery.value.toLowerCase();
+    list = list.filter((item) => 
+      item.note.toLowerCase().includes(q) || 
+      item.location?.toLowerCase().includes(q) ||
+      item.day.toLowerCase().includes(q) ||
+      item.date.toLowerCase().includes(q)
+    );
+  }
+
+  // 3. Filter by Date Range
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (selectedRange.value === "Hari ini") {
+    list = list.filter(item => {
+      const d = new Date(item.rawDate);
+      return d.toDateString() === today.toDateString();
+    });
+  } else if (selectedRange.value === "7 Hari Terakhir") {
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+    list = list.filter(item => new Date(item.rawDate) >= sevenDaysAgo);
+  } else if (selectedRange.value === "Pilih Bulan") {
+    const [year, month] = selectedMonth.value.split("-").map(Number);
+    list = list.filter(item => {
+      const d = new Date(item.rawDate);
+      return d.getFullYear() === year && (d.getMonth() + 1) === month;
+    });
+  } else if (selectedRange.value === "Pilih Tanggal") {
+    if (customStartDate.value && customEndDate.value) {
+      const start = new Date(customStartDate.value);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(customEndDate.value);
+      end.setHours(23, 59, 59, 999);
+      list = list.filter(item => {
+        const d = new Date(item.rawDate);
+        return d >= start && d <= end;
+      });
+    }
+  }
+
+  return list;
 });
 
 const getStatusClass = (status) => {
@@ -117,8 +194,14 @@ const getStatusClass = (status) => {
         <div class="search-container">
           <div class="search-box">
             <img src="../assets/search.png" class="search-icon" alt="Search" />
-            <input type="text" placeholder="Search..." />
+            <input type="text" v-model="searchQuery" placeholder="Search..." />
           </div>
+          <button class="btn-range" @click="openRangeModal">
+            <div class="range-content">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="filter-icon"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+              <span>{{ selectedRange }}</span>
+            </div>
+          </button>
         </div>
 
         <div class="filter-tabs">
@@ -228,6 +311,61 @@ const getStatusClass = (status) => {
           <span>Profile</span>
         </div>
       </div>
+
+      <!-- RANGE MODAL -->
+      <transition name="fade">
+        <div v-if="showRangeModal" class="modal-overlay" @click.self="showRangeModal = false">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button class="btn-close-modal" @click="showRangeModal = false">❮</button>
+              <h3>Rentang Waktu</h3>
+              <div style="width: 24px"></div>
+            </div>
+
+            <div class="modal-body">
+              <div class="range-options">
+                <label class="range-option">
+                  <span>Hari ini</span>
+                  <input type="radio" value="Hari ini" v-model="tempRange" />
+                  <span class="radio-custom"></span>
+                </label>
+
+                <label class="range-option">
+                  <span>7 Hari Terakhir</span>
+                  <input type="radio" value="7 Hari Terakhir" v-model="tempRange" />
+                  <span class="radio-custom"></span>
+                </label>
+
+                <label class="range-option">
+                  <div class="option-with-input">
+                    <span>Pilih Bulan</span>
+                    <input v-if="tempRange === 'Pilih Bulan'" type="month" v-model="tempMonth" class="inline-date-input" />
+                  </div>
+                  <input type="radio" value="Pilih Bulan" v-model="tempRange" />
+                  <span class="radio-custom"></span>
+                </label>
+
+                <label class="range-option">
+                  <div class="option-with-input">
+                    <span>Pilih Tanggal</span>
+                    <div v-if="tempRange === 'Pilih Tanggal'" class="date-range-inputs">
+                      <input type="date" v-model="tempStartDate" class="inline-date-input" />
+                      <span class="to-text">to</span>
+                      <input type="date" v-model="tempEndDate" class="inline-date-input" />
+                    </div>
+                  </div>
+                  <input type="radio" value="Pilih Tanggal" v-model="tempRange" />
+                  <span class="radio-custom"></span>
+                </label>
+              </div>
+
+              <div class="modal-footer">
+                <button class="btn-apply" @click="applyRange">Terapkan</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
     </div>
 </template>
 
@@ -305,6 +443,198 @@ background-color: var(--bg-screen);
   transform: translateY(-50%);
   width: 18px;
   opacity: 0.5;
+}
+
+/* Search Container Layout */
+.search-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.search-box {
+  flex: 1;
+  position: relative;
+}
+
+.btn-range {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+.range-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 600;
+}
+.filter-icon {
+  color: #2563eb;
+}
+
+/* --- MODAL STYLES --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: flex-end;
+}
+.modal-content {
+  background: var(--bg-app);
+  width: 100%;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 24px;
+  box-sizing: border-box; /* Pastikan padding tidak menambah lebar */
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media screen and (max-width: 480px) {
+  .modal-overlay {
+    max-width: 100%;
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-main);
+}
+.btn-close-modal {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.range-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.range-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; /* Alihkan ke atas agar sejajar dengan baris pertama */
+  padding: 16px 0;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+.range-option span {
+  font-size: 15px;
+  color: var(--text-main);
+  font-weight: 500;
+  line-height: 24px; /* Samakan dengan tinggi radio button untuk alignment */
+}
+
+/* Radio Customization */
+.range-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+.radio-custom {
+  height: 22px;
+  width: 22px;
+  background-color: transparent;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+  display: flex; /* Gunakan flex untuk centering dot */
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px; /* Halus penyesuaian agar pas dengan teks */
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+.range-option input:checked ~ .radio-custom {
+  border-color: #2563eb;
+  background-color: white;
+}
+.range-option input:checked ~ .radio-custom::after {
+  content: "";
+  display: block;
+  width: 12px;
+  height: 12px;
+  background: #2563eb;
+  border-radius: 50%;
+}
+
+.option-with-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.inline-date-input {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 13px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  outline: none;
+}
+.date-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.to-text {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.modal-footer {
+  margin-top: 10px;
+}
+.btn-apply {
+  width: 100%;
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+/* Fade Transition */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 
 /* Tabs */

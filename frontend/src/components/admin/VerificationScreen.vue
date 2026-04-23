@@ -1,6 +1,6 @@
 <script setup>
 import { defineProps, defineEmits, ref, onMounted, computed } from "vue";
-import axios from "axios";
+import api from "../../api/axios.js";
 
 const props = defineProps({
   attendance: {
@@ -10,6 +10,15 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["close", "refresh"]);
+
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  const baseUrl = "http://localhost:8000";
+  const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+  const realBase = apiBase.replace("/api", "");
+  return `${realBase}/storage/${path}`;
+};
 
 const isProcessing = ref(false);
 const currentAttendance = ref(props.attendance);
@@ -23,9 +32,7 @@ const calendarDate = ref(new Date(selectedDate.value));
 
 const fetchActiveDates = async () => {
   try {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    const response = await axios.get("http://localhost:8000/api/attendances", {
-      headers: { Authorization: `Bearer ${token}` },
+    const response = await api.get("/attendances", {
       params: { 
         user_id: props.attendance.user_id,
       },
@@ -45,8 +52,7 @@ const fetchActiveDates = async () => {
 
     // Fetch leaves
     try {
-      const leaveRes = await axios.get("http://localhost:8000/api/leaves", {
-        headers: { Authorization: `Bearer ${token}` },
+      const leaveRes = await api.get("/leaves", {
         params: { user_id: props.attendance.user_id },
       });
       if (leaveRes.data.data) {
@@ -81,9 +87,7 @@ onMounted(() => {
 
 const fetchAttendanceByDate = async (date) => {
   try {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    const response = await axios.get("http://localhost:8000/api/attendances", {
-      headers: { Authorization: `Bearer ${token}` },
+    const response = await api.get("/attendances", {
       params: { 
         user_id: props.attendance.user_id,
         attendance_date: date 
@@ -174,17 +178,12 @@ const handleVerify = async (status, isVerified) => {
   isProcessing.value = true;
 
   try {
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
-    await axios.patch(
-      `http://localhost:8000/api/attendances/${currentAttendance.value.id}/verify`,
+    await api.patch(
+      `/attendances/${currentAttendance.value.id}/verify`,
       {
         is_verified: isVerified,
         status: status,
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
+      }
     );
 
     // Refresh parent list and close
@@ -220,11 +219,16 @@ const handleVerify = async (status, isVerified) => {
         </button>
         <div class="divider"></div>
         <div class="profile-info" v-if="attendance">
-          <img
-            :src="attendance.avatar || 'https://i.pravatar.cc/150'"
-            alt="Avatar"
-            class="avatar"
-          />
+          <div class="avatar-wrapper-header">
+            <img
+              v-if="attendance.photo || attendance.user?.profile_photo"
+              :src="getImageUrl(attendance.photo || attendance.user?.profile_photo)"
+              class="avatar"
+            />
+            <div v-else class="avatar-initial-box">
+               {{ (attendance.name || 'U').charAt(0).toUpperCase() }}
+            </div>
+          </div>
           <div class="user-details">
             <h3>{{ attendance.name }}</h3>
             <p>{{ attendance.intern_id }}</p>
@@ -377,7 +381,7 @@ const handleVerify = async (status, isVerified) => {
                 <div
                   class="selfie-placeholder"
                   :style="{
-                    backgroundImage: `url(http://localhost:8000/storage/${currentAttendance.clock_in_photo})`,
+                    backgroundImage: `url(${getImageUrl(currentAttendance.clock_in_photo)})`,
                   }"
                 ></div>
                 <div class="evidence-footer">
@@ -436,7 +440,7 @@ const handleVerify = async (status, isVerified) => {
                 <div
                   class="selfie-placeholder"
                   :style="{
-                    backgroundImage: `url(http://localhost:8000/storage/${currentAttendance.clock_out_photo})`,
+                    backgroundImage: `url(${getImageUrl(currentAttendance.clock_out_photo)})`,
                   }"
                 ></div>
                 <div class="evidence-footer">
@@ -459,14 +463,14 @@ const handleVerify = async (status, isVerified) => {
                 <p class="card-title">📎 EVIDENCE / ATTACHMENTS</p>
                 <div class="attachment-images">
                   <a
-                    :href="`http://localhost:8000/storage/${currentAttendance.evidence}`"
+                    :href="getImageUrl(currentAttendance.evidence)"
                     target="_blank"
                     class="img-box"
                     :style="{
                       backgroundImage: currentAttendance.evidence.match(
                         /\.(jpeg|jpg|gif|png)$/i,
                       )
-                        ? `url(http://localhost:8000/storage/${currentAttendance.evidence})`
+                        ? `url(${getImageUrl(currentAttendance.evidence)})`
                         : 'none',
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
@@ -651,6 +655,18 @@ const handleVerify = async (status, isVerified) => {
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+}
+.avatar-initial-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--bg-input);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
 }
 .user-details h3 {
   margin: 0;

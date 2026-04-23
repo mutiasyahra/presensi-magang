@@ -6,9 +6,17 @@ import api from "../api/axios";
 const user = ref({
   name: "User",
   email: "",
+  profile_photo: null,
 });
 
 const emit = defineEmits(["open-clock-in", "navigate", "logout"]);
+
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
+  return `${baseUrl}/storage/${path}`;
+};
 
 // --- LOGIC WAKTU (JAM UTAMA) ---
 const timeMain = ref("");
@@ -174,10 +182,12 @@ const calendarDays = computed(() => {
 
     days.push({
       date: i,
+      fullDate: dateStr,
       type: "date",
       isToday: isToday,
       status: status,
       isHoliday: isHoliday,
+      attendanceRecord: status === 'present' || status === 'late' || status === 'absent' ? attendances.value.find(a => a.attendance_date === dateStr) : null,
     });
   }
   return days;
@@ -226,7 +236,8 @@ onUnmounted(() => {
       <div class="top-bar">
         <div class="profile-group" @click="$emit('navigate', 'profile')">
           <div class="avatar-wrapper">
-             <div class="avatar">{{ userInitial }}</div>
+             <img v-if="user.profile_photo" :src="getImageUrl(user.profile_photo)" class="avatar-img" />
+             <div v-else class="avatar">{{ userInitial }}</div>
              <div class="active-status"></div>
           </div>
           <div class="text-info">
@@ -878,6 +889,11 @@ background-color: var(--bg-card) !important;
   gap: 4px;
   min-height: 40px;
   justify-content: start;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.cal-cell:active {
+  transform: scale(0.85);
 }
 .date-circle {
   width: 30px;
@@ -887,8 +903,12 @@ background-color: var(--bg-card) !important;
   justify-content: center;
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-main);
+  color: #000000;
   border-radius: 50%;
+  transition: background-color 0.2s;
+}
+.cal-cell:hover .date-circle:not(.current-day) {
+  background-color: #dbeafe;
 }
 /* Highlight Hari Ini */
 .current-day {
@@ -957,41 +977,44 @@ background-color: var(--bg-card) !important;
 .profile-group:active .avatar {
   transform: scale(0.9);
 }
-.avatar {
+.avatar-wrapper {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(45deg, #fbbf24, #ef4444, #3b82f6);
+  border-radius: 50%;
+  padding: 2px;
+}
+.avatar, .avatar-img {
   width: 48px;
   height: 48px;
-  background: #fecaca;
   border-radius: 50%;
+  border: 2px solid white;
+  object-fit: cover;
+  background: #fecaca;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   color: #7f1d1d;
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2), 0 0 15px rgba(0,0,0,0.1);
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   position: relative;
   z-index: 1;
-}
-.avatar-wrapper::before {
-  content: "";
-  position: absolute;
-  top: -3px; left: -3px; right: -3px; bottom: -3px;
-  background: linear-gradient(45deg, #fbbf24, #ef4444, #3b82f6);
-  border-radius: 50%;
-  z-index: 0;
-  opacity: 0.7;
 }
 .active-status {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   background: #22c55e;
-  border: 2px solid white;
+  border: 2.5px solid white;
   border-radius: 50%;
-  z-index: 2;
+  z-index: 5;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 .text-info h2 {
   margin: 0;

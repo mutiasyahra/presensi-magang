@@ -1,21 +1,26 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import axios from "axios";
+import api from "../../api/axios.js";
 import VerificationScreen from "./VerificationScreen.vue";
 
 const isVerifying = ref(false);
 const activeView = ref("clock-in");
+
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  const baseUrl = "http://localhost:8000"; // Fallback to localhost if env not set
+  const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+  const realBase = apiBase.replace("/api", "");
+  return `${realBase}/storage/${path}`;
+};
 
 const attendanceCards = ref([]);
 const selectedAttendance = ref(null);
 
 const fetchAttendances = async () => {
   try {
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
-    const response = await axios.get("http://localhost:8000/api/attendances", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await api.get("/attendances");
 
     // Group by user_id and take the latest attendance
     const grouped = response.data.data.reduce((acc, item) => {
@@ -30,9 +35,7 @@ const fetchAttendances = async () => {
       name: item.user?.name || "Unknown Intern",
       intern_id: item.user?.intern?.intern_id || "-",
       role: "Intern",
-      avatar:
-        item.user?.avatar ||
-        `https://ui-avatars.com/api/?name=${item.user?.name || "User"}`,
+      photo: item.user?.profile_photo || null,
       statusDisplay: item.status ? item.status.toUpperCase() : "UNKNOWN",
       periodDisplay: item.user?.intern?.start_date && item.user?.intern?.end_date
         ? `${new Date(item.user.intern.start_date).toLocaleDateString("id-ID", {
@@ -238,7 +241,10 @@ const stats = computed(() => {
           <div class="card-header">
             <div class="profile-area">
               <div class="avatar-wrapper">
-                <img :src="intern.avatar" alt="avatar" />
+                <img v-if="intern.photo" :src="getImageUrl(intern.photo)" class="avatar-img-fit" />
+                <div v-else class="avatar-initial-box">
+                  {{ (intern.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) }}
+                </div>
                 <span class="status-dot"></span>
               </div>
               <div class="info">
@@ -683,11 +689,23 @@ const stats = computed(() => {
   width: 48px;
   height: 48px;
 }
-.avatar-wrapper img {
+.avatar-wrapper img.avatar-img-fit {
   width: 100%;
   height: 100%;
-  border-radius: 8px;
+  border-radius: 12px;
   object-fit: cover;
+}
+.avatar-initial-box {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background-color: var(--bg-input);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
 }
 .status-dot {
   position: absolute;

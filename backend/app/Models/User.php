@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'profile_photo',
         'is_dark_mode',
         'notify_late_alerts',
         'notify_leave_requests',

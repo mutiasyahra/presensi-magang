@@ -1,21 +1,55 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import api from "../api/axios.js";
 
 // Define emit untuk navigasi kembali
 const emit = defineEmits(["go-back"]);
 
-// --- DATA DUMMY (Disamakan dengan field di Gambar 2) ---
+const isLoading = ref(true);
+
+// --- DATA USER (Akan diisi dari API) ---
 const userInfo = ref({
-  fullName: "Siti Nur Kamila",
-  email: "kamila@email.com",
-  phoneNumber: "+62 812-3456-7890",
-  internId: "PRISMA-2024-001",
-  university: "Universitas Indonesia",
-  department: "Engineering",
-  mentor: "Meutya Syahra",
-  project: "09_Prisma (Presensi Magang)",
-  startDate: "Jan 01, 2024",
-  endDate: "Dec 31, 2024"
+  fullName: "",
+  email: "",
+  phoneNumber: "",
+  internId: "",
+  university: "",
+  department: "",
+  mentor: "",
+  project: "",
+  startDate: "",
+  endDate: ""
+});
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return "-";
+  const options = { year: 'numeric', month: 'short', day: '2-digit' };
+  return new Date(dateStr).toLocaleDateString('en-US', options);
+};
+
+onMounted(async () => {
+  try {
+    const response = await api.get("/settings/me");
+    if (response.data && response.data.status === "success") {
+      const data = response.data.data;
+      userInfo.value = {
+        fullName: data.fullName,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        internId: data.internId,
+        university: data.university,
+        department: data.department,
+        mentor: data.mentor,
+        project: data.project,
+        startDate: formatDate(data.startDate),
+        endDate: formatDate(data.endDate)
+      };
+    }
+  } catch (error) {
+    console.error("Gagal mengambil data personal:", error);
+  } finally {
+    isLoading.value = false;
+  }
 });
 </script>
 
@@ -31,63 +65,68 @@ const userInfo = ref({
 
     <div class="content-area">
       <div class="info-card">
-        <p class="card-desc">Berikut adalah detail informasi data diri Anda yang terdaftar di sistem.</p>
+        <div v-if="isLoading" class="loading-state">
+          <p>Memuat data...</p>
+        </div>
+        <div v-else>
+          <p class="card-desc">Berikut adalah detail informasi data diri Anda yang terdaftar di sistem.</p>
 
-        <div class="data-group">
-          <div class="data-item">
-            <label>Full Name</label>
-            <p>{{ userInfo.fullName }}</p>
-          </div>
-
-          <div class="data-item">
-            <label>Email Address</label>
-            <p>{{ userInfo.email }}</p>
-          </div>
-
-          <div class="data-item">
-            <label>Phone Number</label>
-            <p>{{ userInfo.phoneNumber }}</p>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="data-item">
-            <label>Intern ID</label>
-            <p class="highlight-text">{{ userInfo.internId }}</p>
-          </div>
-
-          <div class="data-item">
-            <label>University</label>
-            <p>{{ userInfo.university }}</p>
-          </div>
-
-          <div class="data-item">
-            <label>Department</label>
-            <p>{{ userInfo.department }}</p>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="data-item">
-            <label>Mentor</label>
-            <p>{{ userInfo.mentor }}</p>
-          </div>
-
-          <div class="data-item">
-            <label>Project</label>
-            <p>{{ userInfo.project }}</p>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="date-grid">
+          <div class="data-group">
             <div class="data-item">
-              <label>Start Date</label>
-              <p>{{ userInfo.startDate }}</p>
+              <label>Full Name</label>
+              <p>{{ userInfo.fullName }}</p>
             </div>
+
             <div class="data-item">
-              <label>End Date</label>
-              <p>{{ userInfo.endDate }}</p>
+              <label>Email Address</label>
+              <p>{{ userInfo.email }}</p>
+            </div>
+
+            <div class="data-item">
+              <label>Phone Number</label>
+              <p>{{ userInfo.phoneNumber }}</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="data-item">
+              <label>Intern ID</label>
+              <p class="highlight-text">{{ userInfo.internId }}</p>
+            </div>
+
+            <div class="data-item">
+              <label>University</label>
+              <p>{{ userInfo.university }}</p>
+            </div>
+
+            <div class="data-item">
+              <label>Department</label>
+              <p>{{ userInfo.department }}</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="data-item">
+              <label>Mentor</label>
+              <p>{{ userInfo.mentor }}</p>
+            </div>
+
+            <div class="data-item">
+              <label>Project</label>
+              <p>{{ userInfo.project }}</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="date-grid">
+              <div class="data-item">
+                <label>Start Date</label>
+                <p>{{ userInfo.startDate }}</p>
+              </div>
+              <div class="data-item">
+                <label>End Date</label>
+                <p>{{ userInfo.endDate }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -184,6 +223,15 @@ const userInfo = ref({
   color: #64748b;
   margin-bottom: 25px;
   line-height: 1.5;
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #94a3b8;
+  font-size: 14px;
 }
 
 /* --- STYLING DATA --- */

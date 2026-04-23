@@ -55,7 +55,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 // Settings Preferences (all authenticated users, even though this system is single admin currently)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/settings/me', [\App\Http\Controllers\Api\SettingsController::class, 'getMe']);
-    Route::put('/settings/me', [\App\Http\Controllers\Api\SettingsController::class, 'updateMe']);
+    Route::post('/settings/me', [\App\Http\Controllers\Api\SettingsController::class, 'updateMe']);
 });
 
 // ================= AUTH =================

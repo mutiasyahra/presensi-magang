@@ -5,7 +5,7 @@
         <button class="btn-back" @click="$emit('go-back')">❮</button>
         <div class="header-titles">
           <h2>Detail Presensi</h2>
-          <p>{{ attendance?.date || 'Tanggal tidak tersedia' }}</p>
+          <p>{{ formattedDate }}</p>
         </div>
         <div style="width: 24px"></div>
       </div>
@@ -22,13 +22,13 @@
         
         <div class="time-row">
           <div class="time-box">
-            <span class="label">MASUK</span>
-            <span class="value">{{ attendance.clock_in || '--:--' }}</span>
+            <span class="label">Masuk</span>
+            <span class="value">{{ formatTime(attendance?.attendanceRecord?.clock_in) }}</span>
           </div>
           <div class="vertical-divider"></div>
           <div class="time-box">
-            <span class="label">KELUAR</span>
-            <span class="value">{{ attendance.clock_out || '--:--' }}</span>
+            <span class="label">Keluar</span>
+            <span class="value">{{ formatTime(attendance?.attendanceRecord?.clock_out) }}</span>
           </div>
         </div>
 
@@ -69,12 +69,59 @@
         <p class="menu-label">Ups! Data presensi tidak ditemukan.</p>
         <button @click="$emit('go-back')" class="retry-btn">Kembali</button>
       </div>
+
+      <div v-if="attendance" class="info-section">
+        <h4>LOKASI & CATATAN</h4>
+        <div class="info-item">
+          <span class="info-label">Lokasi Masuk</span>
+          <span class="info-value">{{ attendance?.attendanceRecord?.clock_in_location || '-' }}</span>
+        </div>
+        <div class="info-item" v-if="attendance?.attendanceRecord?.clock_out_location">
+          <span class="info-label">Lokasi Keluar</span>
+          <span class="info-value">{{ attendance?.attendanceRecord?.clock_out_location }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Rencana Kegiatan</span>
+          <span class="info-value">{{ attendance?.attendanceRecord?.rencana_kegiatan || '-' }}</span>
+        </div>
+        <div class="info-item" v-if="attendance?.attendanceRecord?.progress_kegiatan">
+          <span class="info-label">Progress Kegiatan</span>
+          <span class="info-value">{{ attendance?.attendanceRecord?.progress_kegiatan }}</span>
+        </div>
+      </div>
+
+      <div v-if="attendance" class="info-section">
+        <h4>BUKTI PRESENSI</h4>
+        <div class="photo-grid" v-if="attendance?.attendanceRecord?.clock_in_photo || attendance?.attendanceRecord?.clock_out_photo || attendance?.attendanceRecord?.evidence">
+          <div class="photo-card" v-if="attendance?.attendanceRecord?.clock_in_photo">
+            <span class="photo-label">Foto Masuk</span>
+            <img :src="getImageUrl(attendance.attendanceRecord.clock_in_photo)" alt="Foto Masuk" class="evidence-photo" />
+          </div>
+          <div class="photo-card" v-if="attendance?.attendanceRecord?.clock_out_photo">
+            <span class="photo-label">Foto Keluar</span>
+            <img :src="getImageUrl(attendance.attendanceRecord.clock_out_photo)" alt="Foto Keluar" class="evidence-photo" />
+          </div>
+          <div class="photo-card" v-if="attendance?.attendanceRecord?.evidence">
+            <span class="photo-label">Bukti Progress</span>
+            <template v-if="attendance.attendanceRecord.evidence.endsWith('.pdf')">
+               <a :href="getImageUrl(attendance.attendanceRecord.evidence)" target="_blank" class="pdf-link">Lihat PDF</a>
+            </template>
+            <template v-else>
+               <img :src="getImageUrl(attendance.attendanceRecord.evidence)" alt="Bukti Progress" class="evidence-photo" />
+            </template>
+          </div>
+        </div>
+        <div class="info-item" v-else>
+          <span class="info-label">Foto Absen</span>
+          <span class="info-value">Tidak ada foto / bukti</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, computed } from 'vue';
 
 const props = defineProps({
   attendance: {
@@ -83,11 +130,48 @@ const props = defineProps({
   }
 });
 
+const formattedDate = computed(() => {
+  if (!props.attendance?.fullDate) return 'Tanggal tidak tersedia';
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const d = new Date(props.attendance.fullDate);
+  return d.toLocaleDateString('id-ID', options);
+});
+
+const formatTime = (dateTimeString) => {
+  if (!dateTimeString) return '--:--';
+  const date = new Date(dateTimeString);
+  return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
+  return `${baseUrl}/storage/${path}`;
+};
+
+// Ini untuk fungsi tombol kembali
 defineEmits(['go-back']);
 </script>
 
 <style scoped>
 .screen-container {
+  background-color: #f8fafc;
+  min-height: 100vh;
+  animation: slideInRight 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+@keyframes slideInRight {
+  from { transform: translateX(30%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.blue-header {
+  background-color: #2563eb;
+  padding: 30px 20px 60px;
+  border-bottom-left-radius: 30px;
+  border-bottom-right-radius: 30px;
+  color: white;
+}
+.header-top {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -105,7 +189,51 @@ defineEmits(['go-back']);
   flex-shrink: 0;
 }
 
-.header-content {
+.content { padding: 0 20px; margin-top: -30px; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.detail-card {
+  background: white;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  text-align: center;
+  opacity: 0;
+  animation: fadeInUp 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.status-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+.present { background: #dcfce7; color: #166534; }
+.absent { background: #fee2e2; color: #991b1b; }
+
+.time-row { display: flex; justify-content: space-around; align-items: center; }
+.time-box { display: flex; flex-direction: column; }
+.label { font-size: 12px; color: #64748b; margin-bottom: 5px; }
+.value { font-size: 22px; font-weight: 700; color: #1e293b; }
+.divider { width: 1px; height: 40px; background: #e2e8f0; }
+
+.info-section { 
+  margin-top: 30px; 
+  opacity: 0;
+  animation: fadeInUp 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  animation-delay: 0.1s;
+}
+.info-section h4 { font-size: 12px; color: #64748b; margin-bottom: 15px; letter-spacing: 1px; }
+.info-item {
+  background: white;
+  padding: 15px;
+  border-radius: 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -290,5 +418,56 @@ defineEmits(['go-back']);
 
 .empty-state {
   text-align: center;
+}
+.info-label { color: #94a3b8; font-size: 14px; }
+.info-value { color: #1e293b; font-size: 14px; font-weight: 500; text-align: right; }
+
+.photo-grid {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+.photo-card {
+  flex: 0 0 calc(50% - 7.5px);
+  background: white;
+  border-radius: 15px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+}
+.photo-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.evidence-photo {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+.pdf-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 120px;
+  background-color: #f1f5f9;
+  color: #2563eb;
+  font-weight: 600;
+  border-radius: 10px;
+  text-decoration: none;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+}
+.pdf-link:hover {
+  background-color: #e2e8f0;
 }
 </style>

@@ -1,9 +1,14 @@
 <script setup>
-import { ref, computed, onMounted } from "vue"; 
+import { ref, computed, onMounted } from "vue";
 import api from "../../api/axios.js";
+import Swal from "sweetalert2";
+import { Mail, Phone, Users, FolderOpen, Calendar } from "lucide-vue-next";
 
 // Variabel untuk mengontrol Modal (true = muncul, false = sembunyi)
 const showAddModal = ref(false);
+const showDetailModal = ref(false);
+const selectedIntern = ref(null);
+const isEditing = ref(false);
 
 // interns will be loaded from backend
 const interns = ref([]);
@@ -25,19 +30,23 @@ const filteredInterns = computed(() => {
 
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase();
-    result = result.filter(i => 
-      (i.name && i.name.toLowerCase().includes(q)) ||
-      (i.id && String(i.id).toLowerCase().includes(q)) ||
-      (i.mentor && i.mentor.toLowerCase().includes(q))
+    result = result.filter(
+      (i) =>
+        (i.name && i.name.toLowerCase().includes(q)) ||
+        (i.id && String(i.id).toLowerCase().includes(q)) ||
+        (i.mentor && i.mentor.toLowerCase().includes(q)),
     );
   }
 
-  if (selectedUniversity.value && selectedUniversity.value !== "All Universities") {
-    result = result.filter(i => i.university === selectedUniversity.value);
+  if (
+    selectedUniversity.value &&
+    selectedUniversity.value !== "All Universities"
+  ) {
+    result = result.filter((i) => i.university === selectedUniversity.value);
   }
 
   if (selectedProject.value && selectedProject.value !== "All Projects") {
-    result = result.filter(i => i.project === selectedProject.value);
+    result = result.filter((i) => i.project === selectedProject.value);
   }
 
   return result;
@@ -58,28 +67,29 @@ const handleExport = () => {
     "Project",
     "Start Date",
     "End Date",
-    "Attendance %"
+    "Attendance %",
   ];
 
-  const rows = dataToExport.map(i => [
-    `"${i.name || ''}"`,
-    `"${i.email || ''}"`,
-    `"${i.phone_number || i.phone || ''}"`,
-    `"${i.id || ''}"`,
-    `"${i.university || ''}"`,
-    `"${i.department || ''}"`,
-    `"${i.mentor || ''}"`,
-    `"${i.project || ''}"`,
-    `"${i.start_date || ''}"`,
-    `"${i.end_date || ''}"`,
-    `"${i.attendance || 0}%"`
+  const rows = dataToExport.map((i) => [
+    `"${i.name || ""}"`,
+    `"${i.email || ""}"`,
+    `"${i.phone_number || i.phone || ""}"`,
+    `"${i.id || ""}"`,
+    `"${i.university || ""}"`,
+    `"${i.department || ""}"`,
+    `"${i.mentor || ""}"`,
+    `"${i.project || ""}"`,
+    `"${i.start_date || ""}"`,
+    `"${i.end_date || ""}"`,
+    `"${i.attendance || 0}%"`,
   ]);
 
   // Gunakan separator titik koma (;) agar otomatis dipisah kolomnya oleh Excel di regional Indonesia
   // serta tambahkan karakter BOM (\uFEFF) untuk memberitahu Excel bahwa file ini adalah UTF-8.
-  let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + 
-    [headers.join(";"), ...rows.map(e => e.join(";"))].join("\n");
-    
+  let csvContent =
+    "data:text/csv;charset=utf-8,\uFEFF" +
+    [headers.join(";"), ...rows.map((e) => e.join(";"))].join("\n");
+
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
@@ -160,12 +170,13 @@ const fetchInterns = async () => {
   try {
     const res = await api.get(`/interns`);
     let fetchedData = res.data?.data || res.data || [];
-    interns.value = fetchedData.map(i => ({
+    interns.value = fetchedData.map((i) => ({
       ...i,
-      name: i.full_name || 'Unknown',
+      name: i.full_name || "Unknown",
       id: i.intern_id || i.id,
       attendance: i.attendance_percentage || 0,
-      status: i.status || 'Active'
+      status: i.status || "Active",
+      profile_photo: i.user?.profile_photo || i.profile_photo || null,
     }));
     populateOptionsFromInterns();
   } catch (err) {
@@ -203,10 +214,7 @@ const selectOrAddOption = (field, value) => {
 // allow pressing enter to add new option
 const maybeAdd = (field, arrRef) => {
   const v = formData.value[field].trim();
-  if (
-    v &&
-    !arrRef.some((item) => item.toLowerCase() === v.toLowerCase())
-  ) {
+  if (v && !arrRef.some((item) => item.toLowerCase() === v.toLowerCase())) {
     addNewOption(field, arrRef, v);
   }
 };
@@ -224,7 +232,41 @@ const addNewOption = (field, fieldArray, value) => {
   }
 };
 
-// Save intern (POST) and update UI
+const openAddModal = () => {
+  isEditing.value = false;
+  formData.value = {
+    name: "",
+    email: "",
+    phone: "",
+    id: "",
+    universityInput: "",
+    departmentInput: "",
+    mentorInput: "",
+    projectInput: "",
+    startDate: "",
+    endDate: "",
+  };
+  showAddModal.value = true;
+};
+
+const openEditModal = (intern) => {
+  isEditing.value = true;
+  formData.value = {
+    name: intern.name,
+    email: intern.email,
+    phone: intern.phone_number || intern.phone,
+    id: intern.id || intern.intern_id,
+    universityInput: intern.university,
+    departmentInput: intern.department,
+    mentorInput: intern.mentor,
+    projectInput: intern.project,
+    startDate: intern.start_date,
+    endDate: intern.end_date,
+  };
+  showAddModal.value = true;
+};
+
+// Save intern (POST/PUT) and update UI
 const saving = ref(false);
 const saveError = ref(null);
 const saveIntern = async () => {
@@ -245,27 +287,63 @@ const saveIntern = async () => {
       end_date: formData.value.endDate || null,
     };
 
-    const res = await api.post(`/interns`, payload);
-    const created = res.data?.data || res.data || {};
-    // add to interns list and repopulate options
-    interns.value.unshift({
-      ...created,
-      name: created.full_name || 'Unknown',
-      id: created.intern_id || created.id,
-      attendance: created.attendance_percentage || 0,
-      status: created.status || 'Active'
-    });
+    if (isEditing.value) {
+      const res = await api.put(`/interns/${formData.value.id}`, payload);
+      const updated = res.data?.data || res.data || payload;
+      const index = interns.value.findIndex((i) => i.id === formData.value.id);
+      if (index !== -1) {
+        interns.value[index] = {
+          ...interns.value[index],
+          ...updated,
+          name: updated.full_name || updated.name,
+          id: updated.intern_id || updated.id,
+        };
+      }
+    } else {
+      const res = await api.post(`/interns`, payload);
+      const created = res.data?.data || res.data || {};
+      // add to interns list and repopulate options
+      interns.value.unshift({
+        ...created,
+        name: created.full_name || "Unknown",
+        id: created.intern_id || created.id,
+        attendance: created.attendance_percentage || 0,
+        status: created.status || "Active",
+      });
+    }
     populateOptionsFromInterns();
-    // reset form inputs
-    formData.value.universityInput = "";
-    formData.value.departmentInput = "";
-    formData.value.mentorInput = "";
-    formData.value.projectInput = "";
     showAddModal.value = false;
   } catch (err) {
     saveError.value = err.response?.data?.message || err.message || String(err);
   } finally {
     saving.value = false;
+  }
+};
+
+const deleteIntern = async (id) => {
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "You won't be able to revert this!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Yes, delete it!",
+  });
+
+  if (result.isConfirmed) {
+    try {
+      await api.delete(`/interns/${id}`);
+      interns.value = interns.value.filter((i) => i.id !== id);
+      populateOptionsFromInterns();
+      Swal.fire("Deleted!", "Intern has been deleted.", "success");
+    } catch (error) {
+      Swal.fire(
+        "Error!",
+        error.response?.data?.message || "Failed to delete intern.",
+        "error",
+      );
+    }
   }
 };
 
@@ -303,8 +381,25 @@ const openDetailModal = (intern) => {
 // Beralih dari Modal Detail ke Modal Edit
 const openEditFromDetail = () => {
   showDetailModal.value = false;
-  showEditModal.value = true;
+  openEditModal(selectedIntern.value);
 };
+
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("data:") || path.startsWith("http")) return path;
+  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
+  return `${baseUrl}/storage/${path}`;
+};
+
+function formatDate(dateStr) {
+  if (!dateStr) return "—";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
 </script>
 
 <template>
@@ -335,7 +430,7 @@ const openEditFromDetail = () => {
           </svg>
           Export
         </button>
-        <button class="btn-add" @click="showAddModal = true">
+        <button class="btn-add" @click="openAddModal">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -427,17 +522,25 @@ const openEditFromDetail = () => {
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" v-model="searchQuery" placeholder="Search by name, ID, or mentor..." />
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="Search by name, ID, or mentor..."
+        />
       </div>
 
       <div class="filter-actions">
         <select v-model="selectedUniversity" class="filter-select">
           <option value="All Universities">All Universities</option>
-          <option v-for="uni in universities" :key="uni" :value="uni">{{ uni }}</option>
+          <option v-for="uni in universities" :key="uni" :value="uni">
+            {{ uni }}
+          </option>
         </select>
         <select v-model="selectedProject" class="filter-select">
           <option value="All Projects">All Projects</option>
-          <option v-for="proj in projects" :key="proj" :value="proj">{{ proj }}</option>
+          <option v-for="proj in projects" :key="proj" :value="proj">
+            {{ proj }}
+          </option>
         </select>
         <button class="btn-icon">
           <svg
@@ -483,12 +586,12 @@ const openEditFromDetail = () => {
             <td>
               <div class="intern-profile">
                 <div class="avatar">
-                  <span v-if="!intern.avatar">{{ intern.name.charAt(0) }}</span>
                   <img
-                    v-else
-                    src="https://i.pravatar.cc/150?img=1"
-                    alt="avatar"
+                    v-if="intern.profile_photo"
+                    :src="intern.profile_photo"
+                    class="avatar-img-fit"
                   />
+                  <span v-else>{{ intern.name.charAt(0) }}</span>
                 </div>
                 <div class="intern-details-cell">
                   <p class="intern-name">{{ intern.name }}</p>
@@ -518,7 +621,11 @@ const openEditFromDetail = () => {
             </td>
             <td>
               <div class="action-buttons">
-                <button class="action-btn" title="View">
+                <button
+                  class="action-btn"
+                  title="View"
+                  @click="openDetailModal(intern)"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="18"
@@ -536,7 +643,11 @@ const openEditFromDetail = () => {
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
                 </button>
-                <button class="action-btn" title="Edit">
+                <button
+                  class="action-btn"
+                  title="Edit"
+                  @click="openEditModal(intern)"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="18"
@@ -556,6 +667,28 @@ const openEditFromDetail = () => {
                     ></path>
                   </svg>
                 </button>
+                <button
+                  class="action-btn btn-delete"
+                  title="Delete"
+                  @click="deleteIntern(intern.id)"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path
+                      d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                    ></path>
+                  </svg>
+                </button>
               </div>
             </td>
           </tr>
@@ -564,8 +697,8 @@ const openEditFromDetail = () => {
 
       <div class="pagination">
         <p class="pagination-info">
-          Showing {{ filteredInterns.length > 0 ? 1 : 0 }} to {{ filteredInterns.length }} of
-          {{ filteredInterns.length }} interns
+          Showing {{ filteredInterns.length > 0 ? 1 : 0 }} to
+          {{ filteredInterns.length }} of {{ filteredInterns.length }} interns
         </p>
         <div class="pagination-controls">
           <button class="page-btn">
@@ -614,7 +747,9 @@ const openEditFromDetail = () => {
     <div class="modal-content">
       <div class="modal-header">
         <div>
-          <h2 class="modal-title">Add New Intern</h2>
+          <h2 class="modal-title">
+            {{ isEditing ? "Edit Intern Details" : "Add New Intern" }}
+          </h2>
           <p class="modal-subtitle">
             Fill in the details to register a new intern to the system.
           </p>
@@ -832,7 +967,7 @@ const openEditFromDetail = () => {
                   )"
                   :key="proj"
                   @click="selectOrAddOption('projectInput', proj)"
-                   class="dropdown-item"
+                  class="dropdown-item"
                 >
                   {{ proj }}
                 </div>
@@ -882,7 +1017,169 @@ const openEditFromDetail = () => {
         <button class="btn-cancel" @click="showAddModal = false">Cancel</button>
         <button class="btn-save" @click="saveIntern" :disabled="saving">
           <span v-if="saving">Saving...</span>
-          <span v-else>Save Intern</span>
+          <span v-else>{{ isEditing ? "Save Changes" : "Save Intern" }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- Modal Detail Intern -->
+  <div
+    v-if="showDetailModal && selectedIntern"
+    class="modal-overlay"
+    @click.self="showDetailModal = false"
+  >
+    <div class="modal-content detail-modal">
+      <!-- Header -->
+      <div class="detail-header">
+        <button class="btn-back" @click="showDetailModal = false">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Back to Directory
+        </button>
+        <button class="btn-close" @click="showDetailModal = false">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Profile Section -->
+      <div class="detail-profile">
+        <div class="detail-avatar-wrapper">
+          <img
+            v-if="selectedIntern.profile_photo"
+            :src="getImageUrl(selectedIntern.profile_photo)"
+            :alt="selectedIntern.name"
+          />
+          <div v-else class="detail-avatar-fallback">
+            {{ selectedIntern.name?.charAt(0) }}
+          </div>
+          <span
+            class="status-dot"
+            :class="selectedIntern.status?.toLowerCase()"
+          ></span>
+        </div>
+        <h2 class="detail-name">{{ selectedIntern.name }}</h2>
+        <p class="detail-id">ID: {{ selectedIntern.id }}</p>
+        <p class="detail-role">
+          {{ selectedIntern.university }} | {{ selectedIntern.department }}
+        </p>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="detail-stats">
+        <div class="stat-col">
+          <span class="d-stat-lbl">ATTENDANCE</span>
+          <span class="d-stat-val">{{ selectedIntern.attendance }}%</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-col">
+          <span class="d-stat-lbl">TASKS DONE</span>
+          <span class="d-stat-val">
+            {{ selectedIntern.tasks_done ?? "—" }}
+          </span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-col">
+          <span class="d-stat-lbl">LEAVE BAL.</span>
+          <span class="d-stat-val">{{
+            selectedIntern.leave_balance ?? "—"
+          }}</span>
+        </div>
+      </div>
+
+      <!-- Info List -->
+      <div class="detail-info-list">
+        <div class="info-row">
+          <span class="info-label">
+            <Mail :size="20" color="#3B82F6" />
+            Email Address
+          </span>
+          <span class="info-value">{{ selectedIntern.email || "—" }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">
+            <Phone :size="20" color="#3B82F6" />
+            Phone Number
+          </span>
+          <span class="info-value">{{
+            selectedIntern.phone_number || "—"
+          }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">
+            <Users :size="20" color="#3B82F6" />
+            Mentor
+          </span>
+          <span class="info-value">{{ selectedIntern.mentor || "—" }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">
+            <FolderOpen :size="20" color="#3B82F6" />
+            Project
+          </span>
+          <span class="info-value">{{ selectedIntern.project || "—" }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">
+            <Calendar :size="20" color="#3B82F6" />
+            Internship Period
+          </span>
+          <span class="info-value"
+            >{{ formatDate(selectedIntern.start_date) }} –
+            {{
+              selectedIntern.end_date
+                ? formatDate(selectedIntern.end_date)
+                : "—"
+            }}</span
+          >
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="detail-action-wrapper">
+        <button class="btn-modify" @click="openEditFromDetail">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+            ></path>
+            <path
+              d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+            ></path>
+          </svg>
+          Modify Intern Details
         </button>
       </div>
     </div>
@@ -891,11 +1188,21 @@ const openEditFromDetail = () => {
 
 <style scoped>
 /* ================= MAIN LAYOUT & TABLE ================= */
-.directory-container { display: flex; flex-direction: column; gap: 24px; }
+.directory-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 
 .page-header {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  position: sticky; top: 0; z-index: 100; padding: 20px 0; margin-top: -20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 20px 0;
+  margin-top: -20px;
   background: var(--bg-app);
   border-bottom: 1px solid var(--border-color);
 }
@@ -1153,6 +1460,8 @@ const openEditFromDetail = () => {
 .avatar {
   width: 40px;
   height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   border-radius: 50%;
   background: var(--bg-input);
   display: flex;
@@ -1161,12 +1470,17 @@ const openEditFromDetail = () => {
   overflow: hidden;
   font-weight: 700;
   color: var(--text-dim);
+  flex-shrink: 0;
 }
 
-.avatar img {
-  width: 100%;
-  height: 100%;
+.avatar img.avatar-img-fit {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .intern-details {
@@ -1227,6 +1541,22 @@ const openEditFromDetail = () => {
   width: 36px;
 }
 
+.detail-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--bg-input);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.status-dot.inactive {
+  background: #94a3b8;
+}
 /* Status Badge */
 .status-badge {
   padding: 6px 12px;
@@ -1264,6 +1594,11 @@ const openEditFromDetail = () => {
 .action-btn:hover {
   background: var(--bg-input);
   color: var(--text-main);
+}
+
+.action-btn.btn-delete:hover {
+  color: #ef4444;
+  background: #fef2f2;
 }
 
 /* Pagination */
@@ -1337,9 +1672,17 @@ const openEditFromDetail = () => {
 }
 /* ================= Modal Styles ================= */
 .modal-overlay {
-  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center; z-index: 999;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
 }
 .modal-content {
   background: var(--bg-card);
@@ -1563,34 +1906,166 @@ const openEditFromDetail = () => {
 }
 
 /* ================= MODAL DETAIL STYLES ================= */
-.detail-modal { width: 100%; max-width: 420px; }
-.detail-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #F1F5F9; }
-.btn-back { display: flex; align-items: center; gap: 6px; background: none; border: none; font-size: 14px; font-weight: 500; color: #64748B; cursor: pointer; transition: color 0.2s; }
-.btn-back:hover { color: #0F172A; }
+.detail-modal {
+  width: 100%;
+  max-width: 540px;
+}
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.btn-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.btn-back:hover {
+  color: #0f172a;
+}
 
-.detail-profile { display: flex; flex-direction: column; align-items: center; padding: 28px 24px 20px; }
-.detail-avatar-wrapper { position: relative; width: 88px; height: 88px; border-radius: 50%; padding: 4px; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.08); margin-bottom: 16px; }
-.detail-avatar-wrapper img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-.status-dot { position: absolute; bottom: 2px; right: 6px; width: 16px; height: 16px; background: #10B981; border: 3px solid white; border-radius: 50%; }
+.detail-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 24px 20px;
+}
+.detail-avatar-wrapper {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  padding: 4px;
+  border: 2px solid white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  margin-bottom: 16px;
+}
+.detail-avatar-wrapper img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.status-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 6px;
+  width: 16px;
+  height: 16px;
+  background: #10b981;
+  border: 3px solid white;
+  border-radius: 50%;
+}
 
-.detail-name { font-size: 22px; font-weight: 800; color: #0F172A; margin: 0 0 4px 0; }
-.detail-id { font-size: 12px; font-weight: 700; color: #F59E0B; margin: 0 0 6px 0; letter-spacing: 0.5px; }
-.detail-role { font-size: 14px; color: #64748B; margin: 0; }
+.detail-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+.detail-id {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f59e0b;
+  margin: 0 0 6px 0;
+  letter-spacing: 0.5px;
+}
+.detail-role {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
 
-.detail-stats { display: flex; align-items: center; padding: 20px; margin: 0 24px; border-top: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9; }
-.stat-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.d-stat-lbl { font-size: 10px; font-weight: 700; color: #94A3B8; letter-spacing: 1px; }
-.d-stat-val { font-size: 20px; font-weight: 800; color: #0F172A; }
-.stat-divider { width: 1px; height: 32px; background: #F1F5F9; }
+.detail-stats {
+  display: flex;
+  align-items: center;
+  padding: 24px 0;
+  margin: 16px 24px;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+}
+.stat-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.d-stat-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 1px;
+}
+.d-stat-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.stat-divider {
+  width: 1px;
+  height: 32px;
+  background: #f1f5f9;
+}
 
-.detail-info-list { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-.info-row { display: flex; justify-content: space-between; align-items: center; }
-.info-label { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; color: #64748B; }
-.info-value { font-size: 14px; font-weight: 600; color: #0F172A; text-align: right; }
+.detail-info-list {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.info-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+}
+.info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: right;
+}
 
-.detail-action-wrapper { padding: 0 24px 24px; }
-.btn-modify { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #3B82F6; color: white; border: none; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2); }
-.btn-modify:hover { background: #2563EB; }
+.detail-action-wrapper {
+  padding: 0 24px 24px;
+}
+.btn-modify {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+}
+.btn-modify:hover {
+  background: #2563eb;
+}
 
 /* Responsive adjustments */
 @media (max-width: 640px) {

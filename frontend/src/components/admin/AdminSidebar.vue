@@ -2,11 +2,18 @@
 import { ref } from 'vue';
 import bpsLogo from '../../assets/bps.png';
 
-defineProps(['activeTab', 'pendingLeaves']);
+defineProps(['activeTab', 'pendingLeaves', 'user']);
 defineEmits(['update:activeTab', 'logout']);
 
 const collapsed = ref(false);
 const toggleSidebar = () => { collapsed.value = !collapsed.value; };
+
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
+  return `${baseUrl}/storage/${path}`;
+};
 </script>
 
 <template>
@@ -73,12 +80,13 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
 
     <div class="user-profile" :class="{ 'user-profile--collapsed': collapsed }">
       <div class="avatar">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <img v-if="user?.profile_photo" :src="getImageUrl(user.profile_photo)" class="avatar-img-fit" />
+        <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
       </div>
       <template v-if="!collapsed">
         <div class="user-info">
-          <p class="name">Super Admin</p>
-          <p class="role">Management</p>
+          <p class="name">{{ user?.name || 'Super Admin' }}</p>
+          <p class="role">{{ user?.role === 'admin' ? 'Administrator' : 'Management' }}</p>
         </div>
         <button class="logout-btn" title="Logout" @click="$emit('logout')">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -304,6 +312,13 @@ const toggleSidebar = () => { collapsed.value = !collapsed.value; };
   align-items: center;
   justify-content: center;
   color: var(--text-dim);
+  overflow: hidden;
+}
+
+.avatar-img-fit {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .user-info {
