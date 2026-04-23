@@ -445,8 +445,6 @@ onUnmounted(() => {
 .header-section {
   position: sticky; /* Ganti dari absolute ke sticky */
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 100; /* Pastikan lebih tinggi dari kartu lainnya */
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
@@ -468,10 +466,7 @@ onUnmounted(() => {
 }
 
 .content-wrapper {
-  padding-top: 20px;
-  padding-bottom: 120px;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding: 20px 24px 120px 24px; /* Atur ulang padding agar pas */
 }
 
 /* --- COMPONENT STYLES --- */
@@ -541,14 +536,13 @@ onUnmounted(() => {
 /* Stats Simple */
 .stats-simple-card {
   background-color: var(--bg-card) !important;
-  color: var(--text-main);
-  padding: 20px;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color);  padding: 20px;
   border-radius: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
@@ -597,8 +591,9 @@ onUnmounted(() => {
 
 /* --- TIME CARD REVISION --- */
 .time-card {
-  background-color: var(--bg-card) !important;
-  color: var(--text-main);  padding: 20px;
+background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color);
   border-radius: 30px; /* Lebih bulat */
   padding: 24px;
   text-align: center;
@@ -739,8 +734,9 @@ onUnmounted(() => {
 }
 .stat-card {
   flex: 1;
-background-color: var(--bg-card) !important;
-  color: var(--text-main);
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color);
   padding: 14px 6px;
   border-radius: 20px;
   text-align: center;
@@ -798,7 +794,8 @@ background-color: var(--bg-card) !important;
 /* --- CALENDAR CARD (NEW) --- */
 .calendar-card {
   background-color: var(--bg-card) !important;
-  color: var(--text-main);
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color);
   border-radius: 24px;
   padding: 20px;
   box-shadow: 0 5px 20px -5px rgba(0, 0, 0, 0.04);
@@ -926,17 +923,15 @@ background-color: var(--bg-card) !important;
 
 /* --- HEADER (Perbaikan agar tidak rusak) --- */
 .header-section {
-  position: absolute;
+  position: sticky; /* Ubah dari absolute ke sticky */
   top: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
+  z-index: 100; 
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
   padding: 20px 25px 25px 25px;
   border-bottom-left-radius: 35px;
   border-bottom-right-radius: 35px;
-  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+  /* Hapus left: 0 dan right: 0 jika sudah pakai sticky di flex container */
 }
 
 .top-bar {
@@ -1048,7 +1043,6 @@ background-color: var(--bg-card) !important;
 }
 
 /* --- BOTTOM NAV (Fokus: QR Sejajar & Rapi) --- */
-/* --- BOTTOM NAV (PENYELARASAN FINAL) --- */
 .bottom-nav {
   position: absolute;
   bottom: 0;
@@ -1057,14 +1051,10 @@ background-color: var(--bg-card) !important;
   z-index: 100;
   background: var(--bg-card);
   border-top: 1px solid var(--border-color);
-  /* 1. Ukuran Tinggi Disamakan (70px-80px) */
   height: 75px; 
-  /* 2. Lengkungan Dashboard yang kamu suka */
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
-  /* 3. Shadow Halus agar tidak tampak "nempel" */
   box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.06);
-  /* 4. Layout Grid 5 Kolom (Rata Kiri-Kanan) */
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   align-items: center; 

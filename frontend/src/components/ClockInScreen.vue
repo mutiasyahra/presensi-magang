@@ -275,7 +275,7 @@ onMounted(() => {
 
 /* Container Full Screen HP */
 .clock-in-page {
-background-color: var(--bg-screen);
+  background-color: var(--bg-screen);
   height: 100vh; /* Tinggi pas layar */
   display: flex;
   flex-direction: column; /* Susun atas-bawah */
@@ -285,7 +285,7 @@ background-color: var(--bg-screen);
 /* Header (Diam di Atas) */
 .header-fixed {
   flex-shrink: 0; /* Tidak boleh mengecil */
-background-color: var(--bg-screen);
+  background-color: var(--bg-screen);
   padding: 20px 20px 10px 20px;
   display: flex;
   align-items: center;
@@ -297,7 +297,7 @@ background-color: var(--bg-screen);
   font-size: 18px;
   font-weight: 700;
   margin: 0;
-color: var(--text-main);
+  color: var(--text-main);
 }
 
 /* Area Tengah (Bisa Scroll) */
@@ -329,7 +329,7 @@ color: var(--text-main);
 /* Tombol Back */
 .btn-back {
   background-color: var(--bg-card);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -340,6 +340,7 @@ color: var(--text-main);
 }
 .btn-back img {
   width: 20px;
+  filter: var(--icon-filter, none);
 }
 
 /* Camera Section */
@@ -356,13 +357,14 @@ color: var(--text-main);
   height: 320px;
   border-radius: 30px;
   overflow: visible; /* allow button outside if needed */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 .camera-feed {
   width: 100%;
   height: 100%;
   object-fit: cover;
   pointer-events: none;
+  border-radius: 30px;
 }
 
 /* Capture button overlay */
@@ -453,7 +455,7 @@ color: var(--text-main);
 .icon-box {
   width: 40px;
   height: 40px;
-  background: #eff6ff;
+  background: var(--bg-screen);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -464,6 +466,7 @@ color: var(--text-main);
   width: 20px;
   height: 20px;
   object-fit: contain;
+  filter: var(--icon-filter, none);
 }
 
 /* KUNCI RATA KIRI */
@@ -476,7 +479,7 @@ color: var(--text-main);
 .label {
   font-size: 10px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-muted);
   letter-spacing: 0.5px;
   margin: 0 0 4px 0;
   text-transform: uppercase;
@@ -487,7 +490,7 @@ color: var(--text-main);
 .value {
   font-size: 13px;
   font-weight: 600;
-color: var(--text-main);
+  color: var(--text-main);
   margin: 0;
   line-height: 1.4;
 }
@@ -500,7 +503,7 @@ color: var(--text-main);
   width: 100%;
 }
 .badge-ontime {
-  background: #eff6ff;
+  background: rgba(37, 99, 235, 0.15);
   color: #2563eb;
   font-size: 10px;
   font-weight: 700;
@@ -525,6 +528,7 @@ color: var(--text-main);
 .plan-header img {
   width: 16px;
   opacity: 0.6;
+  filter: var(--icon-filter, none);
 }
 /* */
 .plan-input {

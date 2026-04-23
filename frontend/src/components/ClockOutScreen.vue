@@ -345,7 +345,7 @@ onMounted(() => {
 }
 .selected-file p {
   font-size: 13px;
-  color: #334155;
+  color: var(--text-main);
   margin-bottom: 8px;
 }
 .btn-remove {
@@ -367,7 +367,7 @@ onMounted(() => {
 <style scoped>
 /* --- 1. LAYOUT UTAMA --- */
 .clock-out-page {
-background-color: var(--bg-screen);
+  background-color: var(--bg-screen);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -376,7 +376,7 @@ background-color: var(--bg-screen);
 
 .header-fixed {
   flex-shrink: 0;
-  background-color: #f8fafc;
+  background-color: var(--bg-screen);
   padding: 20px 20px 10px 20px;
   display: flex;
   align-items: center;
@@ -387,7 +387,7 @@ background-color: var(--bg-screen);
   font-size: 18px;
   font-weight: 700;
   margin: 0;
-color: var(--text-main);
+  color: var(--text-main);
 }
 
 /* Scroll Area */
@@ -404,9 +404,9 @@ color: var(--text-main);
 /* Footer */
 .footer-fixed {
   flex-shrink: 0;
-background-color: var(--bg-card);
+  background-color: var(--bg-card);
   padding: 20px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
   text-align: center;
   z-index: 20;
 }
@@ -425,6 +425,7 @@ background-color: var(--bg-card);
 }
 .btn-back img {
   width: 20px;
+  filter: var(--icon-filter, none);
 }
 
 .camera-container {
@@ -576,7 +577,7 @@ background-color: var(--bg-card);
   width: 100%;
 }
 .badge-ontime {
-  background: rgba(37, 99, 235, 0.2);
+  background: rgba(37, 99, 235, 0.15);
   color: #2563eb;
   font-size: 10px;
   font-weight: 700;
@@ -683,7 +684,7 @@ background-color: var(--bg-card);
   filter: brightness(0) invert(1);
 }
 .retake-link {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;

@@ -201,6 +201,7 @@ onMounted(() => {
   --text-main: #1e293b;       /* Warna font utama (gelap) */
   --text-muted: #64748b;     /* Warna font sekunder */
   --border-color: #e2e8f0;    /* Warna garis border/input */
+  --icon-filter: none;
 }
 
 /* Warna saat Dark Mode aktif */
@@ -210,6 +211,7 @@ onMounted(() => {
   --text-main: #f8fafc;       /* Font jadi putih/terang agar terbaca */
   --text-muted: #94a3b8;     /* Font sekunder jadi abu-abu terang */
   --border-color: #334155;    /* Border jadi lebih gelap agar tidak kontras */
+  --icon-filter: brightness(0) invert(1);
 }
 /* Di bawah selector .dark { ... } lo tadi */
 
