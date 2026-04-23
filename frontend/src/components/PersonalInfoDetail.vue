@@ -106,7 +106,8 @@ const userInfo = ref({
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  background-color: #f8fafc;
+  /* PENTING: Ini harus warna layar paling belakang */
+  background-color: var(--bg-screen); 
   font-family: "Inter", sans-serif;
   overflow: hidden;
   position: relative;
@@ -144,7 +145,7 @@ const userInfo = ref({
   background: rgba(255, 255, 255, 0.2);
   color: white;
   font-size: 18px;
-  padding: 8px 12px;
+  padding: 8px 16px;
   border-radius: 12px;
   cursor: pointer;
   backdrop-filter: blur(5px);
@@ -167,11 +168,15 @@ const userInfo = ref({
 }
 
 .info-card {
-  background: var(--bg-card);
+  /* Gunakan bg-card yang seharusnya sedikit lebih terang dari bg-screen */
+  background-color: var(--bg-card); 
   border-radius: 24px;
   padding: 25px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  /* TAMBAHKAN INI: Shadow tipis agar kartu terlihat melayang */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); 
   text-align: left;
+  /* Tambahkan border tipis agar batas kartu jelas */
+  border: 1px solid var(--border-color); 
 }
 
 .card-desc {
@@ -197,7 +202,8 @@ const userInfo = ref({
 .data-item label {
   font-size: 11px;
   text-transform: uppercase;
-  color: #94a3b8;
+  /* Gunakan text-muted agar tidak seputih isi datanya */
+  color: var(--text-muted); 
   font-weight: 600;
   letter-spacing: 0.5px;
 }
@@ -216,8 +222,10 @@ const userInfo = ref({
 
 .divider {
   height: 1px;
-  background-color: var(--border-color);
-  margin: 5px 0;
+  /* Gunakan warna border yang sudah lo definisikan di App.vue */
+  background-color: var(--border-color); 
+  margin: 15px 0;
+  opacity: 0.5; /* Biar lebih subtle */
 }
 
 .date-grid {

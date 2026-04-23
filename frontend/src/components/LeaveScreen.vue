@@ -156,10 +156,10 @@ const submitLeave = async () => {
 .screen-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Kunci tinggi layar */
-  background-color: var(--bg-app);
-  overflow: hidden; /* Matikan scroll di layar utama */
-  transition: background-color 0.3s ease;
+  height: 100vh;
+  background-color: var(--bg-screen);
+  overflow: hidden;
+  position: relative; /* Tambahkan ini agar absolute bottom-nav mengacu ke sini */
 }
 
 /* Header tidak ikut scroll */
@@ -168,7 +168,7 @@ const submitLeave = async () => {
   align-items: center;
   justify-content: space-between;
   padding: 20px;
-  background-color: var(--bg-app);
+  background-color: var(--bg-screen);
   flex-shrink: 0;
   transition: background-color 0.3s ease;
 }
@@ -190,14 +190,19 @@ const submitLeave = async () => {
 }
 
 /* Styling Komponen Lainnya */
-.back-icon { width: 24px; height: 24px; cursor: pointer; }
+.back-icon { width: 24px; height: 24px; cursor: pointer; filter: var(--icon-filter); filter: brightness(0) invert(1); }
 .title { font-size: 18px; font-weight: 700; color: var(--text-main); margin: 0; }
 .spacer { width: 24px; }
 
 .info-alert {
-  display: flex; align-items: flex-start;
-  background-color: #EFF6FF; border-radius: 12px;
-  padding: 12px 16px; margin-bottom: 24px;
+  display: flex; 
+  align-items: flex-start;
+  /* Gunakan rgba agar biru transparan, lebih nyaman di mode gelap */
+  background-color: rgba(59, 130, 246, 0.1); 
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px; 
+  margin-bottom: 24px;
 }
 .info-icon { width: 20px; height: 20px; margin-right: 12px; margin-top: 2px; }
 .info-alert p { margin: 0; font-size: 13px; color: #3B82F6; line-height: 1.5; text-align: left; width: 100%; }
@@ -211,24 +216,24 @@ const submitLeave = async () => {
 .type-container { display: flex; gap: 16px; }
 .type-card {
   flex: 1; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 16px; background-color: var(--bg-card);
+  justify-content: center; padding: 16px; background-color: var(--bg-card); /* GANTI dari white */
   border: 1px solid var(--border-color); border-radius: 16px; cursor: pointer; transition: all 0.2s;
 }
-.type-card.active { border: 2px solid var(--accent-primary); background-color: var(--surface-info); }
+.type-card.active { border: 2px solid #3B82F6; background-color: rgba(59, 130, 246, 0.15); }
 .type-icon { width: 30px; height: 35px; margin-bottom: 8px; }
 .type-card span { font-size: 14px; font-weight: 600; color: var(--text-muted); }
-.type-card.active span { color: var(--accent-primary); }
+.type-card.active span { color: #3B82F6; }
 
 .date-row { display: flex; gap: 16px; }
 .date-input-group { flex: 1; }
 .date-label { display: block; font-size: 12px; color: #94A3B8; margin-bottom: 4px; text-align: left; }
-.date-input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-family: inherit; font-size: 14px; color: var(--text-main); box-sizing: border-box; background-color: var(--bg-input); transition: all 0.3s ease; }
+.date-input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-family: inherit; font-size: 14px; color: var(--text-main); box-sizing: border-box; background-color: var(--bg-card); }
 
-.reason-input { width: 100%; height: 100px; padding: 16px; border: 1px solid var(--border-color); border-radius: 12px; font-family: inherit; font-size: 14px; color: var(--text-main); resize: none; box-sizing: border-box; background-color: var(--bg-input); transition: all 0.3s ease; }
-.reason-input::placeholder { color: #94A3B8; }
+.reason-input { width: 100%; height: 100px; padding: 16px; border: 1px solid var(--border-color); border-radius: 12px; font-family: inherit; font-size: 14px; color: var(--text-main); resize: none; box-sizing: border-box; background-color: var(--bg-card); }
+.reason-input::placeholder { color: var(--text-muted); }
 
-.upload-box { border: 2px dashed var(--input-border); border-radius: 16px; padding: 24px 16px; text-align: center; background-color: var(--bg-card); cursor: pointer; transition: all 0.2s; }
-.upload-box:hover { background-color: var(--bg-input); }
+.upload-box { border: 2px dashed var(--border-color); border-radius: 16px; padding: 24px 16px; text-align: center; background-color: var(--bg-card); cursor: pointer; transition: background-color 0.2s; }
+.upload-box:hover { background-color: rgba(255, 255, 255, 0.05);}
 .upload-icon { width: 40px; height: 40px; margin-bottom: 12px; }
 .upload-text { font-size: 13px; color: #64748B; margin: 0 0 16px 0; line-height: 1.5; }
 .upload-subtext { font-size: 11px; color: #94A3B8; }
@@ -244,12 +249,13 @@ const submitLeave = async () => {
 /* --- BOTTOM NAV (PENYELARASAN TOTAL) --- */
 /* --- BOTTOM NAV (PENYELARASAN TOTAL DENGAN HISTORY) --- */
 .bottom-nav {
-  position: absolute; /* KUNCI: Membuatnya melayang di atas scroll area */
+  position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 100;
-  background: white;
+  z-index: 1000; /* Pastikan lebih tinggi dari elemen form */
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
   height: 75px; /* Standar History */
   border-top-left-radius: 30px; /* Standar History */
   border-top-right-radius: 30px;

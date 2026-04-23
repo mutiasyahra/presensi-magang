@@ -290,7 +290,7 @@ onMounted(() => {
 
 /* Container Full Screen HP */
 .clock-in-page {
-  background-color: var(--bg-app);
+  background-color: var(--bg-screen);
   height: 100vh; /* Tinggi pas layar */
   display: flex;
   flex-direction: column; /* Susun atas-bawah */
@@ -301,7 +301,7 @@ onMounted(() => {
 /* Header (Diam di Atas) */
 .header-fixed {
   flex-shrink: 0; /* Tidak boleh mengecil */
-  background-color: var(--bg-app);
+  background-color: var(--bg-screen);
   padding: 20px 20px 10px 20px;
   display: flex;
   align-items: center;
@@ -332,7 +332,7 @@ onMounted(() => {
 /* Footer (Diam di Bawah) */
 .footer-fixed {
   flex-shrink: 0;
-  background: var(--bg-card);
+  background-color: var(--bg-card);
   padding: 20px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
   text-align: center;
@@ -347,7 +347,7 @@ onMounted(() => {
 
 /* Tombol Back */
 .btn-back {
-  background: var(--bg-input);
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 50%;
   width: 40px;
@@ -360,6 +360,7 @@ onMounted(() => {
 }
 .btn-back img {
   width: 20px;
+  filter: var(--icon-filter, none);
 }
 
 /* Camera Section */
@@ -376,13 +377,14 @@ onMounted(() => {
   height: 320px;
   border-radius: 30px;
   overflow: visible; /* allow button outside if needed */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 .camera-feed {
   width: 100%;
   height: 100%;
   object-fit: cover;
   pointer-events: none;
+  border-radius: 30px;
 }
 
 /* Capture button overlay */
@@ -461,7 +463,7 @@ onMounted(() => {
 }
 
 .info-card {
-  background: var(--bg-card);
+  background-color: var(--bg-card);
   padding: 16px;
   border-radius: 20px;
   display: flex;
@@ -475,7 +477,7 @@ onMounted(() => {
 .icon-box {
   width: 40px;
   height: 40px;
-  background: var(--bg-input);
+  background: var(--bg-screen);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -486,6 +488,7 @@ onMounted(() => {
   width: 20px;
   height: 20px;
   object-fit: contain;
+  filter: var(--icon-filter, none);
 }
 
 /* KUNCI RATA KIRI */
@@ -498,7 +501,7 @@ onMounted(() => {
 .label {
   font-size: 10px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-muted);
   letter-spacing: 0.5px;
   margin: 0 0 4px 0;
   text-transform: uppercase;
@@ -522,8 +525,8 @@ onMounted(() => {
   width: 100%;
 }
 .badge-ontime {
-  background: var(--surface-success);
-  color: var(--accent-success);
+  background: rgba(37, 99, 235, 0.15);
+  color: #2563eb;
   font-size: 10px;
   font-weight: 700;
   padding: 4px 8px;
@@ -533,7 +536,7 @@ onMounted(() => {
 
 /* Work Plan Input */
 .work-plan-card {
-  background: var(--bg-card);
+  background-color: var(--bg-card);
   padding: 20px;
   border-radius: 24px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
@@ -549,29 +552,29 @@ onMounted(() => {
 .plan-header img {
   width: 16px;
   opacity: 0.6;
+  filter: var(--icon-filter, none);
 }
 /* */
 .plan-input {
   width: 100%;
   height: 100px;
-  box-sizing: border-box; /* PENTING: Kunci agar tidak meleber */
-  border: 1px solid #f1f5f9;
-  background: #f8fafc;
-  height: 80px;
+  box-sizing: border-box;
+  /* Ganti border dan background input agar tidak silau */
   border: 1px solid var(--border-color);
-  background: var(--bg-input);
+  background: var(--bg-screen); 
   border-radius: 16px;
   padding: 15px;
   font-family: "Inter", sans-serif;
   font-size: 13px;
-  color: var(--text-main);
+  /* Teks yang diketik user harus var(--text-main) */
+  color: var(--text-main); 
   resize: none;
   outline: none;
   transition: all 0.3s ease;
 }
 .plan-input:focus {
-  border-color: var(--accent-primary);
-  background: var(--bg-card);
+  border-color: #bfdbfe;
+  background-color: var(--bg-card);
 }
 .plan-input::placeholder {
   color: var(--text-dim);

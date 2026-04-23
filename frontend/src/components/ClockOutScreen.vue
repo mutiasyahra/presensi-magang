@@ -173,12 +173,15 @@ const getLocation = () => {
       async (position) => {
         coords.value.lat = position.coords.latitude;
         coords.value.lng = position.coords.longitude;
-        
+
         // Fetch address name from Nominatim
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.value.lat}&lon=${coords.value.lng}&zoom=18&addressdetails=1`, {
-            headers: { 'Accept-Language': 'id' }
-          });
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.value.lat}&lon=${coords.value.lng}&zoom=18&addressdetails=1`,
+            {
+              headers: { "Accept-Language": "id" },
+            },
+          );
           const data = await res.json();
           locationName.value = data.display_name || "Unknown Location";
         } catch (err) {
@@ -363,7 +366,7 @@ onMounted(() => {
 }
 .selected-file p {
   font-size: 13px;
-  color: #334155;
+  color: var(--text-main);
   margin-bottom: 8px;
 }
 .btn-remove {
@@ -385,7 +388,7 @@ onMounted(() => {
 <style scoped>
 /* --- 1. LAYOUT UTAMA --- */
 .clock-out-page {
-  background-color: var(--bg-app);
+  background-color: var(--bg-screen);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -395,7 +398,7 @@ onMounted(() => {
 
 .header-fixed {
   flex-shrink: 0;
-  background-color: var(--bg-app);
+  background-color: var(--bg-screen);
   padding: 20px 20px 10px 20px;
   display: flex;
   align-items: center;
@@ -424,9 +427,9 @@ onMounted(() => {
 /* Footer */
 .footer-fixed {
   flex-shrink: 0;
-  background: var(--bg-card);
+  background-color: var(--bg-card);
   padding: 20px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
   text-align: center;
   z-index: 20;
   border-top: 1px solid var(--border-color);
@@ -435,7 +438,7 @@ onMounted(() => {
 
 /* --- 2. KAMERA & INFO --- */
 .btn-back {
-  background: var(--bg-input);
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 50%;
   width: 40px;
@@ -448,6 +451,7 @@ onMounted(() => {
 }
 .btn-back img {
   width: 20px;
+  filter: var(--icon-filter, none);
 }
 
 .camera-container {
@@ -544,7 +548,7 @@ onMounted(() => {
 
 .info-card,
 .form-card {
-  background: var(--bg-card);
+  background-color: var(--bg-card);
   padding: 16px;
   border-radius: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
@@ -563,7 +567,7 @@ onMounted(() => {
 .icon-box {
   width: 40px;
   height: 40px;
-  background: var(--bg-input);
+  background: var(--bg-screen);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -601,8 +605,8 @@ onMounted(() => {
   width: 100%;
 }
 .badge-ontime {
-  background: var(--surface-success);
-  color: var(--accent-success);
+  background: rgba(37, 99, 235, 0.15);
+  color: #2563eb;
   font-size: 10px;
   font-weight: 700;
   padding: 4px 8px;
@@ -634,7 +638,7 @@ onMounted(() => {
   height: 100px;
   box-sizing: border-box; /* PENTING: Kunci agar tidak meleber */
   border: 1px solid var(--border-color);
-  background: var(--bg-input);
+  background: var(--bg-screen);
   border-radius: 16px;
   padding: 15px;
   font-family: "Inter", sans-serif;
@@ -646,19 +650,19 @@ onMounted(() => {
 }
 .custom-textarea:focus {
   border-color: #bfdbfe;
-  background: white;
+  background-color: var(--bg-card);
 }
 
 /* FIX UPLOAD AREA MELEBER */
 .upload-area {
   width: 100%;
   box-sizing: border-box; /* PENTING */
-  border: 2px dashed var(--input-border);
+  border: 2px dashed var(--border-color);
   border-radius: 16px;
   padding: 25px 15px;
   text-align: center;
-  background-color: var(--bg-input);
-  transition: all 0.3s ease;
+  background-color: var(--bg-screen);
+  transition: all 0.2s;
 }
 .upload-icon {
   width: 32px;
@@ -673,8 +677,8 @@ onMounted(() => {
 }
 .btn-pilih-file {
   margin-top: 10px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color); /* GANTI: Border button */
   color: #3b82f6;
   font-size: 12px;
   font-weight: 600;

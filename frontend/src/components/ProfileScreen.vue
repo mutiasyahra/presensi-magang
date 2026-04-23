@@ -1,10 +1,15 @@
 <script setup>
-
 import { ref, onMounted, computed } from "vue";
 import api from "../api/axios.js";
 
 // Gabungkan semua event di sini
-const emit = defineEmits(["navigate", "logout", "open-personal-info", "open-settings", "open-privacy"]);
+const emit = defineEmits([
+  "navigate",
+  "logout",
+  "open-personal-info",
+  "open-settings",
+  "open-privacy",
+]);
 
 const user = ref({
   name: "User",
@@ -160,7 +165,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: var(--bg-app);
+  background-color: var(--bg-screen);
   overflow: hidden;
   transition: background-color 0.3s ease;
 }
@@ -220,7 +225,7 @@ onMounted(() => {
   z-index: 2;
   scrollbar-width: none;
   padding-bottom: 120px;
-  scrollbar-width: none; 
+  scrollbar-width: none;
   -ms-overflow-style: none;
 }
 .content::-webkit-scrollbar {
@@ -229,10 +234,11 @@ onMounted(() => {
 
 /* 4. KARTU PROFIL UTAMA */
 .profile-card {
-  background: var(--bg-card);
+  background-color: var(--bg-card); /* GANTI INI */
   border-radius: 24px;
   padding: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color); /* Tambahkan border */
   text-align: center;
   margin-bottom: 30px;
   border: 1px solid var(--border-color);
@@ -283,7 +289,7 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 3px solid white;
+  border: 3px solid var(--bg-card);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   cursor: pointer;
 }
@@ -323,13 +329,13 @@ onMounted(() => {
 }
 
 .badge.blue {
-  background-color: #eff6ff;
+  background-color: rgba(59, 130, 246, 0.15);
   color: #3b82f6;
 }
 
 .badge.gray {
-  background-color: var(--bg-input);
-  color: var(--text-muted);
+  background-color: var(--bg-screen);
+  color: var(--text-main);
 }
 
 .company-info {
@@ -373,7 +379,8 @@ onMounted(() => {
 .setting-item {
   display: flex;
   align-items: center;
-  background: var(--bg-card);
+  background-color: var(--bg-card); /* GANTI INI */
+  border: 1px solid var(--border-color); /* Tambahkan border tipis */
   padding: 16px 20px; /* Ditambah padding kanan agar tidak mepet */
   border-radius: 16px;
   margin-bottom: 12px;
@@ -393,7 +400,7 @@ onMounted(() => {
 .setting-icon-wrapper {
   width: 40px;
   height: 40px;
-  background: var(--bg-input);
+  background-color: var(--bg-screen);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -417,7 +424,7 @@ onMounted(() => {
 
 .chevron {
   font-size: 18px;
-  color: #cbd5e1;
+  color: var(--text-muted);
   font-weight: 600;
   width: 20px; /* Beri lebar tetap */
   display: flex;
@@ -427,7 +434,8 @@ onMounted(() => {
 
 /* Tombol Logout Khusus */
 .logout-item {
-  background: #fef2f2;
+  background-color: rgba(239, 68, 68, 0.1); /* Merah transparan */
+  border: 1px solid rgba(239, 68, 68, 0.2);
   box-shadow: none;
   margin-top: 24px;
 }
@@ -448,13 +456,17 @@ onMounted(() => {
   left: 0;
   right: 0;
   z-index: 100;
-  background: white;
+  background-color: var(--bg-card); /* GANTI INI */
+  border-top: 1px solid var(--border-color);
   height: 75px; /* Sinkron 75px */
   border-top-left-radius: 30px; /* Sinkron radius 30px */
   border-top-right-radius: 30px;
-  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.2);
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* Wajib Grid agar posisi ikon simetris */
+  grid-template-columns: repeat(
+    5,
+    1fr
+  ); /* Wajib Grid agar posisi ikon simetris */
   align-items: center;
   padding: 0 5px;
 }
@@ -465,7 +477,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  color: #94A3B8;
+  color: #94a3b8;
   cursor: pointer;
   height: 100%;
 }
@@ -475,7 +487,8 @@ onMounted(() => {
   height: 24px;
   object-fit: contain;
   /* Filter abu-abu pasif agar seragam di semua halaman */
-  filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%) hue-rotate(182deg) brightness(87%) contrast(85%);
+  filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%)
+    hue-rotate(182deg) brightness(87%) contrast(85%);
   transition: all 0.2s ease;
 }
 
@@ -486,11 +499,12 @@ onMounted(() => {
 
 /* State Aktif (Warna Biru Presisi) */
 .nav-item.active {
-  color: #2563EB;
+  color: #3b82f6; /* Warna biru lebih terang sedikit agar pop up */
 }
 
 .nav-item.active img {
-  filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%);
+  filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%)
+    hue-rotate(213deg) brightness(96%) contrast(97%);
 }
 
 /* --- TOMBOL QR (SQUIRCLE VERSION) --- */
@@ -504,7 +518,7 @@ onMounted(() => {
 .scan-button {
   width: 52px;
   height: 52px;
-  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border-radius: 16px; /* Squircle style */
   display: flex;
   justify-content: center;

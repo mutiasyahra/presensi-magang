@@ -33,7 +33,7 @@ const onSplashDone = () => {
 // Fungsi Navigasi yang sudah diperbaiki
 const navigateTo = (page, dataOrType = "in", id = null) => {
   currentPage.value = page;
-  
+
   // 1. Jika ke Detail
   if (page === "attendance-detail") {
     selectedAttendance.value = dataOrType;
@@ -44,7 +44,7 @@ const navigateTo = (page, dataOrType = "in", id = null) => {
     editType.value = dataOrType; // Tadi di sini lo nulis 'type', itu yang bikin error
     editId.value = id;
   }
-  
+
   localStorage.setItem("currentPage", page);
   window.scrollTo(0, 0);
 };
@@ -86,12 +86,12 @@ const onLogout = () => {
 };
 
 onMounted(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user && user.is_dark_mode && user.role === 'admin') {
-        document.documentElement.classList.add("dark");
-    } else {
-        document.documentElement.classList.remove("dark");
-    }
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  if (user && user.is_dark_mode && user.role === "admin") {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
 });
 </script>
 
@@ -107,9 +107,9 @@ onMounted(() => {
         @click-login="navigateTo('login')"
       />
 
-      <QRScanner 
-        v-else-if="currentPage === 'qr-scan'" 
-        @go-back="navigateTo('dashboard')" 
+      <QRScanner
+        v-else-if="currentPage === 'qr-scan'"
+        @go-back="navigateTo('dashboard')"
       />
 
       <LoginScreen
@@ -125,17 +125,17 @@ onMounted(() => {
         @open-detail="(data) => navigateTo('attendance-detail', data)"
       />
 
-      <AttendanceDetail 
+      <AttendanceDetail
         v-else-if="currentPage === 'attendance-detail'"
         :attendance="selectedAttendance"
         @go-back="navigateTo('dashboard')"
       />
 
-      <EditAttendance 
-        v-else-if="currentPage === 'edit-attendance'" 
-        :type="editType" 
+      <EditAttendance
+        v-else-if="currentPage === 'edit-attendance'"
+        :type="editType"
         :attendance-id="editId"
-        @navigate="navigateTo" 
+        @navigate="navigateTo"
       />
 
       <ClockInScreen
@@ -160,49 +160,75 @@ onMounted(() => {
         @navigate="navigateTo"
       />
 
-      <ProfileScreen 
-        v-else-if="currentPage === 'profile'" 
+      <ProfileScreen
+        v-else-if="currentPage === 'profile'"
         @navigate="navigateTo"
         @logout="onLogout"
         @open-personal-info="currentPage = 'profile-detail'"
         @open-settings="currentPage = 'app-settings'"
-        @open-privacy="currentPage = 'privacy-policy'" 
+        @open-privacy="currentPage = 'privacy-policy'"
       />
 
-      <PrivacyPolicy 
-        v-else-if="currentPage === 'privacy-policy'" 
-        @go-back="currentPage = 'profile'" 
+      <PrivacyPolicy
+        v-else-if="currentPage === 'privacy-policy'"
+        @go-back="currentPage = 'profile'"
       />
 
-      <AppSettings 
-        v-else-if="currentPage === 'app-settings'" 
-        @go-back="currentPage = 'profile'" 
+      <AppSettings
+        v-else-if="currentPage === 'app-settings'"
+        @go-back="currentPage = 'profile'"
       />
 
-      <PersonalInfoDetail 
-  v-else-if="currentPage === 'profile-detail'" 
-  @go-back="navigateTo('profile')" 
-/>
+      <PersonalInfoDetail
+        v-else-if="currentPage === 'profile-detail'"
+        @go-back="navigateTo('profile')"
+      />
 
-<EditProfile 
-  v-else-if="currentPage === 'edit-profile'" 
-  @go-back="navigateTo('profile')"
-  @profile-updated="() => console.log('Profil Diperbarui!')"
-/>
+      <EditProfile
+        v-else-if="currentPage === 'edit-profile'"
+        @go-back="navigateTo('profile')"
+        @profile-updated="() => console.log('Profil Diperbarui!')"
+      />
     </div>
   </div>
 </template>
 
 <style>
+/* Warna Default (Light Mode) */
+:root {
+  --bg-screen: #f8fafc; /* Warna layar paling belakang */
+  --bg-card: #ffffff; /* Warna kotak/card utama */
+  --text-main: #1e293b; /* Warna font utama (gelap) */
+  --text-muted: #64748b; /* Warna font sekunder */
+  --border-color: #e2e8f0; /* Warna garis border/input */
+  --icon-filter: none;
+}
+
+/* Warna saat Dark Mode aktif */
+.dark {
+  --bg-screen: #0f172a; /* Layar belakang jadi biru sangat gelap */
+  --bg-card: #1e293b; /* Kotak/card lebih terang sedikit dari layar (seperti di image_06ee44.png) */
+  --text-main: #f8fafc; /* Font jadi putih/terang agar terbaca */
+  --text-muted: #94a3b8; /* Font sekunder jadi abu-abu terang */
+  --border-color: #334155; /* Border jadi lebih gelap agar tidak kontras */
+  --icon-filter: brightness(0) invert(1);
+}
+/* Di bawah selector .dark { ... } lo tadi */
+
 body {
   margin: 0;
   padding: 0;
   font-family: "Inter", sans-serif;
-  background-color: var(--bg-app);
+  /* GANTI INI: panggil variabelnya */
+  background-color: var(--bg-screen);
+  color: var(--text-main);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .app-background {
-  background-color: var(--bg-mobile-shell, #e2e8f0);
+  background-color: #e2e8f0; /* Biarkan ini untuk tampilan desktop */
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -213,25 +239,12 @@ body {
 .mobile-frame {
   width: 100%;
   max-width: 480px;
-  min-width: 360px;
   min-height: 100vh;
-  background-color: var(--bg-mobile-frame, #ffffff);
+  /* GANTI INI: Pakai bg-screen supaya layar putihnya hilang */
+  background-color: var(--bg-screen);
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow-x: hidden;
   transition: background-color 0.3s ease;
-}
-
-@media screen and (max-width: 480px) {
-  .app-background {
-    background-color: var(--bg-mobile-frame, #ffffff);
-    display: block;
-  }
-  .mobile-frame {
-    max-width: 100%;
-    min-width: 100%;
-    box-shadow: none;
-    min-height: 100vh;
-  }
 }
 </style>
