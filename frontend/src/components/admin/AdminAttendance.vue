@@ -173,7 +173,8 @@ const fetchInterns = async () => {
     interns.value = fetchedData.map((i) => ({
       ...i,
       name: i.full_name || "Unknown",
-      id: i.intern_id || i.id,
+      id: i.id,
+      displayId: i.intern_id || `USR-${i.id}`,
       attendance: i.attendance_percentage || 0,
       status: i.status || "Active",
       profile_photo: i.user?.profile_photo || i.profile_photo || null,
@@ -232,9 +233,16 @@ const addNewOption = (field, fieldArray, value) => {
   }
 };
 
+const handleBlur = () => {
+  setTimeout(() => {
+    activeDropdown.value = null;
+  }, 200);
+};
+
 const openAddModal = () => {
   isEditing.value = false;
   formData.value = {
+    dbId: null,
     name: "",
     email: "",
     phone: "",
@@ -252,10 +260,11 @@ const openAddModal = () => {
 const openEditModal = (intern) => {
   isEditing.value = true;
   formData.value = {
+    dbId: intern.user_id || intern.id,
     name: intern.name,
     email: intern.email,
     phone: intern.phone_number || intern.phone,
-    id: intern.id || intern.intern_id,
+    id: intern.displayId || intern.intern_id,
     universityInput: intern.university,
     departmentInput: intern.department,
     mentorInput: intern.mentor,
@@ -288,15 +297,15 @@ const saveIntern = async () => {
     };
 
     if (isEditing.value) {
-      const res = await api.put(`/interns/${formData.value.id}`, payload);
+      const res = await api.put(`/interns/${formData.value.dbId}`, payload);
       const updated = res.data?.data || res.data || payload;
-      const index = interns.value.findIndex((i) => i.id === formData.value.id);
+      const index = interns.value.findIndex((i) => (i.user_id || i.id) === formData.value.dbId);
       if (index !== -1) {
         interns.value[index] = {
           ...interns.value[index],
           ...updated,
           name: updated.full_name || updated.name,
-          id: updated.intern_id || updated.id,
+          displayId: updated.intern_id || updated.id,
         };
       }
     } else {
@@ -306,7 +315,8 @@ const saveIntern = async () => {
       interns.value.unshift({
         ...created,
         name: created.full_name || "Unknown",
-        id: created.intern_id || created.id,
+        id: created.id,
+        displayId: created.intern_id || created.id,
         attendance: created.attendance_percentage || 0,
         status: created.status || "Active",
       });
@@ -320,7 +330,7 @@ const saveIntern = async () => {
   }
 };
 
-const deleteIntern = async (id) => {
+const deleteIntern = async (intern) => {
   const result = await Swal.fire({
     title: "Are you sure?",
     text: "You won't be able to revert this!",
@@ -333,8 +343,9 @@ const deleteIntern = async (id) => {
 
   if (result.isConfirmed) {
     try {
-      await api.delete(`/interns/${id}`);
-      interns.value = interns.value.filter((i) => i.id !== id);
+      const targetId = intern.user_id || intern.id;
+      await api.delete(`/interns/${targetId}`);
+      interns.value = interns.value.filter((i) => (i.user_id || i.id) !== targetId);
       populateOptionsFromInterns();
       Swal.fire("Deleted!", "Intern has been deleted.", "success");
     } catch (error) {
@@ -595,7 +606,7 @@ function formatDate(dateStr) {
                 </div>
                 <div class="intern-details-cell">
                   <p class="intern-name">{{ intern.name }}</p>
-                  <p class="intern-id">ID: {{ intern.id }}</p>
+                  <p class="intern-id">ID: {{ intern.displayId || intern.id }}</p>
                 </div>
               </div>
             </td>
@@ -670,7 +681,7 @@ function formatDate(dateStr) {
                 <button
                   class="action-btn btn-delete"
                   title="Delete"
-                  @click="deleteIntern(intern.id)"
+                  @click="deleteIntern(intern)"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -814,7 +825,7 @@ function formatDate(dateStr) {
                 v-model="formData.universityInput"
                 placeholder="Type or select university..."
                 @focus="activeDropdown = 'university'"
-                @blur="setTimeout(() => (activeDropdown = null), 200)"
+                @blur="handleBlur"
                 @keydown.enter.prevent="
                   maybeAdd('universityInput', universities)
                 "
@@ -863,7 +874,7 @@ function formatDate(dateStr) {
                 v-model="formData.departmentInput"
                 placeholder="Type or select department..."
                 @focus="activeDropdown = 'department'"
-                @blur="setTimeout(() => (activeDropdown = null), 200)"
+                @blur="handleBlur"
                 @keydown.enter.prevent="
                   maybeAdd('departmentInput', departments)
                 "
@@ -912,7 +923,7 @@ function formatDate(dateStr) {
                 v-model="formData.mentorInput"
                 placeholder="Type or select mentor..."
                 @focus="activeDropdown = 'mentor'"
-                @blur="setTimeout(() => (activeDropdown = null), 200)"
+                @blur="handleBlur"
                 @keydown.enter.prevent="maybeAdd('mentorInput', mentors)"
               />
               <div v-if="activeDropdown === 'mentor'" class="dropdown-menu">
@@ -955,7 +966,7 @@ function formatDate(dateStr) {
                 v-model="formData.projectInput"
                 placeholder="Type or select project..."
                 @focus="activeDropdown = 'project'"
-                @blur="setTimeout(() => (activeDropdown = null), 200)"
+                @blur="handleBlur"
                 @keydown.enter.prevent="maybeAdd('projectInput', projects)"
               />
               <div v-if="activeDropdown === 'project'" class="dropdown-menu">
@@ -1028,9 +1039,9 @@ function formatDate(dateStr) {
     class="modal-overlay"
     @click.self="showDetailModal = false"
   >
-    <div class="modal-content detail-modal">
+    <div class="modal-content">
       <!-- Header -->
-      <div class="detail-header">
+      <div class="modal-header" style="align-items: center;">
         <button class="btn-back" @click="showDetailModal = false">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -1065,101 +1076,103 @@ function formatDate(dateStr) {
         </button>
       </div>
 
-      <!-- Profile Section -->
-      <div class="detail-profile">
-        <div class="detail-avatar-wrapper">
-          <img
-            v-if="selectedIntern.profile_photo"
-            :src="getImageUrl(selectedIntern.profile_photo)"
-            :alt="selectedIntern.name"
-          />
-          <div v-else class="detail-avatar-fallback">
-            {{ selectedIntern.name?.charAt(0) }}
+      <div class="modal-body" style="padding: 0;">
+        <!-- Profile Section -->
+        <div class="detail-profile">
+          <div class="detail-avatar-wrapper">
+            <img
+              v-if="selectedIntern.profile_photo"
+              :src="getImageUrl(selectedIntern.profile_photo)"
+              :alt="selectedIntern.name"
+            />
+            <div v-else class="detail-avatar-fallback">
+              {{ selectedIntern.name?.charAt(0) }}
+            </div>
+            <span
+              class="status-dot"
+              :class="selectedIntern.status?.toLowerCase()"
+            ></span>
           </div>
-          <span
-            class="status-dot"
-            :class="selectedIntern.status?.toLowerCase()"
-          ></span>
+          <h2 class="detail-name">{{ selectedIntern.name }}</h2>
+          <p class="detail-id">ID: {{ selectedIntern.displayId || selectedIntern.id }}</p>
+          <p class="detail-role">
+            {{ selectedIntern.university }} | {{ selectedIntern.department }}
+          </p>
         </div>
-        <h2 class="detail-name">{{ selectedIntern.name }}</h2>
-        <p class="detail-id">ID: {{ selectedIntern.id }}</p>
-        <p class="detail-role">
-          {{ selectedIntern.university }} | {{ selectedIntern.department }}
-        </p>
-      </div>
 
-      <!-- Stats Row -->
-      <div class="detail-stats">
-        <div class="stat-col">
-          <span class="d-stat-lbl">ATTENDANCE</span>
-          <span class="d-stat-val">{{ selectedIntern.attendance }}%</span>
+        <!-- Stats Row -->
+        <div class="detail-stats">
+          <div class="stat-col">
+            <span class="d-stat-lbl">ATTENDANCE</span>
+            <span class="d-stat-val">{{ selectedIntern.attendance }}%</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-col">
+            <span class="d-stat-lbl">TASKS DONE</span>
+            <span class="d-stat-val">
+              {{ selectedIntern.tasks_done ?? "—" }}
+            </span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-col">
+            <span class="d-stat-lbl">LEAVE BAL.</span>
+            <span class="d-stat-val">{{
+              selectedIntern.leave_balance ?? "—"
+            }}</span>
+          </div>
         </div>
-        <div class="stat-divider"></div>
-        <div class="stat-col">
-          <span class="d-stat-lbl">TASKS DONE</span>
-          <span class="d-stat-val">
-            {{ selectedIntern.tasks_done ?? "—" }}
-          </span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-col">
-          <span class="d-stat-lbl">LEAVE BAL.</span>
-          <span class="d-stat-val">{{
-            selectedIntern.leave_balance ?? "—"
-          }}</span>
-        </div>
-      </div>
 
-      <!-- Info List -->
-      <div class="detail-info-list">
-        <div class="info-row">
-          <span class="info-label">
-            <Mail :size="20" color="#3B82F6" />
-            Email Address
-          </span>
-          <span class="info-value">{{ selectedIntern.email || "—" }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">
-            <Phone :size="20" color="#3B82F6" />
-            Phone Number
-          </span>
-          <span class="info-value">{{
-            selectedIntern.phone_number || "—"
-          }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">
-            <Users :size="20" color="#3B82F6" />
-            Mentor
-          </span>
-          <span class="info-value">{{ selectedIntern.mentor || "—" }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">
-            <FolderOpen :size="20" color="#3B82F6" />
-            Project
-          </span>
-          <span class="info-value">{{ selectedIntern.project || "—" }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">
-            <Calendar :size="20" color="#3B82F6" />
-            Internship Period
-          </span>
-          <span class="info-value"
-            >{{ formatDate(selectedIntern.start_date) }} –
-            {{
-              selectedIntern.end_date
-                ? formatDate(selectedIntern.end_date)
-                : "—"
-            }}</span
-          >
+        <!-- Info List -->
+        <div class="detail-info-list">
+          <div class="info-row">
+            <span class="info-label">
+              <Mail :size="20" color="#3B82F6" />
+              Email Address
+            </span>
+            <span class="info-value">{{ selectedIntern.email || "—" }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <Phone :size="20" color="#3B82F6" />
+              Phone Number
+            </span>
+            <span class="info-value">{{
+              selectedIntern.phone_number || "—"
+            }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <Users :size="20" color="#3B82F6" />
+              Mentor
+            </span>
+            <span class="info-value">{{ selectedIntern.mentor || "—" }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <FolderOpen :size="20" color="#3B82F6" />
+              Project
+            </span>
+            <span class="info-value">{{ selectedIntern.project || "—" }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <Calendar :size="20" color="#3B82F6" />
+              Internship Period
+            </span>
+            <span class="info-value"
+              >{{ formatDate(selectedIntern.start_date) }} –
+              {{
+                selectedIntern.end_date
+                  ? formatDate(selectedIntern.end_date)
+                  : "—"
+              }}</span
+            >
+          </div>
         </div>
       </div>
 
       <!-- Action Button -->
-      <div class="detail-action-wrapper">
+      <div class="modal-footer" style="justify-content: stretch; padding: 16px 24px;">
         <button class="btn-modify" @click="openEditFromDetail">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -1735,7 +1748,8 @@ function formatDate(dateStr) {
 /* Modal Body & Form Grid */
 .modal-body {
   padding: 24px;
-  overflow: visible;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .form-grid {
@@ -1906,17 +1920,6 @@ function formatDate(dateStr) {
 }
 
 /* ================= MODAL DETAIL STYLES ================= */
-.detail-modal {
-  width: 100%;
-  max-width: 540px;
-}
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  border-bottom: 1px solid #f1f5f9;
-}
 .btn-back {
   display: flex;
   align-items: center;
@@ -1937,17 +1940,17 @@ function formatDate(dateStr) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 28px 24px 20px;
+  padding: 16px 24px 12px;
 }
 .detail-avatar-wrapper {
   position: relative;
-  width: 88px;
-  height: 88px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   padding: 4px;
   border: 2px solid white;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 .detail-avatar-wrapper img {
   width: 100%;
@@ -1967,7 +1970,7 @@ function formatDate(dateStr) {
 }
 
 .detail-name {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
   color: #0f172a;
   margin: 0 0 4px 0;
@@ -1988,8 +1991,8 @@ function formatDate(dateStr) {
 .detail-stats {
   display: flex;
   align-items: center;
-  padding: 24px 0;
-  margin: 16px 24px;
+  padding: 12px 0;
+  margin: 8px 24px;
   border-top: 1px solid #f1f5f9;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -2007,7 +2010,7 @@ function formatDate(dateStr) {
   letter-spacing: 1px;
 }
 .d-stat-val {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 800;
   color: #0f172a;
 }
@@ -2018,10 +2021,10 @@ function formatDate(dateStr) {
 }
 
 .detail-info-list {
-  padding: 24px;
+  padding: 12px 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 .info-row {
   display: flex;
@@ -2043,9 +2046,6 @@ function formatDate(dateStr) {
   text-align: right;
 }
 
-.detail-action-wrapper {
-  padding: 0 24px 24px;
-}
 .btn-modify {
   display: flex;
   align-items: center;

@@ -45,6 +45,8 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::patch('/attendances/{id}/verify', [AttendanceController::class, 'verify']);
     Route::get('/interns', [InternController::class, 'index']);
     Route::post('/interns', [InternController::class, 'store']);
+    Route::put('/interns/{id}', [InternController::class, 'update']);
+    Route::delete('/interns/{id}', [InternController::class, 'destroy']);
     
     // Settings System
     Route::get('/settings/system', [\App\Http\Controllers\Api\SettingsController::class, 'getSystem']);
