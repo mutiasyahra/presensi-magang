@@ -9,9 +9,15 @@ const isNotificationOn = ref(true);
 
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value;
-  // documentElement theme logic removed for user side
 
-  // Save to localStorage immediately so App.vue uses it
+  // Apply dark class to documentElement immediately
+  if (isDarkMode.value) {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+
+  // Save to localStorage so App.vue can restore on next load
   const userStr = localStorage.getItem("user");
   if (userStr) {
     try {

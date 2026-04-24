@@ -87,7 +87,7 @@ const onLogout = () => {
 
 onMounted(() => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  if (user && user.is_dark_mode && user.role === "admin") {
+  if (user && user.is_dark_mode) {
     document.documentElement.classList.add("dark");
   } else {
     document.documentElement.classList.remove("dark");
