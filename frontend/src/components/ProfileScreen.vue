@@ -178,12 +178,15 @@ onMounted(() => {
 
 /* 2. BACKGROUND BIRU HEADER */
 .blue-header {
-  background: var(--header-gradient, #2563eb);
-  height: 100px;
+  background: #2563eb; 
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  
+  height: 100px; /* Samakan dengan Privacy Policy agar proporsional */
   border-bottom-left-radius: 40px;
   border-bottom-right-radius: 40px;
   padding: 40px 24px;
   flex-shrink: 0;
+  z-index: 1;
   transition: all 0.3s ease;
 }
 
@@ -201,6 +204,7 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
+  backdrop-filter: blur(4px);
 }
 
 .header-icon {
@@ -213,13 +217,13 @@ onMounted(() => {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: white;
-}
+  color: #ffffff !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);}
 
 .header-titles p {
   margin: 4px 0 0 0;
   font-size: 12px;
-  color: #dbeafe;
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
 /* 3. AREA KONTEN (Overlap ke atas) */
@@ -263,9 +267,9 @@ onMounted(() => {
   height: 100%;
   object-fit: cover; /* Cover agar gambar penuh tanpa ruang kosong */
   border-radius: 24%;
-  background-color: white;
-  border: 4px solid white;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  background-color: var(--bg-card);
+  border: 4px solid var(--bg-card);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .avatar-circle-profile {
@@ -341,7 +345,7 @@ onMounted(() => {
 
 .badge.gray {
   background-color: var(--bg-screen);
-  color: var(--text-main);
+  color: var(--text-muted);
 }
 
 .company-info {

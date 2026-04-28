@@ -270,7 +270,7 @@ const saveChanges = async () => {
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  background-color: #f8fafc;
+  background-color: var(--bg-screen);
   font-family: "Inter", sans-serif;
   overflow: hidden;
 }
@@ -314,10 +314,10 @@ const saveChanges = async () => {
   scrollbar-width: none;
 }
 .overlap-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 24px;
   padding: 30px 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 /* Avatar Styling */
@@ -337,7 +337,7 @@ const saveChanges = async () => {
   height: 100%;
   object-fit: cover;
   border-radius: 24%;
-  border: 4px solid white;
+  border: 4px solid var(--bg-card);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 .avatar-circle-edit {
@@ -351,7 +351,7 @@ const saveChanges = async () => {
   color: white;
   font-size: 32px;
   font-weight: 700;
-  border: 4px solid white;
+  border: 4px solid var(--bg-card);
 }
 .edit-icon-badge {
   position: absolute;
@@ -364,7 +364,7 @@ const saveChanges = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid white;
+  border: 3px solid var(--bg-card);
 }
 .edit-icon-badge img {
   width: 14px;
@@ -380,14 +380,14 @@ const saveChanges = async () => {
 
 .divider {
   height: 1px;
-  background: #f1f5f9;
+  background: var(--border-color);
   margin-bottom: 25px;
 }
 
 /* Input Styling (Anti Hitam) */
 .group-title {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 700;
   letter-spacing: 1px;
   margin-bottom: 15px;
@@ -399,7 +399,7 @@ const saveChanges = async () => {
 }
 .input-item label {
   font-size: 12px;
-  color: #475569;
+  color: var(--text-main);
   font-weight: 600;
   margin-left: 2px;
   display: block;
@@ -414,17 +414,17 @@ const saveChanges = async () => {
   width: 100%;
   padding: 14px 14px 14px 45px;
   border-radius: 14px;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--border-color);
   font-size: 14px;
-  color: #1e293b;
-  background-color: var(--bg-card) !important; /* Paksa Putih */
+  color: var(--text-main);
+  background-color: var(--bg-screen) !important;
   box-sizing: border-box;
   transition: 0.2s;
 }
 .form-input:focus {
   border-color: #3b82f6;
   outline: none;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 .input-icon-svg {
   position: absolute;
@@ -432,7 +432,7 @@ const saveChanges = async () => {
   top: 50%;
   transform: translateY(-50%);
   width: 18px;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 /* Tombol Save Baru */

@@ -65,41 +65,84 @@ const policySections = [
 </template>
 
 <style scoped>
+/* Main Wrapper hanya untuk demo desktop, di mobile akan menyesuaikan */
 .main-wrapper { background-color: #e2e8f0; display: flex; justify-content: center; min-height: 100vh; font-family: "Inter", sans-serif; }
-.mobile-frame { width: 100%; max-width: 480px; height: 100vh; background-color: var(--bg-screen); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+
+.mobile-frame { 
+  width: 100%; 
+  max-width: 480px; 
+  height: 100vh; 
+  background-color: var(--bg-screen); 
+  position: relative; 
+  overflow: hidden; 
+  display: flex; 
+  flex-direction: column; 
+  transition: background-color 0.3s ease;
+}
 
 .blue-header {
-  background: var(--header-gradient, linear-gradient(135deg, #3b82f6 0%, #2563eb 100%));
-  height: 140px; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
-  padding: 20px 25px; color: white; z-index: 1;
-  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  height: 140px; 
+  border-bottom-left-radius: 40px; 
+  border-bottom-right-radius: 40px;
+  padding: 20px 25px; 
+  color: white; 
+  z-index: 1;
 }
 
 .header-content { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
 .header-content h2 { font-size: 18px; font-weight: 700; margin: 0; }
 
-.btn-back { border: none; background: rgba(255, 255, 255, 0.2); color: white; padding: 8px 16px; border-radius: 12px; cursor: pointer; backdrop-filter: blur(5px); }
+.btn-back { 
+  border: none; 
+  background: rgba(255, 255, 255, 0.2); 
+  color: white; 
+  padding: 8px 16px; 
+  border-radius: 12px; 
+  cursor: pointer; 
+  backdrop-filter: blur(5px); 
+}
 
-.content-area { flex: 1; padding: 0 20px; margin-top: -50px; z-index: 2; overflow-y: hidden; display: flex; padding-bottom: 20px; }
+.content-area { 
+  flex: 1; 
+  padding: 0 20px; 
+  margin-top: -50px; 
+  z-index: 2; 
+  display: flex; 
+  padding-bottom: 20px; 
+  overflow: hidden; /* Mencegah double scrollbar */
+}
 
 .policy-card { 
-  background-color: var(--bg-card); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); 
-  border: 1px solid var(--border-color); border-radius: 24px; padding: 25px; 
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); 
-  display: flex; flex-direction: column; width: 100%;
+  background-color: var(--bg-card); 
+  border-radius: 24px; 
+  padding: 25px; 
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); 
+  display: flex; 
+  flex-direction: column; 
+  width: 100%;
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
 }
 
 .icon-header { text-align: center; margin-bottom: 20px; }
 .icon-circle { 
-  width: 50px; height: 50px; background: var(--bg-screen); border-radius: 15px; 
-  display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;
+  width: 50px; 
+  height: 50px; 
+  background: var(--bg-screen); /* Mengikuti warna dasar layar */
+  border-radius: 15px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  margin: 0 auto 12px;
+  border: 1px solid var(--border-color);
 }
-.icon-svg { width: 24px; height: 24px; stroke: var(--accent-primary); stroke-width: 2; fill: none; }
+/* Pakai warna biru agar ikon tetap terlihat "hidup" */
+.icon-svg { width: 24px; height: 24px; stroke: #3b82f6; stroke-width: 2; fill: none; }
 
 .icon-header h3 { font-size: 16px; color: var(--text-main); margin: 0; font-weight: 700; }
-.icon-header p { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+/* Ganti #94a3b8 ke variabel muted */
+.icon-header p { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
 .divider { height: 1px; background: var(--border-color); margin-bottom: 20px; opacity: 0.5;}
 
@@ -111,9 +154,18 @@ const policySections = [
 .policy-section p { font-size: 13px; color: var(--text-muted); line-height: 1.6; text-align: justify; }
 
 .acceptance-box {
-  background: var(--bg-screen); /* GANTI INI */
-  border: 1px dashed var(--border-color); /* GANTI INI */ padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1;
+  background: var(--bg-screen); 
+  border: 1px dashed var(--border-color); 
+  padding: 15px; 
+  border-radius: 12px;
   margin-top: 10px;
 }
-.acceptance-box p { font-size: 11px; color: #94a3b8; text-align: center; margin: 0; }
+/* Pastikan teks di box bawah tidak terlalu gelap di mode dark */
+.acceptance-box p { 
+  font-size: 11px; 
+  color: var(--text-muted); 
+  text-align: center; 
+  margin: 0; 
+  opacity: 0.8;
+}
 </style>
