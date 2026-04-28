@@ -665,7 +665,7 @@ background-color: var(--bg-card) !important;
 }
 .seconds-text {
   font-size: 28px;
-  color: #e2e8f0; /* Abu sangat muda (pasif) */
+  color: var(--text-muted);
   font-weight: 600;
 }
 
@@ -836,12 +836,12 @@ background-color: var(--bg-card) !important;
 .cal-nav {
   display: flex;
   gap: 8px;
-  background: var(--bg-screen); /* Tombol navigasi kalender */
+  background: transparent;
   color: #3b82f6;
 }
 .nav-btn {
-  background: var(--bg-screen);
-  border: none;
+  background: var(--bg-card); 
+  border: 1px solid var(--border-color);
   width: 30px;
   height: 30px;
   min-width: 30px;
@@ -903,7 +903,7 @@ background-color: var(--bg-card) !important;
   justify-content: center;
   font-size: 13px;
   font-weight: 600;
-  color: #000000;
+  color: var(--text-main);
   border-radius: 50%;
   transition: background-color 0.2s;
 }
@@ -1191,23 +1191,20 @@ background-color: var(--bg-card) !important;
   justify-content: center;
   align-items: center;
   margin-bottom: 6px;
-  overflow: hidden; /* Pastikan tidak ada yang keluar kotak */
+  overflow: hidden; 
 }
 
-/* Warna ungu transparan khusus Leave (TANPA GARIS/BORDER) */
 .leave-bg-clean {
   background-color: rgba(168, 85, 247, 0.15) !important; /* Background ungu muda */
 }
 
-/* Mengontrol ukuran SVG di dalam kotak agar kecil dan presisi */
 .icon-svg-leave {
   width: 22px;
   height: 22px;
-  color: #a855f7 !important; /* Warna ungu tegas */
-  stroke: #a855f7 !important; /* Paksa warna garisnya juga ungu */
+  color: #a855f7 !important; 
+  stroke: #a855f7 !important; 
 }
 
-/* Menyesuaikan angka dan label agar serasi dengan ikon gambar */
 .stat-num {
   font-size: 16px;
   font-weight: 700;
@@ -1215,7 +1212,7 @@ background-color: var(--bg-card) !important;
 }
 
 .stat-label {
-  font-size: 10px; /* Samakan ukuran teks label dengan ikon lainnya */
+  font-size: 10px;
   color: #94a3b8;
   font-weight: 500;
 }
