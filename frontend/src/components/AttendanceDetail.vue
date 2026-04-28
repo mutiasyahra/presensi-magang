@@ -57,8 +57,7 @@
             <span class="row-label">Lokasi Masuk</span>
           </div>
           <span class="row-value">{{
-            attendance?.attendanceRecord?.clock_in_location ||
-            "—"
+            attendance?.attendanceRecord?.clock_in_location || "—"
           }}</span>
         </div>
 

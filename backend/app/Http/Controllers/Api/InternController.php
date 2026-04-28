@@ -86,4 +86,63 @@ class InternController extends Controller
 
         return response()->json($intern);
     }
+
+    public function update(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'full_name' => 'required',
+            'email' => 'required|email|unique:users,email,'.$user->id,
+            'intern_id' => 'required|unique:interns,intern_id,'.($user->intern ? $user->intern->id : 'NULL'),
+        ]);
+
+        $user->update([
+            'name' => $request->full_name,
+            'email' => $request->email,
+        ]);
+
+        if ($user->intern) {
+            $user->intern->update([
+                'intern_id' => $request->intern_id,
+                'full_name' => $request->full_name,
+                'email' => $request->email,
+                'phone_number' => $request->phone_number,
+                'university' => $request->university,
+                'department' => $request->department,
+                'mentor' => $request->mentor,
+                'project' => $request->project,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date
+            ]);
+            $intern = $user->intern;
+        } else {
+            $intern = Intern::create([
+                'user_id' => $user->id,
+                'intern_id' => $request->intern_id,
+                'full_name' => $request->full_name,
+                'email' => $request->email,
+                'phone_number' => $request->phone_number,
+                'university' => $request->university,
+                'department' => $request->department,
+                'mentor' => $request->mentor,
+                'project' => $request->project,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date
+            ]);
+        }
+
+        return response()->json($intern);
+    }
+
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->intern) {
+            $user->intern->delete();
+        }
+        $user->delete();
+
+        return response()->json(['message' => 'Intern deleted successfully']);
+    }
 }
