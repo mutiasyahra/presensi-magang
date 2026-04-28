@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import api from '../../api/axios.js';
 
 const attendanceRecords = ref([]);
@@ -157,6 +157,16 @@ const getImageUrl = (path) => {
 // Automatic Refresh on Filter Change
 watch([selectedProject, selectedUniversity, selectedPeriod], () => {
   fetchReportData();
+  currentPage.value = 1;
+});
+
+// Pagination
+const currentPage = ref(1);
+const itemsPerPage = 10;
+const totalPages = computed(() => Math.ceil(attendanceRecords.value.length / itemsPerPage));
+const paginatedRecords = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return attendanceRecords.value.slice(start, start + itemsPerPage);
 });
 
 onMounted(() => {
@@ -198,8 +208,8 @@ onMounted(() => {
       <div class="stat-card">
         <span class="stat-label">Leaves & Permits</span>
         <div class="stat-value-row">
-          <h2>{{ stats.pending_leaves ?? 0 }}</h2>
-          <span class="badge badge-grey">Awaiting Action</span>
+          <h2>{{ stats.total_leaves ?? 0 }}</h2>
+          <span class="badge badge-grey">Total Records</span>
         </div>
       </div>
       <div class="stat-card">
@@ -318,7 +328,7 @@ onMounted(() => {
             <tr v-if="attendanceRecords.length === 0">
               <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">No attendance records found.</td>
             </tr>
-            <tr v-for="record in attendanceRecords" :key="record.id">
+            <tr v-for="record in paginatedRecords" :key="record.id">
               <td>
                 <div class="intern-details">
                   <div class="avatar-placeholder">
@@ -334,7 +344,10 @@ onMounted(() => {
               <td class="td-date"><span class="regular-text">{{ formatDate(record.attendance_date) }}</span></td>
               <td><span class="regular-text">{{ formatTimeOnly(record.clock_in) }}</span></td>
               <td>
-                <span v-if="record.clock_in" class="status-badge" :class="record.clock_in_status === 'terlambat' ? 'late-entry' : 'present'">
+                <span v-if="['izin', 'sakit'].includes(record.status)" class="status-badge" style="background: #e0f2fe; color: #0284c7;">
+                  {{ record.status.toUpperCase() }}
+                </span>
+                <span v-else-if="record.clock_in" class="status-badge" :class="record.clock_in_status === 'terlambat' ? 'late-entry' : 'present'">
                   {{ (record.clock_in_status || 'tepat waktu').toUpperCase() }}
                 </span>
                 <span v-else class="status-badge absent">N/A</span>
@@ -342,7 +355,10 @@ onMounted(() => {
               <td class="td-wide"><span class="regular-text">{{ record.rencana_kegiatan || '-' }}</span></td>
               <td><span class="regular-text">{{ formatTimeOnly(record.clock_out) }}</span></td>
               <td>
-                <span v-if="record.clock_out" class="status-badge" :class="record.clock_out_status === 'terlambat' ? 'late-entry' : (record.clock_out_status === 'terlalu cepat' ? 'warning-entry' : 'present')">
+                <span v-if="['izin', 'sakit'].includes(record.status)" class="status-badge" style="background: #e0f2fe; color: #0284c7;">
+                  {{ record.status.toUpperCase() }}
+                </span>
+                <span v-else-if="record.clock_out" class="status-badge" :class="record.clock_out_status === 'terlambat' ? 'late-entry' : (record.clock_out_status === 'terlalu cepat' ? 'warning-entry' : 'present')">
                   {{ (record.clock_out_status || 'tepat waktu').toUpperCase() }}
                 </span>
                 <span v-else class="status-badge absent">PENDING</span>
@@ -372,11 +388,19 @@ onMounted(() => {
       </div>
 
       <div class="pagination-footer">
-        <p>Showing {{ attendanceRecords.length }} records</p>
-        <div class="pagination">
-          <button class="page-btn" disabled>Previous</button>
-          <button class="page-btn" disabled>Next</button>
+        <p>Showing {{ attendanceRecords.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0 }}–{{ Math.min(currentPage * itemsPerPage, attendanceRecords.length) }} of {{ attendanceRecords.length }} records</p>
+        <div class="pagination" v-if="totalPages > 1">
+          <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">Previous</button>
+          <button
+            v-for="p in totalPages"
+            :key="p"
+            class="page-btn"
+            :class="{ active: currentPage === p }"
+            @click="currentPage = p"
+          >{{ p }}</button>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++">Next</button>
         </div>
+        <div v-else></div>
       </div>
     </div>
 

@@ -195,7 +195,22 @@ const handleVerify = async (status, isVerified) => {
     isProcessing.value = false;
   }
 };
+const totalHours = computed(() => {
+  if (!currentAttendance.value?.clock_in || !currentAttendance.value?.clock_out) return "0h 0m";
+  
+  const start = new Date(currentAttendance.value.clock_in);
+  const end = new Date(currentAttendance.value.clock_out);
+  const diffMs = end - start;
+  
+  if (diffMs < 0) return "0h 0m";
+  
+  const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  
+  return `${diffHrs}h ${diffMins}m`;
+});
 </script>
+
 
 <template>
   <div class="verification-wrapper">
@@ -365,7 +380,8 @@ const handleVerify = async (status, isVerified) => {
               <div class="event-header">
                 <div>
                   <h4>Clock In</h4>
-                  <p class="location">📍 Singapore, Science Park Drive</p>
+                  <p class="location">📍 {{ currentAttendance?.clock_in_location || "Singapore, Science Park Drive" }}</p>
+
                 </div>
                 <span class="time">{{
                   currentAttendance?.clock_in
@@ -377,18 +393,21 @@ const handleVerify = async (status, isVerified) => {
                 }}</span>
               </div>
 
-              <div class="evidence-card" v-if="currentAttendance?.clock_in_photo">
-                <div
+                <a
+                  :href="getImageUrl(currentAttendance.clock_in_photo)"
+                  target="_blank"
                   class="selfie-placeholder"
                   :style="{
                     backgroundImage: `url(${getImageUrl(currentAttendance.clock_in_photo)})`,
+                    cursor: 'pointer'
                   }"
-                ></div>
+                  title="View Full Image"
+                ></a>
+
                 <div class="evidence-footer">
                   <span class="label">📷 Morning Selfie</span>
                   <span class="status text-green">✅ GPS Verified</span>
                 </div>
-              </div>
 
               <div class="info-card">
                 <p class="card-title">📝 DAILY WORK PLAN</p>
@@ -424,7 +443,8 @@ const handleVerify = async (status, isVerified) => {
               <div class="event-header">
                 <div>
                   <h4>Clock Out</h4>
-                  <p class="location">📍 Singapore, Science Park Drive</p>
+                  <p class="location">📍 {{ currentAttendance?.clock_out_location || "Singapore, Science Park Drive" }}</p>
+
                 </div>
                 <span class="time">{{
                   currentAttendance?.clock_out
@@ -436,18 +456,21 @@ const handleVerify = async (status, isVerified) => {
                 }}</span>
               </div>
 
-              <div class="evidence-card" v-if="currentAttendance?.clock_out_photo">
-                <div
+                <a
+                  :href="getImageUrl(currentAttendance.clock_out_photo)"
+                  target="_blank"
                   class="selfie-placeholder"
                   :style="{
                     backgroundImage: `url(${getImageUrl(currentAttendance.clock_out_photo)})`,
+                    cursor: 'pointer'
                   }"
-                ></div>
+                  title="View Full Image"
+                ></a>
+
                 <div class="evidence-footer">
                   <span class="label">📷 Afternoon Selfie</span>
                   <span class="status text-green">✅ Validated</span>
                 </div>
-              </div>
 
               <div class="info-card">
                 <p class="card-title">📉 DAILY ACTIVITY SUMMARY</p>
@@ -551,7 +574,7 @@ const handleVerify = async (status, isVerified) => {
           <div class="stats-row">
             <div class="stat-box">
               <p class="label">TOTAL HOURS</p>
-              <p class="value"><strong>8.4</strong> hrs</p>
+              <p class="value"><strong>{{ totalHours }}</strong></p>
             </div>
             <div class="stat-box">
               <p class="label">STATUS</p>

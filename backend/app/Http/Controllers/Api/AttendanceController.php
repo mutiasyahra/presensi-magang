@@ -363,12 +363,28 @@ class AttendanceController extends Controller
                 ->where('attendance_date', 'like', $month.'%')
                 ->count();
 
+            $startOfMonth = now()->startOfMonth();
+            $today = now();
+            $elapsedWorkingDays = $startOfMonth->diffInDaysFiltered(function (Carbon $date) {
+                return !$date->isWeekend();
+            }, clone $today);
+            if (!now()->isWeekend()) {
+                $elapsedWorkingDays++;
+            }
+            if ($elapsedWorkingDays == 0) $elapsedWorkingDays = 1;
+
             $totalInterns = User::where('role', 'user')->count();
             
             // Calculate rates
             $totalPresent = $present + $late;
-            $avgAttendance = $totalInterns > 0 ? round(($totalPresent / ($totalInterns * 22)) * 100, 1) : 0; // Assuming 22 work days
+            $avgAttendance = $totalInterns > 0 ? round(($totalPresent / ($totalInterns * $elapsedWorkingDays)) * 100, 1) : 0;
+            if ($avgAttendance > 100) $avgAttendance = 100;
+            
             $onTimeRate = $totalPresent > 0 ? round(($present / $totalPresent) * 100, 1) : 0;
+
+            $projectDistribution = Intern::select('project', \DB::raw('count(*) as count'))
+                ->groupBy('project')
+                ->get();
 
             return response()->json([
                 'present' => $present,
@@ -376,9 +392,10 @@ class AttendanceController extends Controller
                 'absent' => $absent,
                 'avg_attendance' => $avgAttendance,
                 'on_time_rate' => $onTimeRate,
-                'pending_leaves' => Leave::where('status', 'pending')->count(),
+                'total_leaves' => Leave::count(),
                 'total_interns' => $totalInterns,
-                'total_departments' => Intern::distinct('department')->count('department')
+                'total_departments' => Intern::distinct('department')->count('department'),
+                'project_distribution' => $projectDistribution
             ]);
         }
 

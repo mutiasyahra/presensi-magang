@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 
 const props = defineProps(['leaveRequests']);
 const emit = defineEmits(['approve']);
@@ -50,6 +50,15 @@ const getImageUrl = (path) => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://127.0.0.1:8000';
   return `${baseUrl}/storage/${path}`;
 };
+
+// Pagination
+const currentPage = ref(1);
+const itemsPerPage = 10;
+const totalPages = computed(() => Math.ceil((props.leaveRequests?.length || 0) / itemsPerPage));
+const paginatedLeaves = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return (props.leaveRequests || []).slice(start, start + itemsPerPage);
+});
 </script>
 
 <template>
@@ -127,7 +136,7 @@ const getImageUrl = (path) => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="leave in leaveRequests" :key="leave.id">
+            <tr v-for="leave in paginatedLeaves" :key="leave.id">
               
               <td>
                 <div class="intern-details">
@@ -196,13 +205,19 @@ const getImageUrl = (path) => {
       </div>
 
       <div class="pagination-footer">
-        <p>Showing {{ leaveRequests.length }} total requests</p>
-        <div class="pagination">
-          <button class="page-btn">&lt;</button>
-          <button class="page-btn active">1</button>
-          <button class="page-btn">2</button>
-          <button class="page-btn">&gt;</button>
+        <p>Showing {{ Math.min((currentPage - 1) * itemsPerPage + 1, leaveRequests?.length || 0) }}–{{ Math.min(currentPage * itemsPerPage, leaveRequests?.length || 0) }} of {{ leaveRequests?.length || 0 }} requests</p>
+        <div class="pagination" v-if="totalPages > 1">
+          <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">&lt;</button>
+          <button
+            v-for="p in totalPages"
+            :key="p"
+            class="page-btn"
+            :class="{ active: currentPage === p }"
+            @click="currentPage = p"
+          >{{ p }}</button>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++">&gt;</button>
         </div>
+        <div v-else></div>
       </div>
     </div>
 

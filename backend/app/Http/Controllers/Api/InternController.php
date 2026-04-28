@@ -15,7 +15,7 @@ class InternController extends Controller
         $users = User::where('role', 'user')
             ->with(['intern'])
             ->withCount(['attendances' => function ($q) {
-                $q->whereNotNull('clock_out');
+                $q->whereIn('status', ['hadir', 'terlambat', 'izin', 'sakit']);
             }])
             ->get()
             ->map(function ($user) {

@@ -102,6 +102,15 @@ const stats = computed(() => {
     pending
   };
 });
+
+// Pagination
+const currentPage = ref(1);
+const itemsPerPage = 9;
+const totalPages = computed(() => Math.ceil(attendanceCards.value.length / itemsPerPage));
+const paginatedCards = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return attendanceCards.value.slice(start, start + itemsPerPage);
+});
 </script>
 
 <template>
@@ -235,7 +244,7 @@ const stats = computed(() => {
       <div class="cards-grid">
         <div
           class="attendance-card"
-          v-for="intern in attendanceCards"
+          v-for="intern in paginatedCards"
           :key="intern.id"
         >
           <div class="card-header">
@@ -359,39 +368,20 @@ const stats = computed(() => {
       </div>
 
       <div class="pagination">
-        <p class="pagination-info">Showing {{ attendanceCards.length }} Interns Today</p>
-        <div class="pagination-controls">
-          <button class="page-btn">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
+        <p class="pagination-info">Showing {{ attendanceCards.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0 }}–{{ Math.min(currentPage * itemsPerPage, attendanceCards.length) }} of {{ attendanceCards.length }} Interns</p>
+        <div class="pagination-controls" v-if="totalPages > 1">
+          <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
-          <button class="page-btn active">1</button>
-          <button class="page-btn">2</button>
-          <button class="page-btn">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
+          <button
+            v-for="p in totalPages"
+            :key="p"
+            class="page-btn"
+            :class="{ active: currentPage === p }"
+            @click="currentPage = p"
+          >{{ p }}</button>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
         </div>
       </div>
