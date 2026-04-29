@@ -20,7 +20,7 @@ const user = ref({
 
 const getImageUrl = (path) => {
   if (!path) return null;
-  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  if (path.startsWith("data:") || path.startsWith("http")) return path;
   const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
   return `${baseUrl}/storage/${path}`;
 };
@@ -71,7 +71,11 @@ onMounted(() => {
     <div class="content">
       <div class="profile-card">
         <div class="avatar-container">
-          <img v-if="user.profile_photo" :src="getImageUrl(user.profile_photo)" class="avatar-img" />
+          <img
+            v-if="user.profile_photo"
+            :src="getImageUrl(user.profile_photo)"
+            class="avatar-img"
+          />
           <div v-else class="avatar-circle-profile">{{ userInitial }}</div>
 
           <div class="edit-icon" @click="$emit('navigate', 'edit-profile')">
@@ -178,9 +182,9 @@ onMounted(() => {
 
 /* 2. BACKGROUND BIRU HEADER */
 .blue-header {
-  background: #2563eb; 
+  background: #2563eb;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  
+
   height: 100px; /* Samakan dengan Privacy Policy agar proporsional */
   border-bottom-left-radius: 40px;
   border-bottom-right-radius: 40px;
@@ -218,7 +222,8 @@ onMounted(() => {
   font-size: 20px;
   font-weight: 700;
   color: #ffffff !important;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
 .header-titles p {
   margin: 4px 0 0 0;

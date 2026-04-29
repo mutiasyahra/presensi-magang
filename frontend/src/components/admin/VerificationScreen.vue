@@ -393,20 +393,24 @@ const totalHours = computed(() => {
                 }}</span>
               </div>
 
-                <a
-                  :href="getImageUrl(currentAttendance.clock_in_photo)"
-                  target="_blank"
-                  class="selfie-placeholder"
-                  :style="{
-                    backgroundImage: `url(${getImageUrl(currentAttendance.clock_in_photo)})`,
-                    cursor: 'pointer'
-                  }"
-                  title="View Full Image"
-                ></a>
-
-                <div class="evidence-footer">
-                  <span class="label">📷 Morning Selfie</span>
-                  <span class="status text-green">✅ GPS Verified</span>
+                <div class="evidence-card" v-if="currentAttendance.clock_in_photo">
+                  <a
+                    :href="getImageUrl(currentAttendance.clock_in_photo)"
+                    target="_blank"
+                    class="selfie-placeholder"
+                    :style="{
+                      backgroundImage: `url(${getImageUrl(currentAttendance.clock_in_photo)})`,
+                      cursor: 'pointer'
+                    }"
+                    title="View Full Image"
+                  ></a>
+                  <div class="evidence-footer">
+                    <span class="label">📷 Morning Selfie</span>
+                    <span class="status text-green">✅ GPS Verified</span>
+                  </div>
+                </div>
+                <div v-else class="no-selfie-placeholder">
+                   <span>📷 No Morning Selfie Recorded</span>
                 </div>
 
               <div class="info-card">
@@ -456,20 +460,24 @@ const totalHours = computed(() => {
                 }}</span>
               </div>
 
-                <a
-                  :href="getImageUrl(currentAttendance.clock_out_photo)"
-                  target="_blank"
-                  class="selfie-placeholder"
-                  :style="{
-                    backgroundImage: `url(${getImageUrl(currentAttendance.clock_out_photo)})`,
-                    cursor: 'pointer'
-                  }"
-                  title="View Full Image"
-                ></a>
-
-                <div class="evidence-footer">
-                  <span class="label">📷 Afternoon Selfie</span>
-                  <span class="status text-green">✅ Validated</span>
+                <div class="evidence-card" v-if="currentAttendance.clock_out_photo">
+                  <a
+                    :href="getImageUrl(currentAttendance.clock_out_photo)"
+                    target="_blank"
+                    class="selfie-placeholder"
+                    :style="{
+                      backgroundImage: `url(${getImageUrl(currentAttendance.clock_out_photo)})`,
+                      cursor: 'pointer'
+                    }"
+                    title="View Full Image"
+                  ></a>
+                  <div class="evidence-footer">
+                    <span class="label">📷 Afternoon Selfie</span>
+                    <span class="status text-green">✅ Validated</span>
+                  </div>
+                </div>
+                <div v-else class="no-selfie-placeholder">
+                   <span>📷 No Afternoon Selfie Recorded</span>
                 </div>
 
               <div class="info-card">
@@ -1042,9 +1050,27 @@ const totalHours = computed(() => {
   margin-bottom: 8px;
 }
 .selfie-placeholder {
+  display: block;
   height: 200px;
   background-size: cover;
   background-position: center;
+  background-color: var(--bg-input);
+  transition: transform 0.3s;
+}
+.selfie-placeholder:hover {
+    transform: scale(1.02);
+}
+
+.no-selfie-placeholder {
+    background: var(--bg-input);
+    border: 1px dashed var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 16px;
 }
 .bg-blue {
   background-color: var(--bg-card);

@@ -47,16 +47,44 @@
           <span class="help-text">System will automatically mark interns as late after the start time.</span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group full-width">
           <label>
             <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            Geofencing Radius
+            Office Location & Geofencing
           </label>
-          <div class="input-with-suffix">
-            <input type="number" v-model="system.radius" />
-            <span class="suffix">METERS</span>
+          <div class="location-setup">
+            <div class="address-input-wrapper">
+              <div class="form-group mb-2">
+                <label class="sub-label">OFFICE NAME</label>
+                <input type="text" v-model="system.officeName" placeholder="e.g. Tech Innovations Hub" />
+              </div>
+              <div class="form-group">
+                <label class="sub-label">FULL ADDRESS</label>
+                <textarea 
+                  v-model="system.officeAddress" 
+                  placeholder="Enter office full address..."
+                  rows="3"
+                  class="address-textarea"
+                ></textarea>
+              </div>
+              <button class="btn-detect" @click="detectOfficeLocation" :disabled="isDetecting">
+                <svg v-if="!isDetecting" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span v-else class="spinner-small"></span>
+                {{ isDetecting ? 'Detecting...' : 'Detect Current' }}
+              </button>
+            </div>
+            <div class="coords-grid">
+              <div class="coord-input">
+                <span class="coord-label">LATITUDE</span>
+                <input type="text" v-model="system.officeLat" placeholder="-6.200000" />
+              </div>
+              <div class="coord-input">
+                <span class="coord-label">LONGITUDE</span>
+                <input type="text" v-model="system.officeLng" placeholder="106.816666" />
+              </div>
+            </div>
           </div>
-          <span class="help-text">Distance within which interns are allowed to clock in via mobile app.</span>
+          <span class="help-text">This location will be used to verify intern attendance and shown on their dashboard.</span>
         </div>
       </div>
 
@@ -130,8 +158,48 @@ const account = reactive({
 const system = reactive({
   startTime: '08:00',
   endTime: '17:00',
-  radius: 100
+  officeName: '',
+  officeAddress: '',
+  officeLat: '',
+  officeLng: ''
 });
+
+const isDetecting = ref(false);
+
+const detectOfficeLocation = () => {
+    if (!navigator.geolocation) {
+        Swal.fire('Error', 'Browser Anda tidak mendukung geolokasi.', 'error');
+        return;
+    }
+
+    isDetecting.value = true;
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            system.officeLat = lat.toFixed(6);
+            system.officeLng = lng.toFixed(6);
+
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+                    headers: { 'Accept-Language': 'id' }
+                });
+                const data = await res.json();
+                system.officeAddress = data.display_name || "Location detected";
+            } catch (err) {
+                console.error("Reverse Geocoding error:", err);
+                system.officeAddress = "Location detected (Address unavailable)";
+            } finally {
+                isDetecting.value = false;
+            }
+        },
+        (err) => {
+            isDetecting.value = false;
+            console.error("Error getting location:", err);
+            Swal.fire('Error', 'Gagal mengakses lokasi. Pastikan izin lokasi diberikan.', 'error');
+        }
+    );
+};
 
 const notifications = reactive({
   lateAlerts: localUser.notify_late_alerts !== undefined ? !!localUser.notify_late_alerts : true,
@@ -161,7 +229,10 @@ const loadSettings = async () => {
             const s = sysRes.data.data;
             system.startTime = s.startTime || '08:00';
             system.endTime = s.endTime || '17:00';
-            system.radius = s.radius || 100;
+            system.officeName = s.officeName || '';
+            system.officeAddress = s.officeAddress || '';
+            system.officeLat = s.officeLat || '';
+            system.officeLng = s.officeLng || '';
         }
     } catch (error) {
         console.error("Failed to load settings:", error);
@@ -250,7 +321,10 @@ const saveSystem = async () => {
         const payload = {
             startTime: system.startTime,
             endTime: system.endTime,
-            radius: parseInt(system.radius) || 100,
+            officeName: system.officeName,
+            officeAddress: system.officeAddress,
+            officeLat: system.officeLat,
+            officeLng: system.officeLng,
         };
         await api.put('/settings/system', payload);
         Swal.fire({
@@ -408,6 +482,107 @@ input:focus {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
+}
+
+/* Location Setup Styles */
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.location-setup {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: var(--bg-input);
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.sub-label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: var(--text-dim) !important;
+    margin-bottom: 6px !important;
+    letter-spacing: 0.5px;
+}
+
+.mb-2 { margin-bottom: 12px; }
+
+.address-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.address-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--bg-card);
+    color: var(--text-main);
+    resize: none;
+    font-family: inherit;
+}
+
+.btn-detect {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-detect:hover:not(:disabled) {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.btn-detect:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.coords-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.coord-input {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.coord-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+}
+
+.spinner-small {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 /* Buttons */

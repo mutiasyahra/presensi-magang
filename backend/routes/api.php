@@ -47,15 +47,14 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::post('/interns', [InternController::class, 'store']);
     Route::put('/interns/{id}', [InternController::class, 'update']);
     Route::delete('/interns/{id}', [InternController::class, 'destroy']);
-    
-    // Settings System
-    Route::get('/settings/system', [\App\Http\Controllers\Api\SettingsController::class, 'getSystem']);
+    // Admin Settings Update
     Route::put('/settings/system', [\App\Http\Controllers\Api\SettingsController::class, 'updateSystem']);
 
 });
 
-// Settings Preferences (all authenticated users, even though this system is single admin currently)
+// Settings Access (GET is for all auth users, POST/PUT for profile/system)
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/settings/system', [\App\Http\Controllers\Api\SettingsController::class, 'getSystem']);
     Route::get('/settings/me', [\App\Http\Controllers\Api\SettingsController::class, 'getMe']);
     Route::post('/settings/me', [\App\Http\Controllers\Api\SettingsController::class, 'updateMe']);
 });

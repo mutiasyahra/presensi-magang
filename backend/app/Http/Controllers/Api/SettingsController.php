@@ -127,7 +127,10 @@ class SettingsController extends Controller
         $defaults = [
             'work_start_time' => '08:00',
             'work_end_time' => '17:00',
-            'geofencing_radius' => 100,
+            'office_name' => 'Tech Innovations Hub',
+            'office_address' => 'Jakarta, Indonesia',
+            'office_lat' => '-6.200000',
+            'office_lng' => '106.816666',
         ];
 
         // Fetch existing settings
@@ -141,7 +144,10 @@ class SettingsController extends Controller
             'data' => [
                 'startTime' => $systemConfig['work_start_time'],
                 'endTime' => $systemConfig['work_end_time'],
-                'radius' => (int) $systemConfig['geofencing_radius'],
+                'officeName' => $systemConfig['office_name'],
+                'officeAddress' => $systemConfig['office_address'],
+                'officeLat' => $systemConfig['office_lat'],
+                'officeLng' => $systemConfig['office_lng'],
             ]
         ]);
     }
@@ -154,7 +160,10 @@ class SettingsController extends Controller
         $request->validate([
             'startTime' => 'required|date_format:H:i',
             'endTime' => 'required|date_format:H:i',
-            'radius' => 'required|integer|min:10',
+            'officeName' => 'required|string',
+            'officeAddress' => 'required|string',
+            'officeLat' => 'required|numeric',
+            'officeLng' => 'required|numeric',
         ]);
 
         Setting::updateOrCreate(
@@ -168,8 +177,23 @@ class SettingsController extends Controller
         );
 
         Setting::updateOrCreate(
-            ['key' => 'geofencing_radius'],
-            ['value' => $request->radius]
+            ['key' => 'office_name'],
+            ['value' => $request->officeName]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'office_address'],
+            ['value' => $request->officeAddress]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'office_lat'],
+            ['value' => $request->officeLat]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'office_lng'],
+            ['value' => $request->officeLng]
         );
 
         return response()->json([
@@ -178,7 +202,10 @@ class SettingsController extends Controller
             'data' => [
                 'startTime' => $request->startTime,
                 'endTime' => $request->endTime,
-                'radius' => (int) $request->radius,
+                'officeName' => $request->officeName,
+                'officeAddress' => $request->officeAddress,
+                'officeLat' => $request->officeLat,
+                'officeLng' => $request->officeLng,
             ]
         ]);
     }
