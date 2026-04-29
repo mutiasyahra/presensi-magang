@@ -517,14 +517,23 @@ input:focus {
 
 .address-textarea {
     width: 100%;
-    padding: 12px;
+    padding: 10px 14px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     font-size: 14px;
-    background: var(--bg-card);
+    background-color: var(--bg-input);
     color: var(--text-main);
     resize: none;
     font-family: inherit;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.address-textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    background-color: var(--bg-card);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .btn-detect {
