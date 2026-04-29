@@ -355,26 +355,37 @@ const saveChanges = async () => {
 }
 .edit-icon-badge {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 30px;
-  height: 30px;
-  background: #2563eb;
+  bottom: -10px;
+  right: -10px;
+  width: 28px;
+  height: 28px;
+  background-color: #3b82f6;
   border-radius: 50%;
   display: flex;
-  align-items: center;
   justify-content: center;
-  border: 3px solid var(--bg-card);
+  align-items: center;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
 }
+
+.edit-icon-badge:hover, .edit-icon-badge:active {
+    background-color: #2563eb;
+    transform: scale(1.1);
+}
+
 .edit-icon-badge img {
   width: 14px;
   filter: brightness(0) invert(1);
+  transition: transform 0.2s;
 }
 .edit-photo-tip {
   font-size: 13px;
   color: #3b82f6;
   font-weight: 600;
-  margin-top: 12px;
+  margin-top: 16px;
   cursor: pointer;
 }
 
