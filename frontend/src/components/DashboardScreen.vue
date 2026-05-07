@@ -44,12 +44,19 @@ const userInitial = computed(() => {
   return user.value.name ? user.value.name.charAt(0).toUpperCase() : "U";
 });
 
-const greetingText = computed(() => {
+// --- LOGIC GREETING MODERN ---
+const greetingData = computed(() => {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 11) return "Selamat Pagi 🌅";
-  if (hour >= 11 && hour < 15) return "Selamat Siang ☀️";
-  if (hour >= 15 && hour < 19) return "Selamat Sore 🌆";
-  return "Selamat Malam 🌙";
+  if (hour >= 5 && hour < 11) {
+    return { text: "Selamat Pagi", icon: "morning", sub: "Semangat produktif hari ini!" };
+  }
+  if (hour >= 11 && hour < 15) {
+    return { text: "Selamat Siang", icon: "noon", sub: "Jangan lupa istirahat & makan!" };
+  }
+  if (hour >= 15 && hour < 19) {
+    return { text: "Selamat Sore", icon: "afternoon", sub: "Selesaikan tugasmu pelan-pelan." };
+  }
+  return { text: "Selamat Malam", icon: "night", sub: "Waktunya istirahat yang cukup." };
 });
 
 // --- LOGIC KALENDER ---
@@ -240,10 +247,13 @@ onUnmounted(() => {
              <div v-else class="avatar">{{ userInitial }}</div>
              <div class="active-status"></div>
           </div>
-          <div class="text-info">
-            <p class="welcome">{{ greetingText }}</p>
-            <h2 class="username">{{ user.name }}</h2>
-          </div>
+<div class="text-info">
+  <div class="greeting-wrapper">
+    <p class="welcome">{{ greetingData.text }}</p>
+    <div class="weather-icon-mini" :class="greetingData.icon"></div>
+  </div>
+  <h2 class="username">{{ user.name }}</h2>
+</div>
         </div>
         <button class="btn-notif" @click="$emit('navigate', 'profile')">
           <div class="notif-wrapper">
@@ -482,6 +492,69 @@ onUnmounted(() => {
   padding: 20px 24px 120px 24px; /* Atur ulang padding agar pas */
 }
 
+/* --- GREETING AESTHETIC --- */
+.greeting-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.weather-icon-mini {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  position: relative;
+  transition: all 0.5s ease;
+}
+
+/* Style Matahari Pagi/Siang */
+.weather-icon-mini.morning, .weather-icon-mini.noon {
+  background: #fbbf24;
+  box-shadow: 0 0 10px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);
+}
+
+/* Style Matahari Sore (Oranye) */
+.weather-icon-mini.afternoon {
+  background: #f97316;
+  box-shadow: 0 0 10px #f97316, 0 0 20px rgba(249, 115, 22, 0.4);
+}
+
+/* Style Bulan Malam */
+.weather-icon-mini.night {
+  background: #f1f5f9;
+  box-shadow: 0 0 10px #f1f5f9, 0 0 20px rgba(255, 255, 255, 0.3);
+}
+/* Efek sabit untuk bulan malam */
+.weather-icon-mini.night::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  background: #2563eb; /* Warna header */
+  border-radius: 50%;
+}
+
+/* --- DIGITAL CLOCK REFINEMENT --- */
+.digital-clock {
+  font-family: 'Poppins', sans-serif;
+  font-size: 56px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1;
+  margin: 0;
+  
+  /* Gradasi warna yang estetik */
+  background: linear-gradient(to bottom, var(--text-main) 0%, var(--text-muted) 100%);
+  -webkit-background-clip: text; /* Untuk Chrome, Safari, dan Edge */
+  background-clip: text;         /* Properti standar untuk masa depan dan Firefox */
+  -webkit-text-fill-color: transparent;
+  font-variant-numeric: tabular-nums; 
+  filter: drop-shadow(0 4px 4px rgba(0,0,0,0.05));
+  transition: all 0.3s ease;
+}
+
 /* --- COMPONENT STYLES --- */
 .location-card {
   background: linear-gradient(135deg, #1e40af 0%, #172554 100%);
@@ -549,8 +622,12 @@ onUnmounted(() => {
 /* Stats Simple */
 .stats-simple-card {
   background-color: var(--bg-card) !important;
-  color: var(--text-main) !important;
-  border: 1px solid var(--border-color);  padding: 20px;
+  border: 1px solid var(--border-color) !important;  color: var(--text-main) !important;
+  box-shadow: 
+    0 10px 30px -5px rgba(0, 0, 0, 0.5),      /* Shadow bawah (dalam) */
+    0 4px 12px -2px rgba(0, 0, 0, 0.4),      /* Shadow bawah (halus) */
+    inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
+  padding: 20px;
   border-radius: 24px;
   display: flex;
   justify-content: space-between;
@@ -566,7 +643,10 @@ onUnmounted(() => {
   background-color: #f1f5f9;
 }
 .stats-simple-card:hover {
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.6), 
+    inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
 }
 .rate-info {
   text-align: left;
@@ -604,17 +684,25 @@ onUnmounted(() => {
 
 /* --- TIME CARD REVISION --- */
 .time-card {
-background-color: var(--bg-card) !important;
+  background-color: var(--bg-card) !important;
   color: var(--text-main) !important;
-  border: 1px solid var(--border-color);
-  border-radius: 30px; /* Lebih bulat */
+  /* Perubahan di bawah ini */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 30px; 
   padding: 24px;
   text-align: center;
-  box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.08); /* Shadow halus premium */
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15); /* Shadow lebih dalam */
   margin-bottom: 25px;
   position: relative;
   transition: all 0.3s ease;
   z-index: 1;
+}
+
+.time-card:hover {
+  transform: translateY(-2px); /* Melayang sedikit saat dihover */
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.6), 
+    inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Header Tanggal & Pill */
@@ -749,15 +837,17 @@ background-color: var(--bg-card) !important;
 .stat-card {
   flex: 1;
   background-color: var(--bg-card) !important;
-  color: var(--text-main) !important;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-color) !important;
   padding: 14px 6px;
   border-radius: 20px;
   text-align: center;
-  box-shadow: 0 5px 20px -5px rgba(0, 0, 0, 0.04);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 
+    0 10px 30px -5px rgba(0, 0, 0, 0.5),
+    0 4px 12px -2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
+    
+  transition: all 0.3s ease;  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   cursor: pointer;
-  border: 1px solid var(--border-color);
 }
 .stat-card:active {
   transform: scale(0.92);
@@ -806,20 +896,26 @@ background-color: var(--bg-card) !important;
   font-weight: 500;
 }
 
-/* --- CALENDAR CARD (NEW) --- */
+/* --- CALENDAR CARD --- */
 .calendar-card {
   background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
   color: var(--text-main) !important;
-  border: 1px solid var(--border-color);
   border-radius: 24px;
   padding: 20px;
-  box-shadow: 0 5px 20px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 
+    0 10px 30px -5px rgba(0, 0, 0, 0.5), 
+    0 4px 12px -2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
   transition: all 0.3s ease;
   position: relative;
   z-index: 1;
 }
 .calendar-card:hover {
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px); /* Melayang sedikit saat dihover */
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.6), 
+    inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
 }
 .cal-header {
   display: flex;
@@ -1088,14 +1184,13 @@ background-color: var(--bg-card) !important;
   padding: 0 5px;
 }
 
-/* Item Navigasi (Teks & Icon) */
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  color: #94A3B8; /* Warna abu-abu standar Leave */
+  color: #94A3B8;
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
@@ -1122,23 +1217,19 @@ background-color: var(--bg-card) !important;
   transform: translateY(-2px);
 }
 
-/* Styling Icon Biasa */
 .nav-item img {
   width: 24px;
   height: 24px;
   object-fit: contain;
-  /* Filter agar warna icon konsisten abu-abu saat tidak aktif */
   filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%) hue-rotate(182deg) brightness(87%) contrast(85%);
   transition: 0.3s;
 }
 
-/* Keadaan Aktif (Biru Dashboard) */
 .nav-item.active {
   color: #2563EB;
 }
 
 .nav-item.active img {
-  /* Filter warna Biru (#2563EB) */
   filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%);
 }
 
@@ -1154,7 +1245,7 @@ background-color: var(--bg-card) !important;
   width: 52px;
   height: 52px;
   background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-  border-radius: 16px; /* Bentuk Kotak Melengkung (Squircle) */
+  border-radius: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1171,31 +1262,29 @@ background-color: var(--bg-card) !important;
 .scan-button img {
   width: 26px;
   height: 26px;
-  filter: brightness(0) invert(1) !important; /* Paksa Putih Bersih */
+  filter: brightness(0) invert(1) !important;
 }
-/* Icon Leave Terbaru */
-/* Container stat-card agar tetap rapi */
+
 .stat-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px; /* Sesuaikan gap agar rapat seperti ikon lainnya */
+  gap: 2px;
 }
 
-/* Membuat kotak persegi melengkung untuk SVG */
 .icon-square {
-  width: 30px;  /* Sesuaikan dengan ukuran pembungkus ikon gambar (.png) */
-  height: 30px; /* Pastikan persegi sempurna */
-  border-radius: 12px; /* Sudut melengkung, cocokan dengan ikon gambar */
+  width: 30px;
+  height: 30px;
+  border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
   margin-bottom: 6px;
-  overflow: hidden; 
+  overflow: hidden;
 }
 
 .leave-bg-clean {
-  background-color: rgba(168, 85, 247, 0.15) !important; /* Background ungu muda */
+  background-color: rgba(168, 85, 247, 0.15) !important; 
 }
 
 .icon-svg-leave {

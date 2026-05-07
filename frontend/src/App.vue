@@ -196,30 +196,28 @@ onMounted(() => {
 <style>
 /* Warna Default (Light Mode) */
 :root {
-  --bg-screen: #f8fafc; /* Warna layar paling belakang */
-  --bg-card: #ffffff; /* Warna kotak/card utama */
-  --text-main: #1e293b; /* Warna font utama (gelap) */
-  --text-muted: #64748b; /* Warna font sekunder */
-  --border-color: #e2e8f0; /* Warna garis border/input */
+  --bg-screen: #f8fafc; 
+  --bg-card: #ffffff; 
+  --text-main: #1e293b; 
+  --text-muted: #64748b; 
+  --border-color: #e2e8f0; 
   --icon-filter: none;
 }
 
 /* Warna saat Dark Mode aktif */
 .dark {
-  --bg-screen: #0f172a; /* Layar belakang jadi biru sangat gelap */
-  --bg-card: #1e293b; /* Kotak/card lebih terang sedikit dari layar (seperti di image_06ee44.png) */
-  --text-main: #f8fafc; /* Font jadi putih/terang agar terbaca */
-  --text-muted: #94a3b8; /* Font sekunder jadi abu-abu terang */
-  --border-color: #334155; /* Border jadi lebih gelap agar tidak kontras */
+  --bg-screen: #020617;
+  --bg-card: #0f172a;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.05); 
   --icon-filter: brightness(0) invert(1);
 }
-/* Di bawah selector .dark { ... } lo tadi */
 
 body {
   margin: 0;
   padding: 0;
   font-family: "Inter", sans-serif;
-  /* GANTI INI: panggil variabelnya */
   background-color: var(--bg-screen);
   color: var(--text-main);
   transition:
@@ -228,7 +226,7 @@ body {
 }
 
 .app-background {
-  background-color: #e2e8f0; /* Biarkan ini untuk tampilan desktop */
+  background-color: #e2e8f0;
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -240,7 +238,6 @@ body {
   width: 100%;
   max-width: 480px;
   min-height: 100vh;
-  /* GANTI INI: Pakai bg-screen supaya layar putihnya hilang */
   background-color: var(--bg-screen);
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
   position: relative;
