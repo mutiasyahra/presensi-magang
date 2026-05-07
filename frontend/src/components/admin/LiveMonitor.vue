@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, onUnmounted } from "vue";
 import api from "../../api/axios.js";
 import VerificationScreen from "./VerificationScreen.vue";
 
@@ -102,6 +102,63 @@ const stats = computed(() => {
     pending
   };
 });
+
+// Pagination
+const currentPage = ref(1);
+const itemsPerPage = 9;
+const totalPages = computed(() => Math.ceil(attendanceCards.value.length / itemsPerPage));
+const paginatedCards = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return attendanceCards.value.slice(start, start + itemsPerPage);
+});
+
+// Live Status Logic
+const liveTime = ref("");
+const liveAmPm = ref("");
+
+const updateLiveTime = () => {
+  const now = new Date();
+  liveTime.value = now.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  liveAmPm.value = now.getHours() < 12 ? "AM" : "PM";
+};
+
+let liveTimer;
+onMounted(() => {
+  updateLiveTime();
+  liveTimer = setInterval(updateLiveTime, 60000);
+});
+
+onUnmounted(() => {
+  clearInterval(liveTimer);
+});
+
+const todayCheckins = computed(() => attendanceCards.value.length);
+
+const averageDelay = computed(() => {
+  const today = attendanceCards.value;
+  if (today.length === 0) return "0 min";
+  
+  let totalDelay = 0;
+  let count = 0;
+  
+  today.forEach(r => {
+    if (r.clock_in) {
+      const clockIn = new Date(r.clock_in);
+      const expected = new Date(r.clock_in);
+      expected.setHours(9, 0, 0, 0);
+      const diff = Math.floor((clockIn - expected) / (1000 * 60));
+      if (diff > 0) {
+        totalDelay += diff;
+      }
+      count++;
+    }
+  });
+  
+  return count > 0 ? Math.round(totalDelay / count) + " min" : "0 min";
+});
 </script>
 
 <template>
@@ -201,41 +258,52 @@ const stats = computed(() => {
         </div>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-card">
-          <p class="stat-label">ON TIME</p>
-          <div class="stat-row">
-            <h2 class="stat-value">{{ stats.onTime }}</h2>
-            <span class="stat-percent text-green">{{ stats.onTimePct }}</span>
+      <div class="live-monitor-content-row">
+        <!-- Live Status Card (New) -->
+        <div class="content-card live-status-blue">
+          <div class="card-header-flex">
+            <div class="live-title-group">
+              <h3 class="live-title">Live Status</h3>
+              <p class="live-subtitle">Current session monitoring</p>
+            </div>
+            <div class="live-icon-white">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12s2.545-5 7-5c4.454 0 7 5 7 5s-2.546 5-7 5c-4.455 0-7-5-7-5z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </div>
           </div>
-        </div>
-        <div class="stat-card">
-          <p class="stat-label">LATE ARRIVALS</p>
-          <div class="stat-row">
-            <h2 class="stat-value">{{ stats.late }}</h2>
-            <span class="stat-percent text-orange">{{ stats.latePct }}</span>
+
+          <div class="live-time-wrap">
+            <h1 class="live-time">
+              {{ liveTime }}<span class="ampm">{{ liveAmPm }}</span>
+            </h1>
+            <div class="active-pulse-group">
+              <span class="active-dot dot-green dot-pulse"></span>
+              Active monitoring in progress
+            </div>
           </div>
-        </div>
-        <div class="stat-card">
-          <p class="stat-label">OFFICE</p>
-          <div class="stat-row">
-            <h2 class="stat-value">{{ stats.office }}</h2>
-            <span class="stat-percent text-blue">{{ stats.officePct }}</span>
+
+          <div class="live-stats-divider"></div>
+
+          <div class="live-stats-group">
+            <div class="live-stat-item">
+              <span class="live-stat-label">Recent Check-ins</span>
+              <p class="live-stat-value">{{ todayCheckins }}</p>
+            </div>
+            <div class="live-stat-item">
+              <span class="live-stat-label">Average Delay</span>
+              <p class="live-stat-value">{{ averageDelay }}</p>
+            </div>
           </div>
+
+          <button class="view-logs-btn" @click="fetchAttendances">Refresh Live Data</button>
         </div>
-        <div class="stat-card">
-          <p class="stat-label">REMOTE</p>
-          <div class="stat-row">
-            <h2 class="stat-value">{{ stats.remote }}</h2>
-            <span class="stat-percent text-grey">{{ stats.remotePct }}</span>
-          </div>
-        </div>
+
+        <!-- Optional: Other info or just the Live Status taking more space -->
       </div>
 
       <div class="cards-grid">
         <div
           class="attendance-card"
-          v-for="intern in attendanceCards"
+          v-for="intern in paginatedCards"
           :key="intern.id"
         >
           <div class="card-header">
@@ -359,39 +427,20 @@ const stats = computed(() => {
       </div>
 
       <div class="pagination">
-        <p class="pagination-info">Showing {{ attendanceCards.length }} Interns Today</p>
-        <div class="pagination-controls">
-          <button class="page-btn">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
+        <p class="pagination-info">Showing {{ attendanceCards.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0 }}–{{ Math.min(currentPage * itemsPerPage, attendanceCards.length) }} of {{ attendanceCards.length }} Interns</p>
+        <div class="pagination-controls" v-if="totalPages > 1">
+          <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
-          <button class="page-btn active">1</button>
-          <button class="page-btn">2</button>
-          <button class="page-btn">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
+          <button
+            v-for="p in totalPages"
+            :key="p"
+            class="page-btn"
+            :class="{ active: currentPage === p }"
+            @click="currentPage = p"
+          >{{ p }}</button>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
         </div>
       </div>
@@ -597,6 +646,146 @@ const stats = computed(() => {
   color: var(--text-main);
   margin: 0;
   line-height: 1;
+}
+
+/* Live Status Card Styles */
+.live-monitor-content-row {
+  margin-bottom: 24px;
+}
+
+.live-status-blue {
+  background: var(--accent-primary);
+  color: white;
+  border-radius: 20px;
+  padding: 30px;
+  border: none;
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+}
+
+.live-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.live-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.live-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.live-time-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.live-time {
+  font-size: 56px;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
+.ampm {
+  font-size: 24px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  margin-left: 8px;
+}
+
+.active-pulse-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.active-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot-green {
+  background-color: #10b981;
+}
+
+.dot-pulse {
+  animation: pulse 2s infinite ease-out;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.live-stats-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 30px 0;
+}
+
+.live-stats-group {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.live-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.live-stat-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.live-stat-value {
+  color: white;
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.view-logs-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: white;
+  color: var(--accent-primary);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.view-logs-btn:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
 }
 .stat-percent {
   font-size: 13px;

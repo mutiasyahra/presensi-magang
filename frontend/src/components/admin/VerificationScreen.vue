@@ -195,7 +195,22 @@ const handleVerify = async (status, isVerified) => {
     isProcessing.value = false;
   }
 };
+const totalHours = computed(() => {
+  if (!currentAttendance.value?.clock_in || !currentAttendance.value?.clock_out) return "0h 0m";
+  
+  const start = new Date(currentAttendance.value.clock_in);
+  const end = new Date(currentAttendance.value.clock_out);
+  const diffMs = end - start;
+  
+  if (diffMs < 0) return "0h 0m";
+  
+  const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  
+  return `${diffHrs}h ${diffMins}m`;
+});
 </script>
+
 
 <template>
   <div class="verification-wrapper">
@@ -365,7 +380,8 @@ const handleVerify = async (status, isVerified) => {
               <div class="event-header">
                 <div>
                   <h4>Clock In</h4>
-                  <p class="location">📍 Singapore, Science Park Drive</p>
+                  <p class="location">📍 {{ currentAttendance?.clock_in_location || "Singapore, Science Park Drive" }}</p>
+
                 </div>
                 <span class="time">{{
                   currentAttendance?.clock_in
@@ -377,18 +393,25 @@ const handleVerify = async (status, isVerified) => {
                 }}</span>
               </div>
 
-              <div class="evidence-card" v-if="currentAttendance?.clock_in_photo">
-                <div
-                  class="selfie-placeholder"
-                  :style="{
-                    backgroundImage: `url(${getImageUrl(currentAttendance.clock_in_photo)})`,
-                  }"
-                ></div>
-                <div class="evidence-footer">
-                  <span class="label">📷 Morning Selfie</span>
-                  <span class="status text-green">✅ GPS Verified</span>
+                <div class="evidence-card" v-if="currentAttendance.clock_in_photo">
+                  <a
+                    :href="getImageUrl(currentAttendance.clock_in_photo)"
+                    target="_blank"
+                    class="selfie-placeholder"
+                    :style="{
+                      backgroundImage: `url(${getImageUrl(currentAttendance.clock_in_photo)})`,
+                      cursor: 'pointer'
+                    }"
+                    title="View Full Image"
+                  ></a>
+                  <div class="evidence-footer">
+                    <span class="label">📷 Morning Selfie</span>
+                    <span class="status text-green">✅ GPS Verified</span>
+                  </div>
                 </div>
-              </div>
+                <div v-else class="no-selfie-placeholder">
+                   <span>📷 No Morning Selfie Recorded</span>
+                </div>
 
               <div class="info-card">
                 <p class="card-title">📝 DAILY WORK PLAN</p>
@@ -424,7 +447,8 @@ const handleVerify = async (status, isVerified) => {
               <div class="event-header">
                 <div>
                   <h4>Clock Out</h4>
-                  <p class="location">📍 Singapore, Science Park Drive</p>
+                  <p class="location">📍 {{ currentAttendance?.clock_out_location || "Singapore, Science Park Drive" }}</p>
+
                 </div>
                 <span class="time">{{
                   currentAttendance?.clock_out
@@ -436,18 +460,25 @@ const handleVerify = async (status, isVerified) => {
                 }}</span>
               </div>
 
-              <div class="evidence-card" v-if="currentAttendance?.clock_out_photo">
-                <div
-                  class="selfie-placeholder"
-                  :style="{
-                    backgroundImage: `url(${getImageUrl(currentAttendance.clock_out_photo)})`,
-                  }"
-                ></div>
-                <div class="evidence-footer">
-                  <span class="label">📷 Afternoon Selfie</span>
-                  <span class="status text-green">✅ Validated</span>
+                <div class="evidence-card" v-if="currentAttendance.clock_out_photo">
+                  <a
+                    :href="getImageUrl(currentAttendance.clock_out_photo)"
+                    target="_blank"
+                    class="selfie-placeholder"
+                    :style="{
+                      backgroundImage: `url(${getImageUrl(currentAttendance.clock_out_photo)})`,
+                      cursor: 'pointer'
+                    }"
+                    title="View Full Image"
+                  ></a>
+                  <div class="evidence-footer">
+                    <span class="label">📷 Afternoon Selfie</span>
+                    <span class="status text-green">✅ Validated</span>
+                  </div>
                 </div>
-              </div>
+                <div v-else class="no-selfie-placeholder">
+                   <span>📷 No Afternoon Selfie Recorded</span>
+                </div>
 
               <div class="info-card">
                 <p class="card-title">📉 DAILY ACTIVITY SUMMARY</p>
@@ -551,7 +582,7 @@ const handleVerify = async (status, isVerified) => {
           <div class="stats-row">
             <div class="stat-box">
               <p class="label">TOTAL HOURS</p>
-              <p class="value"><strong>8.4</strong> hrs</p>
+              <p class="value"><strong>{{ totalHours }}</strong></p>
             </div>
             <div class="stat-box">
               <p class="label">STATUS</p>
@@ -1019,9 +1050,27 @@ const handleVerify = async (status, isVerified) => {
   margin-bottom: 8px;
 }
 .selfie-placeholder {
+  display: block;
   height: 200px;
   background-size: cover;
   background-position: center;
+  background-color: var(--bg-input);
+  transition: transform 0.3s;
+}
+.selfie-placeholder:hover {
+    transform: scale(1.02);
+}
+
+.no-selfie-placeholder {
+    background: var(--bg-input);
+    border: 1px dashed var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 16px;
 }
 .bg-blue {
   background-color: var(--bg-card);

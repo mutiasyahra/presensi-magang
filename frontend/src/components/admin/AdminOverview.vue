@@ -18,67 +18,13 @@ import {
   ChevronRight,
 } from "lucide-vue-next";
 
+const toLocalDateString = (isoString) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  return date.toLocaleDateString('en-CA'); // YYYY-MM-DD
+};
+
 const props = defineProps(["stats", "attendanceList"]);
-
-const weeklyAttendance = computed(() => {
-  const list = props.attendanceList || [];
-  
-  // Format day
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const summaryMap = new Map();
-  
-  // Initialize the last 7 days including today
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dayName = days[d.getDay()];
-    // Store date string to ensure correct order
-    const dateStr = [d.getFullYear(), d.getMonth() + 1, d.getDate()].join('-');
-    summaryMap.set(dateStr, { day: dayName, present: 0, late: 0 });
-  }
-
-  // Iterate attendanceList and group them
-  const todayDate = new Date();
-  todayDate.setHours(23, 59, 59, 999);
-  const sevenDaysAgoDate = new Date();
-  sevenDaysAgoDate.setDate(todayDate.getDate() - 6);
-  sevenDaysAgoDate.setHours(0, 0, 0, 0);
-
-  list.forEach(record => {
-    let rawDateStr = record.attendance_date || record.clock_in;
-    if (!rawDateStr) return;
-    
-    let recordDate = new Date(rawDateStr);
-    
-    if (recordDate >= sevenDaysAgoDate && recordDate <= todayDate) {
-       const dateKey = [recordDate.getFullYear(), recordDate.getMonth() + 1, recordDate.getDate()].join('-');
-       
-       if (summaryMap.has(dateKey)) {
-         let stats = summaryMap.get(dateKey);
-         if (record.status === "terlambat") {
-           stats.late++;
-         } else {
-           stats.present++;
-         }
-       }
-    }
-  });
-
-  const rawArray = Array.from(summaryMap.values());
-  let maxTotal = 0;
-  rawArray.forEach(d => {
-     const t = d.present + d.late;
-     if (t > maxTotal) maxTotal = t;
-  });
-  
-  const scaleBase = maxTotal > 0 ? maxTotal : 10; // Default scale if empty
-  
-  return rawArray.map(d => ({
-     day: d.day,
-     present: (d.present / scaleBase) * 100,
-     late: (d.late / scaleBase) * 100
-  }));
-});
 
 // Helper: format waktu dari ISO string ke "DD MMM, HH:MM AM/PM"
 const formatTime = (isoString) => {
@@ -108,16 +54,6 @@ const formatTime = (isoString) => {
   return `${day} ${month}, ${time}`;
 };
 
-// Helper: format tanggal ke string "YYYY-MM-DD" lokal
-const toLocalDateString = (isoString) => {
-  if (!isoString) return "";
-  const date = new Date(isoString);
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
-
 // Helper: tentukan status berdasarkan jenis event (clock-in atau clock-out)
 const getStatus = (record, action) => {
   if (action === "Clocked In") {
@@ -132,7 +68,7 @@ const getStatus = (record, action) => {
 };
 
 const currentPage = ref(1);
-const itemsPerPage = 6;
+const itemsPerPage = 10;
 
 // Computed: ambil semua activity sorted
 const allRecentEvents = computed(() => {
@@ -172,6 +108,20 @@ const allRecentEvents = computed(() => {
             ).toFixed(4)}`
           : "Remote"),
         status: getStatus(record, "Clocked Out"),
+        photo: record.user?.profile_photo || null,
+      });
+    }
+
+    if (!record.clock_in && !record.clock_out && ['izin', 'sakit'].includes(record.status)) {
+      allEvents.push({
+        id: `${record.id || index}-leave`,
+        name: record.user?.name || "Unknown",
+        role: record.user?.email || "",
+        action: record.status === "izin" ? "Izin" : "Sakit",
+        time: formatTime(record.attendance_date + "T08:00:00"),
+        rawTime: new Date(record.attendance_date + "T08:00:00"),
+        location: "-",
+        status: record.status.toUpperCase(),
         photo: record.user?.profile_photo || null,
       });
     }
@@ -249,11 +199,18 @@ const filteredEvents = computed(() => {
       return d.getFullYear() === year && (d.getMonth() + 1) === month;
     });
   } else if (selectedRange.value === "Pilih Tanggal") {
-    if (customStartDate.value && customEndDate.value) {
+    if (customStartDate.value) {
       const start = new Date(customStartDate.value);
       start.setHours(0, 0, 0, 0);
-      const end = new Date(customEndDate.value);
+      
+      let end;
+      if (customEndDate.value) {
+        end = new Date(customEndDate.value);
+      } else {
+        end = new Date(customStartDate.value); // fallback to start date
+      }
       end.setHours(23, 59, 59, 999);
+      
       all = all.filter(e => e.rawTime >= start && e.rawTime <= end);
     }
   }
@@ -263,6 +220,8 @@ const filteredEvents = computed(() => {
     all = all.filter((e) => e.action === "Clocked In");
   if (activityFilter.value === "Clock-out")
     all = all.filter((e) => e.action === "Clocked Out");
+  if (activityFilter.value === "Izin/Sakit")
+    all = all.filter((e) => e.action === "Izin" || e.action === "Sakit");
 
   return all;
 });
@@ -283,31 +242,6 @@ const getImageUrl = (path) => {
 
 
 
-
-// Computed: hitung jumlah clock-in hari ini
-const todayCheckins = computed(() => {
-  const list = props.attendanceList || [];
-  const today = toLocalDateString(new Date().toISOString());
-  return list.filter((record) => {
-    const recDate =
-      record.attendance_date || toLocalDateString(record.clock_in);
-    return recDate === today;
-  }).length;
-});
-
-// Computed: jam sekarang untuk Live Status
-const liveTime = computed(() => {
-  const now = new Date();
-  return now.toLocaleTimeString("id-ID", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-});
-
-const liveAmPm = computed(() => {
-  const now = new Date();
-  return now.getHours() < 12 ? "AM" : "PM";
-});
 
 const attendanceStatusToday = computed(() => {
   const list = props.attendanceList || [];
@@ -330,27 +264,178 @@ const attendanceStatusToday = computed(() => {
 
 const projectPerformance = computed(() => {
   const list = props.attendanceList || [];
+  const statsDist = props.stats?.project_distribution || [];
   const projectMap = new Map();
 
-  list.forEach(record => {
-    const project = record.user?.intern?.project || "Unassigned";
-    if (!projectMap.has(project)) {
-      projectMap.set(project, { name: project, present: 0, total: 0 });
+  // Helper to calculate working days since a specific date
+  const getElapsedWorkingDaysSince = (startDateStr) => {
+    if (!startDateStr) return 1;
+    const start = new Date(startDateStr);
+    const end = new Date();
+    if (start > end) return 1;
+    
+    let count = 0;
+    const curr = new Date(start);
+    curr.setDate(curr.getDate() + 1); 
+    
+    while (curr <= end) {
+      const day = curr.getDay();
+      if (day !== 0 && day !== 6) count++; 
+      curr.setDate(curr.getDate() + 1);
     }
-    const stats = projectMap.get(project);
-    stats.total++;
-    if (["hadir", "terlambat"].includes(record.status)) {
-      stats.present++;
+    return count > 0 ? count : 1;
+  };
+
+  // Initialize from official stats
+  statsDist.forEach(item => {
+    const rawName = item.project || "Unassigned";
+    const projName = rawName.trim();
+    if (projName !== "Unassigned") {
+      projectMap.set(projName.toLowerCase(), {
+        name: projName,
+        count: parseInt(item.count || 0),
+        interns: new Map(),
+        color: projName.toLowerCase().includes("prisma") ? "#8b5cf6" : "#3b82f6"
+      });
+    }
+  });
+
+  // Calculate progress per intern from attendanceList
+  list.forEach(record => {
+    const userId = record.user_id;
+    if (!record.user) return;
+    
+    const rawProject = record.user.intern?.project || "Unassigned";
+    const project = rawProject.trim();
+    if (project === "Unassigned") return;
+
+    const key = project.toLowerCase();
+    if (!projectMap.has(key)) {
+       projectMap.set(key, { 
+         name: project, 
+         count: 0, 
+         interns: new Map(), 
+         color: project.toLowerCase().includes("prisma") ? "#8b5cf6" : "#3b82f6" 
+       });
+    }
+    
+    const pData = projectMap.get(key);
+    if (!pData.interns.has(userId)) {
+      pData.interns.set(userId, { 
+        present: 0,
+        startDate: record.user.intern?.start_date
+      });
+    }
+    
+    const iStats = pData.interns.get(userId);
+    if (["hadir", "terlambat", "izin", "sakit"].includes(record.status)) {
+      iStats.present++;
     }
   });
 
   return Array.from(projectMap.values())
-    .map(p => ({
-      ...p,
-      rate: p.total > 0 ? Math.round((p.present / p.total) * 100) : 0
-    }))
-    .sort((a, b) => b.rate - a.rate)
-    .slice(0, 5);
+    .map(p => {
+      const internList = Array.from(p.interns.values()).map(i => {
+        const elapsed = getElapsedWorkingDaysSince(i.startDate);
+        return {
+          ...i,
+          rate: Math.min(100, Math.round((i.present / elapsed) * 100))
+        };
+      });
+      
+      const totalRate = internList.reduce((acc, curr) => acc + curr.rate, 0);
+      
+      const finalCount = p.count > 0 ? p.count : p.interns.size;
+      const avgRate = finalCount > 0 ? Math.round(totalRate / finalCount) : 0;
+      
+      return {
+        name: p.name,
+        count: finalCount,
+        rate: avgRate,
+        color: p.color
+      };
+    })
+    .sort((a, b) => b.rate - a.rate);
+});
+
+const totalProjects = computed(() => projectPerformance.value.length);
+const chartPeriod = ref("weekly"); // 'weekly' or 'monthly'
+
+const weeklyAttendance = computed(() => {
+  const list = props.attendanceList || [];
+  const now = new Date();
+  
+  if (chartPeriod.value === "weekly") {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const dateStr = toLocalDateString(d.toISOString());
+      const dayLabel = d.toLocaleDateString("en-US", { weekday: "short" });
+      days.push({ date: dateStr, label: dayLabel, onTime: 0, late: 0 });
+    }
+
+    list.forEach(record => {
+      const recDate = record.attendance_date || toLocalDateString(record.clock_in);
+      const dayData = days.find(d => d.date === recDate);
+      if (dayData) {
+        if (record.clock_in_status === "tepat waktu" || record.status === "hadir") {
+          dayData.onTime++;
+        } else if (record.clock_in_status === "terlambat" || record.status === "terlambat") {
+          dayData.late++;
+        }
+      }
+    });
+
+    const maxVal = Math.max(...days.map(d => d.onTime + d.late), 5);
+    return days.map(d => ({
+      label: d.label,
+      onTime: d.onTime,
+      late: d.late,
+      onTimeHeight: (d.onTime / maxVal) * 100,
+      lateHeight: (d.late / maxVal) * 100
+    }));
+  } else {
+    // Monthly View: Group into 4 weeks (last 28 days)
+    const weeks = [
+      { label: "Week 1", startOffset: 27, endOffset: 21, onTime: 0, late: 0 },
+      { label: "Week 2", startOffset: 20, endOffset: 14, onTime: 0, late: 0 },
+      { label: "Week 3", startOffset: 13, endOffset: 7, onTime: 0, late: 0 },
+      { label: "Week 4", startOffset: 6, endOffset: 0, onTime: 0, late: 0 }
+    ];
+
+    const getDayDate = (offset) => {
+      const d = new Date();
+      d.setDate(now.getDate() - offset);
+      return toLocalDateString(d.toISOString());
+    };
+
+    list.forEach(record => {
+      const recDate = record.attendance_date || toLocalDateString(record.clock_in);
+      const recTime = new Date(recDate).getTime();
+      
+      weeks.forEach(w => {
+        const start = new Date(getDayDate(w.startOffset)).getTime();
+        const end = new Date(getDayDate(w.endOffset)).getTime();
+        if (recTime >= start && recTime <= end) {
+          if (record.clock_in_status === "tepat waktu" || record.status === "hadir") {
+            w.onTime++;
+          } else if (record.clock_in_status === "terlambat" || record.status === "terlambat") {
+            w.late++;
+          }
+        }
+      });
+    });
+
+    const maxVal = Math.max(...weeks.map(w => w.onTime + w.late), 10);
+    return weeks.map(w => ({
+      label: w.label,
+      onTime: w.onTime,
+      late: w.late,
+      onTimeHeight: (w.onTime / maxVal) * 100,
+      lateHeight: (w.late / maxVal) * 100
+    }));
+  }
 });
 
 const chartGradient = computed(() => {
@@ -369,6 +454,24 @@ const chartGradient = computed(() => {
 
   if (stops.length === 0) return "conic-gradient(#e2e8f0 0% 100%)";
   return `conic-gradient(${stops.join(", ")})`;
+});
+
+const projectDonutSegments = computed(() => {
+  const projects = projectPerformance.value;
+  const totalInterns = projects.reduce((acc, p) => acc + p.count, 0) || 1;
+  let cumulativeOffset = 0;
+
+  return projects.map(p => {
+    const percentage = (p.count / totalInterns) * 100;
+    const dashArray = `${percentage} 100`;
+    const dashOffset = -cumulativeOffset;
+    cumulativeOffset += percentage;
+    return {
+      ...p,
+      dashArray,
+      dashOffset
+    };
+  });
 });
 
 const internPerformance = computed(() => {
@@ -427,211 +530,196 @@ const internPerformance = computed(() => {
       <div class="stat-card" style="--delay: 0.1s">
         <div class="card-header">
           <div class="icon-wrapper blue-icon">
-            <Users size="20" />
+            <Users size="18" />
           </div>
-          <span class="badge badge-green">+12%</span>
+          <span class="trend text-green">+4.2%</span>
         </div>
         <div class="card-body">
-          <p class="label">Total Peserta Magang</p>
           <h3 class="value">{{ stats?.total_interns ?? "-" }}</h3>
+          <p class="label">Total Interns</p>
+        </div>
+        <div class="sparkline blue-spark">
+          <div class="spark-bar" style="height: 40%"></div>
+          <div class="spark-bar" style="height: 50%"></div>
+          <div class="spark-bar" style="height: 45%"></div>
+          <div class="spark-bar" style="height: 60%"></div>
+          <div class="spark-bar" style="height: 55%"></div>
+          <div class="spark-bar" style="height: 70%"></div>
+          <div class="spark-bar" style="height: 65%"></div>
         </div>
       </div>
 
       <div class="stat-card" style="--delay: 0.2s">
         <div class="card-header">
           <div class="icon-wrapper green-icon">
-            <CheckCircle size="20" />
+            <CheckCircle size="18" />
           </div>
-          <span class="badge badge-grey">Hadir Bulan Ini</span>
+          <span class="trend text-green">Stable</span>
         </div>
         <div class="card-body">
-          <p class="label">Hadir (Bulan Ini)</p>
           <h3 class="value">{{ stats?.present ?? "-" }}</h3>
+          <p class="label">Active Present</p>
+        </div>
+        <div class="sparkline green-spark">
+          <div class="spark-bar" style="height: 60%"></div>
+          <div class="spark-bar" style="height: 65%"></div>
+          <div class="spark-bar" style="height: 60%"></div>
+          <div class="spark-bar" style="height: 70%"></div>
+          <div class="spark-bar" style="height: 75%"></div>
+          <div class="spark-bar" style="height: 70%"></div>
+          <div class="spark-bar" style="height: 80%"></div>
         </div>
       </div>
 
       <div class="stat-card" style="--delay: 0.3s">
         <div class="card-header">
-          <div class="icon-wrapper orange-icon">
-            <Gift size="20" />
+          <div class="icon-wrapper purple-icon">
+            <Gift size="18" />
           </div>
-          <span class="badge badge-orange"
-            >{{ stats?.pending_leaves ?? 0 }} Pending</span
-          >
+          <span class="trend text-orange">{{ stats?.pending_leaves ?? 0 }} Action</span>
         </div>
         <div class="card-body">
-          <p class="label">Izin / Cuti</p>
-          <h3 class="value">{{ stats?.absent ?? "-" }}</h3>
+          <h3 class="value">{{ stats?.pending_leaves ?? "-" }}</h3>
+          <p class="label">Pending Leaves</p>
+        </div>
+        <div class="sparkline purple-spark">
+          <div class="spark-bar" style="height: 30%"></div>
+          <div class="spark-bar" style="height: 20%"></div>
+          <div class="spark-bar" style="height: 40%"></div>
+          <div class="spark-bar" style="height: 35%"></div>
+          <div class="spark-bar" style="height: 25%"></div>
+          <div class="spark-bar" style="height: 30%"></div>
+          <div class="spark-bar" style="height: 45%"></div>
         </div>
       </div>
 
       <div class="stat-card" style="--delay: 0.4s">
         <div class="card-header">
-          <div class="icon-wrapper red-icon">
-            <Clock size="20" />
+          <div class="icon-wrapper orange-icon">
+            <Clock size="18" />
           </div>
-          <span class="badge badge-red">Bulan Ini</span>
+          <span class="trend text-purple">{{ totalProjects }} Active</span>
         </div>
         <div class="card-body">
-          <p class="label">Terlambat</p>
-          <h3 class="value">{{ stats?.late ?? "-" }}</h3>
+          <h3 class="value">{{ totalProjects }}</h3>
+          <p class="label">Total Projects</p>
+        </div>
+        <div class="sparkline orange-spark">
+          <div class="spark-bar" style="height: 50%"></div>
+          <div class="spark-bar" style="height: 45%"></div>
+          <div class="spark-bar" style="height: 40%"></div>
+          <div class="spark-bar" style="height: 35%"></div>
+          <div class="spark-bar" style="height: 30%"></div>
+          <div class="spark-bar" style="height: 25%"></div>
+          <div class="spark-bar" style="height: 20%"></div>
         </div>
       </div>
     </section>
 
-    <section class="dashboard-content performance-row">
-      <div class="content-card status-card">
-        <h3 class="section-title">Attendance Status (Today)</h3>
-        <div class="status-chart-container">
-          <div class="chart-visual-box">
-            <div
-              class="chart-circle"
-              :style="{ background: chartGradient }"
-            ></div>
-            <div class="chart-center">
-              <span class="center-label">Total</span>
-              <span class="center-value">{{
-                props.stats?.total_interns || 0
-              }}</span>
-            </div>
+    <!-- MAIN CHARTS ROW -->
+    <div class="main-charts-row">
+      <!-- Attendance Trends (Left) -->
+      <div class="content-card chart-area main-trend">
+        <div class="card-header-flex">
+          <div class="title-group">
+             <h3 class="section-title">Attendance Trends</h3>
+             <p class="section-subtitle">{{ chartPeriod === 'weekly' ? 'Weekly' : 'Monthly' }} activity overview</p>
           </div>
+          <div class="dropdown chart-period-dropdown">
+            <select v-model="chartPeriod" class="period-select">
+               <option value="weekly">Last 7 Days</option>
+               <option value="monthly">Last 30 Days</option>
+            </select>
+            <ChevronDown class="dropdown-icon" size="14" />
+          </div>
+        </div>
 
-          <div class="chart-legend">
+        <div class="bar-chart-container">
+          <div class="y-axis">
+            <span>100</span>
+            <span>75</span>
+            <span>50</span>
+            <span>25</span>
+            <span>0</span>
+          </div>
+          <div class="bar-chart-main">
             <div
-              v-for="item in attendanceStatusToday"
-              :key="item.label"
-              class="legend-item"
+              class="bar-group"
+              v-for="(data, index) in weeklyAttendance"
+              :key="index"
             >
-              <div class="legend-row">
+              <div class="bar-wrapper">
                 <div
-                  class="legend-dot"
-                  :style="{ backgroundColor: item.color }"
-                ></div>
-                <span class="legend-label">{{ item.label }}</span>
-                <span class="legend-value">{{ item.value }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="content-card performance-card">
-        <h3 class="section-title">Project Performance</h3>
-        <div class="project-list">
-          <div
-            v-for="project in projectPerformance"
-            :key="project.name"
-            class="project-item"
-          >
-            <div class="project-name-row">
-              <span class="project-name">{{ project.name }}</span>
-              <span class="project-rate">{{ project.rate }}%</span>
-            </div>
-            <div class="progress-container">
-              <div
-                class="progress-fill"
-                :style="{ width: project.rate + '%' }"
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="content-card intern-card">
-        <h3 class="section-title">Intern Performance</h3>
-        <div class="intern-performance-list">
-          <div
-            v-for="(intern, idx) in internPerformance"
-            :key="intern.email"
-            class="intern-perf-item"
-          >
-            <div class="intern-perf-info">
-              <div class="intern-perf-avatar">
-                {{ intern.name.charAt(0).toUpperCase() }}
-              </div>
-              <div class="intern-perf-details">
-                <span class="intern-perf-name">{{ intern.name }}</span>
-                <span class="intern-perf-subtext"
-                  >{{ intern.present }} Present Days</span
+                  class="bar bar-on-time"
+                  :style="{ height: data.onTimeHeight + '%' }"
                 >
+                  <div class="bar-tooltip">On Time: {{ data.onTime }}</div>
+                </div>
+                <div
+                  class="bar bar-late"
+                  :style="{ height: data.lateHeight + '%' }"
+                >
+                  <div class="bar-tooltip">Late: {{ data.late }}</div>
+                </div>
               </div>
-            </div>
-            <div class="perf-rank">
-              <span class="rank-badge">#{{ idx + 1 }}</span>
+              <span class="bar-label">{{ data.label }}</span>
             </div>
           </div>
         </div>
-      </div>
-    </section>
-
-    <section class="dashboard-content">
-      <div class="content-card chart-area">
-        <div class="card-header-flex">
-          <h3 class="section-title">Weekly Attendance Summary</h3>
-          <div class="dropdown">
-            <span class="dropdown-label">Last 7 Days</span>
-            <ChevronDown class="dropdown-icon" size="16" />
-          </div>
-        </div>
-
-        <div class="bar-chart">
-          <div
-            class="bar-group"
-            v-for="(data, index) in weeklyAttendance"
-            :key="index"
-          >
-            <div class="bar-wrapper">
-              <div
-                class="bar bar-present"
-                :style="{ height: data.present + '%' }"
-                title="Present"
-              ></div>
-              <div
-                class="bar bar-late"
-                :style="{ height: data.late + '%' }"
-                title="Late"
-              ></div>
-            </div>
-            <span class="day-label">{{ data.day }}</span>
-          </div>
+        <div class="chart-footer-legend">
+           <div class="legend-item"><div class="dot blue"></div> On Time</div>
+           <div class="legend-item"><div class="dot orange"></div> Late</div>
         </div>
       </div>
 
-      <div class="content-card live-status-blue">
-        <div class="card-header-flex">
-          <div class="info-group">
-            <h3 class="live-title">Live Status</h3>
-            <span class="live-subtitle">Current session monitoring</span>
-          </div>
-          <Wifi class="live-icon-white" size="20" />
-        </div>
-
-        <div class="live-time-wrap">
-          <p class="live-time">
-            {{ liveTime }}<span class="ampm">{{ liveAmPm }}</span>
-          </p>
-          <div class="active-pulse-group">
-            <div class="active-dot dot-green dot-pulse"></div>
-            <p class="active-text">Active monitoring in progress</p>
-          </div>
-        </div>
-
-        <div class="live-stats-group">
-          <div class="live-stat-item">
-            <p class="live-stat-label">Check-ins Hari Ini</p>
-            <p class="live-stat-value">{{ todayCheckins }}</p>
-          </div>
-          <div class="live-stat-item">
-            <p class="live-stat-label">Total Presensi</p>
-            <p class="live-stat-value">
-              {{ (props.attendanceList || []).length }}
-            </p>
+      <!-- Project Distribution (Right) -->
+      <div class="content-card distribution-card">
+        <h3 class="section-title">Project Distribution</h3>
+        <p class="section-subtitle">Interns per project</p>
+        
+        <div class="donut-chart-container">
+          <svg viewBox="0 0 36 36" class="circular-chart">
+            <path class="circle-bg"
+              d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+            />
+            <path 
+              v-for="seg in projectDonutSegments"
+              :key="seg.name"
+              class="circle"
+              :stroke-dasharray="seg.dashArray"
+              :stroke-dashoffset="seg.dashOffset"
+              d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+              :style="{ stroke: seg.color }"
+            />
+          </svg>
+          <div class="donut-inner">
+             <span class="donut-val">{{ totalProjects }}</span>
+             <span class="donut-lab">Projects</span>
           </div>
         </div>
 
-        <button class="view-logs-btn">View Live Logs</button>
+        <div class="distribution-list">
+           <div class="dist-item-wrapper" v-for="p in projectPerformance.slice(0,4)" :key="p.name">
+              <div class="dist-item">
+                 <div class="dist-info">
+                    <span class="dist-name">{{ p.name }}</span>
+                    <span class="dist-count">{{ p.count }} Interns</span>
+                 </div>
+                 <div class="progress-container-side">
+                    <div class="dist-bar-bg">
+                       <div class="dist-bar-fill" :style="{ width: p.rate + '%', backgroundColor: p.color }"></div>
+                    </div>
+                    <span class="progress-val-side">{{ p.rate }}%</span>
+                 </div>
+              </div>
+           </div>
+        </div>
       </div>
-    </section>
+    </div>
 
     <section class="dashboard-content recent-activity-full">
       <div class="content-card recent-activity">
@@ -639,7 +727,7 @@ const internPerformance = computed(() => {
           <h3 class="section-title">Recent Activity</h3>
           <div class="activity-filters">
             <button
-              v-for="f in ['All', 'Clock-in', 'Clock-out']"
+              v-for="f in ['All', 'Clock-in', 'Clock-out', 'Izin/Sakit']"
               :key="f"
               :class="['filter-pill', { active: activityFilter === f }]"
               @click="setFilter(f)"
@@ -746,7 +834,8 @@ const internPerformance = computed(() => {
                     class="icon-green"
                     size="18"
                   />
-                  <LogOut v-else class="icon-orange" size="18" />
+                  <LogOut v-else-if="activity.action === 'Clocked Out'" class="icon-orange" size="18" />
+                  <Calendar v-else size="18" style="color: #3b82f6;" />
                   <p class="activity-action">{{ activity.action }}</p>
                 </div>
               </td>
@@ -1110,131 +1199,6 @@ const internPerformance = computed(() => {
   color: var(--text-muted);
 }
 
-/* --- Kanan: Status Biru (Informatif, Lucu, Aesthetic) --- */
-.live-status-blue {
-  background: var(--accent-primary); /* Kotak biru estetis */
-  color: white;
-  border-color: var(--accent-primary);
-}
-
-.live-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: white;
-  margin: 0;
-}
-
-.live-subtitle {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 500;
-}
-
-.live-icon-white {
-  color: white;
-}
-
-.live-time-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.live-time {
-  font-size: 44px;
-  font-weight: 800;
-  color: white;
-  margin: 0;
-  letter-spacing: -1.5px;
-}
-
-.ampm {
-  font-size: 20px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.8);
-  margin-left: 6px;
-}
-
-.active-pulse-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 13px;
-}
-
-.active-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.dot-green {
-  background-color: #10b981;
-}
-
-.dot-pulse {
-  animation: pulse 2s infinite ease-out;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-  }
-}
-
-.live-stats-group {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.live-stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.live-stat-label {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.live-stat-value {
-  color: white;
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.view-logs-btn {
-  width: 100%;
-  margin-top: 20px;
-  padding: 12px;
-  background-color: rgba(255, 255, 255, 0.9);
-  color: var(--accent-primary);
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.view-logs-btn:hover {
-  background-color: white;
-}
-
 /* --- Recent Activity Tabel (Di Bawah Diagram & Live Status) --- */
 .recent-activity-full {
   grid-template-columns: 1fr;
@@ -1498,16 +1462,16 @@ const internPerformance = computed(() => {
   height: 20px;
   margin-left: 12px;
   position: relative;
+  flex-shrink: 0;
 }
 
 .admin-radio-custom {
   height: 18px;
   width: 18px;
+  flex-shrink: 0;
   border: 2px solid #cbd5e1;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
 }
 
 .admin-range-option input[type="radio"] {
@@ -1525,6 +1489,10 @@ const internPerformance = computed(() => {
   height: 10px;
   background: var(--accent-primary);
   border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .admin-modal-footer {
@@ -1832,138 +1800,355 @@ const internPerformance = computed(() => {
     gap: 32px;
   }
 }
-
-.chart-visual-box {
-  position: relative;
-  width: 170px;
-  height: 170px;
-  flex-shrink: 0;
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
 }
 
-.chart-circle {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  transition: background 0.5s ease;
-}
-
-.chart-center {
-  position: absolute;
-  top: 15%;
-  left: 15%;
-  width: 70%;
-  height: 70%;
+.stat-card {
   background: var(--bg-card);
-  border-radius: 50%;
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.stat-card .value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+  line-height: 1;
+}
+
+.stat-card .label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 4px 0 0 0;
+  font-weight: 500;
+}
+
+.trend {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg-input);
+}
+
+.sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 30px;
+  margin-top: 8px;
+}
+
+.spark-bar {
+  flex: 1;
+  border-radius: 2px;
+  min-height: 4px;
+}
+
+.blue-spark .spark-bar { background: var(--accent-primary); opacity: 0.6; }
+.green-spark .spark-bar { background: #10b981; opacity: 0.6; }
+.purple-spark .spark-bar { background: #a855f7; opacity: 0.6; }
+.orange-spark .spark-bar { background: #f59e0b; opacity: 0.6; }
+
+/* --- MAIN CHARTS ROW --- */
+.main-charts-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.main-trend {
+  padding: 32px;
+}
+
+.section-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.bar-chart-container {
+  display: flex;
+  gap: 20px;
+  height: 240px;
+  margin: 32px 0 16px 0;
+  position: relative;
+}
+
+.y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  width: 24px;
+  padding-bottom: 24px;
+}
+
+.bar-chart-main {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  position: relative;
+}
+
+.bar-chart-main::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 23px;
+  height: 1px;
+  background: var(--border-color);
+  opacity: 0.5;
+}
+
+.bar-group {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  gap: 12px;
+  height: 100%;
 }
 
-.center-label {
-  font-size: 11px;
+.bar-wrapper {
+  flex: 1;
+  width: 32px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  position: relative;
+}
+
+.bar {
+  flex: 1;
+  border-radius: 6px 6px 0 0;
+  position: relative;
+  transition: height 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.bar-on-time { background: linear-gradient(to top, #3b82f6, #60a5fa); }
+.bar-late { background: linear-gradient(to top, #f59e0b, #fbbf24); }
+
+.bar-tooltip {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-main);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.bar:hover .bar-tooltip {
+  opacity: 1;
+}
+
+.day-label {
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
-  text-transform: uppercase;
 }
 
-.center-value {
-  font-size: 22px;
+.chart-period-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.period-select {
+  appearance: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 8px 36px 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.period-select:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-input);
+}
+
+.chart-period-dropdown .dropdown-icon {
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+  color: var(--text-muted);
+}
+
+.chart-footer-legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot.blue { background: #3b82f6; }
+.dot.orange { background: #f59e0b; }
+
+/* Donut Chart Style */
+.distribution-card {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+.donut-chart-container {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 32px auto;
+}
+
+.circular-chart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.circle-bg {
+  fill: none;
+  stroke: var(--bg-input);
+  stroke-width: 3.8;
+}
+
+.circle {
+  fill: none;
+  stroke-width: 3.8;
+  stroke-linecap: round;
+  transition: stroke-dasharray 1s ease;
+}
+
+.donut-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.progress-container-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.dist-bar-bg {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-val-side {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 35px;
+  text-align: right;
+}
+
+.donut-val {
+  font-size: 24px;
   font-weight: 800;
   color: var(--text-main);
 }
 
-.chart-legend {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.legend-item {
-  padding: 2px 0;
-}
-
-.legend-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.legend-label {
-  flex: 1;
-  font-size: 13px;
-  font-weight: 600;
+.donut-lab {
+  font-size: 11px;
   color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
-.legend-value {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-.intern-performance-list {
+.distribution-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-top: 20px;
 }
 
-.intern-perf-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.intern-perf-item:last-child {
-  border-bottom: none;
-}
-
-.intern-perf-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.intern-perf-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--bg-input);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--accent-primary);
-}
-
-.intern-perf-details {
+.dist-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
 
-.intern-perf-name {
-  font-size: 13px;
+.dist-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text-main);
 }
 
-.intern-perf-subtext {
-  font-size: 11px;
-  color: var(--text-muted);
+.dist-name { color: var(--text-main); }
+.dist-count { color: var(--text-muted); }
+
+.dist-bar-bg {
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.dist-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease;
 }
 
 .rank-badge {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import api from "../../api/axios.js";
 import Swal from "sweetalert2";
 import { Mail, Phone, Users, FolderOpen, Calendar } from "lucide-vue-next";
@@ -376,12 +376,25 @@ const projectCount = computed(() => {
   return set.size;
 });
 
-// Fungsi warna progress bar
 const getProgressColor = (value) => {
   if (value >= 90) return "bg-green";
   if (value > 0) return "bg-orange";
   return "bg-grey";
 };
+
+// Pagination
+const currentPage = ref(1);
+const itemsPerPage = 10;
+const totalPages = computed(() => Math.ceil(filteredInterns.value.length / itemsPerPage));
+const paginatedInterns = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return filteredInterns.value.slice(start, start + itemsPerPage);
+});
+
+// Reset to page 1 on filter change
+watch([searchQuery, selectedUniversity, selectedProject], () => {
+  currentPage.value = 1;
+});
 
 // Buka Modal Detail
 const openDetailModal = (intern) => {
@@ -593,7 +606,7 @@ function formatDate(dateStr) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="intern in filteredInterns" :key="intern.id">
+          <tr v-for="intern in paginatedInterns" :key="intern.id">
             <td>
               <div class="intern-profile">
                 <div class="avatar">
@@ -708,43 +721,21 @@ function formatDate(dateStr) {
 
       <div class="pagination">
         <p class="pagination-info">
-          Showing {{ filteredInterns.length > 0 ? 1 : 0 }} to
-          {{ filteredInterns.length }} of {{ filteredInterns.length }} interns
+          Showing {{ filteredInterns.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0 }}–{{ Math.min(currentPage * itemsPerPage, filteredInterns.length) }} of {{ filteredInterns.length }} interns
         </p>
-        <div class="pagination-controls">
-          <button class="page-btn">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
+        <div class="pagination-controls" v-if="totalPages > 1">
+          <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
-          <button class="page-btn active">1</button>
-          <button class="page-btn">2</button>
-          <button class="page-btn">3</button>
-          <span class="page-dots">...</span>
-          <button class="page-btn">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
+          <button
+            v-for="p in totalPages"
+            :key="p"
+            class="page-btn"
+            :class="{ active: currentPage === p }"
+            @click="currentPage = p"
+          >{{ p }}</button>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
         </div>
       </div>

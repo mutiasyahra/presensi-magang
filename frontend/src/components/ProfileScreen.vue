@@ -15,12 +15,14 @@ const user = ref({
   name: "User",
   email: "",
   id: "",
+  internId: "",
+  project: "",
   profile_photo: null,
 });
 
 const getImageUrl = (path) => {
   if (!path) return null;
-  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  if (path.startsWith("data:") || path.startsWith("http")) return path;
   const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
   return `${baseUrl}/storage/${path}`;
 };
@@ -41,12 +43,49 @@ const handleLogout = async () => {
   }
 };
 
+const officeLocation = ref({
+  name: "Loading...",
+  address: "Loading...",
+});
+
+const fetchSystemSettings = async () => {
+  try {
+    const res = await api.get("/settings/system");
+    if (res.data?.data) {
+      officeLocation.value.name = res.data.data.officeName;
+      officeLocation.value.address = res.data.data.officeAddress;
+    }
+  } catch (err) {
+    console.error("Gagal mengambil pengaturan sistem:", err);
+  }
+};
+
+const fetchUserProfile = async () => {
+  try {
+    const res = await api.get("/settings/me");
+    if (res.data?.data) {
+      // Update user state with full data
+      user.value = {
+        ...user.value,
+        ...res.data.data,
+        name: res.data.data.fullName, // Map fullName to name for consistency
+      };
+      // Optionally update localStorage so it's fresh next time
+      localStorage.setItem("user", JSON.stringify(user.value));
+    }
+  } catch (err) {
+    console.error("Gagal mengambil profil user:", err);
+  }
+};
+
 onMounted(() => {
   // Load user data from localStorage
   const storedUser = localStorage.getItem("user");
   if (storedUser) {
     user.value = JSON.parse(storedUser);
   }
+  fetchUserProfile();
+  fetchSystemSettings();
 });
 </script>
 
@@ -71,7 +110,11 @@ onMounted(() => {
     <div class="content">
       <div class="profile-card">
         <div class="avatar-container">
-          <img v-if="user.profile_photo" :src="getImageUrl(user.profile_photo)" class="avatar-img" />
+          <img
+            v-if="user.profile_photo"
+            :src="getImageUrl(user.profile_photo)"
+            class="avatar-img"
+          />
           <div v-else class="avatar-circle-profile">{{ userInitial }}</div>
 
           <div class="edit-icon" @click="$emit('navigate', 'edit-profile')">
@@ -83,18 +126,18 @@ onMounted(() => {
         <p class="user-id">{{ user.email }}</p>
 
         <div class="badges">
-          <span class="badge blue">UI/UX Intern</span>
-          <span class="badge gray">Cohort X Echo 1</span>
+          <span class="badge blue">{{ user.internId || "No ID" }}</span>
+          <span class="badge gray">{{ user.project || "No Project" }}</span>
         </div>
 
         <div class="company-info">
           <div class="info-block">
-            <span class="info-label">COMPANY</span>
-            <span class="info-value">Astra International</span>
+            <span class="info-label">OFFICE</span>
+            <span class="info-name-small">{{ officeLocation.name }}</span>
           </div>
           <div class="info-block">
             <span class="info-label">LOCATION</span>
-            <span class="info-value">Jakarta, ID</span>
+            <span class="info-address-small">{{ officeLocation.address }}</span>
           </div>
         </div>
       </div>
@@ -178,9 +221,9 @@ onMounted(() => {
 
 /* 2. BACKGROUND BIRU HEADER */
 .blue-header {
-  background: #2563eb; 
+  background: #2563eb;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  
+
   height: 100px; /* Samakan dengan Privacy Policy agar proporsional */
   border-bottom-left-radius: 40px;
   border-bottom-right-radius: 40px;
@@ -218,7 +261,8 @@ onMounted(() => {
   font-size: 20px;
   font-weight: 700;
   color: #ffffff !important;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
 .header-titles p {
   margin: 4px 0 0 0;
@@ -290,24 +334,33 @@ onMounted(() => {
 /* POSISI ICON PENSIL DI POJOK KANAN BAWAH */
 .edit-icon {
   position: absolute;
-  bottom: -6px;
-  right: -6px;
-  width: 32px;
-  height: 32px;
+  bottom: -10px;
+  right: -10px;
+  width: 28px;
+  height: 28px;
   background-color: #3b82f6;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 3px solid var(--bg-card);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+}
+
+.edit-icon:hover,
+.edit-icon:active {
+  background-color: #2563eb;
+  transform: scale(1.1);
 }
 
 .edit-icon img {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   filter: brightness(0) invert(1);
+  transition: transform 0.2s;
 }
 
 .username {
@@ -348,31 +401,42 @@ onMounted(() => {
   color: var(--text-muted);
 }
 
+/* 4b. REVERTED SIDE-BY-SIDE INFO */
 .company-info {
-  display: flex;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr; /* Beri sedikit ruang lebih untuk alamat */
+  gap: 16px;
   border-top: 1px solid var(--border-color);
   padding-top: 20px;
+  text-align: left;
 }
 
 .info-block {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .info-label {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 800;
   color: #94a3b8;
   letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
-.info-value {
+.info-name-small {
   font-size: 13px;
   font-weight: 700;
   color: var(--text-main);
+  line-height: 1.3;
+}
+
+.info-address-small {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 /* 5. LIST MENU SETTING */

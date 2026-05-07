@@ -67,6 +67,29 @@ class LeaveController extends Controller
             'status' => $request->status
         ]);
 
+        if ($request->status === 'approved') {
+            $startDate = \Carbon\Carbon::parse($leave->start_date);
+            $endDate = \Carbon\Carbon::parse($leave->end_date);
+            
+            while ($startDate->lte($endDate)) {
+                if (!$startDate->isWeekend()) {
+                    \App\Models\Attendance::updateOrCreate(
+                        [
+                            'user_id' => $leave->user_id,
+                            'attendance_date' => $startDate->toDateString()
+                        ],
+                        [
+                            'status' => $leave->type,
+                            'is_verified' => true,
+                            'rencana_kegiatan' => 'Cuti: ' . $leave->reason,
+                            'progress_kegiatan' => 'Cuti: ' . $leave->reason,
+                        ]
+                    );
+                }
+                $startDate->addDay();
+            }
+        }
+
         // Kirim notifikasi ke user yang mengajukan
         $leave->user->notify(new LeaveApprovedNotification($leave));
 

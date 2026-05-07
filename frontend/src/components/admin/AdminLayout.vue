@@ -18,6 +18,7 @@ const stats = ref({
   absent: 0,
   pending_leaves: 0,
   total_interns: 0,
+  project_distribution: [],
 });
 const attendanceList = ref([]);
 const leaveRequests = ref([]);

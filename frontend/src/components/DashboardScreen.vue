@@ -88,6 +88,34 @@ const presentCount = computed(() => calendarDays.value.filter(d => d.type === 'd
 const lateCount = computed(() => calendarDays.value.filter(d => d.type === 'date' && d.status === 'late').length);
 const absentCount = computed(() => calendarDays.value.filter(d => d.type === 'date' && d.status === 'absent').length);
 const leaveCount = computed(() => calendarDays.value.filter(d => d.type === 'date' && d.status === 'leave').length);
+ 
+ const officeLocation = ref({
+   name: "Tech Innovations Hub",
+   address: "Jakarta, Indonesia",
+   lat: -6.200000,
+   lng: 106.816666
+ });
+
+ const fetchSystemSettings = async () => {
+   try {
+     const res = await api.get("/settings/system");
+     if (res.data?.data) {
+       officeLocation.value.name = res.data.data.officeName;
+       officeLocation.value.address = res.data.data.officeAddress;
+       officeLocation.value.lat = parseFloat(res.data.data.officeLat);
+       officeLocation.value.lng = parseFloat(res.data.data.officeLng);
+     }
+   } catch (err) {
+     console.error("Gagal mengambil pengaturan sistem:", err);
+   }
+ };
+
+ const openGoogleMaps = () => {
+   const { lat, lng } = officeLocation.value;
+   if (lat && lng) {
+     window.open(`https://www.google.com/maps?q=${lat},${lng}`, "_blank");
+   }
+ };
 
 const fetchCalendarData = async () => {
   try {
@@ -231,6 +259,7 @@ onMounted(() => {
 
   fetchCalendarData();
   fetchHolidays(displayYear.value);
+  fetchSystemSettings();
 });
 onUnmounted(() => {
   clearInterval(timer);
@@ -266,13 +295,14 @@ onUnmounted(() => {
 
     <div class="scroll-area">
       <div class="content-wrapper">
-        <div class="location-card">
+        <div class="location-card" @click="openGoogleMaps">
           <div class="loc-icon-wrapper">
             <img src="../assets/location.png" alt="Loc" class="loc-img" />
           </div>
           <div class="loc-text">
             <p class="loc-label">OFFICE LOCATION</p>
-            <h3 class="loc-name">Tech Innovations Hub, Jakarta</h3>
+            <h3 class="loc-name">{{ officeLocation.name }}</h3>
+            <p class="loc-address">{{ officeLocation.address }}</p>
           </div>
           <div class="arrow-right">></div>
         </div>
@@ -601,18 +631,22 @@ onUnmounted(() => {
 .loc-label {
   margin: 0;
   font-size: 10px;
-  opacity: 0.8;
-  letter-spacing: 0.5px;
-  color: var(--text-muted) !important;
+  letter-spacing: 0.8px;
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-weight: 700;
 }
 .loc-name {
   margin: 2px 0 0;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.loc-address {
+  margin: 4px 0 0;
+  font-size: 11px;
+  opacity: 0.8;
+  line-height: 1.5;
+  font-weight: 500;
 }
 .arrow-right {
   font-size: 16px;
