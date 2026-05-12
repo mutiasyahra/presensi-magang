@@ -173,31 +173,26 @@ const submitLeave = async () => {
   transition: background-color 0.3s ease;
 }
 
-/* 2. AREA TENGAH YANG BISA DI-SCROLL */
-/* 2. AREA TENGAH YANG BISA DI-SCROLL */
 .content {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  padding-bottom: 100px; /* Ditambah agar tidak tertutup Navbar melayang */
+  padding-bottom: 100px;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* Untuk Chrome, Safari, dan Opera */
 .content::-webkit-scrollbar {
   display: none;
 }
 
-/* Styling Komponen Lainnya */
-.back-icon { width: 24px; height: 24px; cursor: pointer; filter: var(--icon-filter); filter: brightness(0) invert(1); }
+.back-icon { width: 24px; height: 24px; cursor: pointer; color: #2563eb; }
 .title { font-size: 18px; font-weight: 700; color: var(--text-main); margin: 0; }
 .spacer { width: 24px; }
 
 .info-alert {
   display: flex; 
   align-items: flex-start;
-  /* Gunakan rgba agar biru transparan, lebih nyaman di mode gelap */
   background-color: rgba(59, 130, 246, 0.1); 
   border: 1px solid rgba(59, 130, 246, 0.2);
   border-radius: 12px;

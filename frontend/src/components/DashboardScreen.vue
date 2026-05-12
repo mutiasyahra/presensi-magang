@@ -658,7 +658,6 @@ onUnmounted(() => {
   background-color: var(--bg-card) !important;
   border: 1px solid var(--border-color) !important;  color: var(--text-main) !important;
   box-shadow: 
-    0 10px 30px -5px rgba(0, 0, 0, 0.5),      /* Shadow bawah (dalam) */
     0 4px 12px -2px rgba(0, 0, 0, 0.4),      /* Shadow bawah (halus) */
     inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
   padding: 20px;
@@ -876,7 +875,6 @@ onUnmounted(() => {
   border-radius: 20px;
   text-align: center;
   box-shadow: 
-    0 10px 30px -5px rgba(0, 0, 0, 0.5),
     0 4px 12px -2px rgba(0, 0, 0, 0.4),
     inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
     
@@ -938,7 +936,6 @@ onUnmounted(() => {
   border-radius: 24px;
   padding: 20px;
   box-shadow: 
-    0 10px 30px -5px rgba(0, 0, 0, 0.5), 
     0 4px 12px -2px rgba(0, 0, 0, 0.4),
     inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
   transition: all 0.3s ease;
@@ -1218,125 +1215,24 @@ onUnmounted(() => {
   padding: 0 5px;
 }
 
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  color: #94A3B8;
-  font-size: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  height: 100%;
-  transition: all 0.2s;
-}
-.nav-item:active {
-  transform: scale(0.9);
-}
-.nav-item img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  opacity: 0.5;
-  filter: grayscale(100%);
-  transition: 0.3s;
-}
-.nav-item.active {
-  color: var(--accent-primary, #2563eb);
-}
-.nav-item.active img {
-  opacity: 1;
-  filter: grayscale(0%) brightness(1.2);
-  transform: translateY(-2px);
-}
-
-.nav-item img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%) hue-rotate(182deg) brightness(87%) contrast(85%);
-  transition: 0.3s;
-}
-
-.nav-item.active {
-  color: #2563EB;
-}
-
-.nav-item.active img {
-  filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%);
-}
+.nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #94A3B8; font-size: 10px; font-weight: 600; cursor: pointer; height: 100%; transition: all 0.2s; }
+.nav-item:active { transform: scale(0.9); }
+.nav-item img { width: 18px; height: 18px; object-fit: contain; opacity: 0.5; filter: grayscale(100%); transition: 0.3s; }
+.nav-item.active { color: var(--accent-primary, #2563eb); }
+.nav-item.active img { opacity: 1; filter: grayscale(0%) brightness(1.2); transform: translateY(-2px); }
+.nav-item img { width: 24px; height: 24px; object-fit: contain; filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%) hue-rotate(182deg) brightness(87%) contrast(85%); transition: 0.3s; }
+.nav-item.active { color: #2563EB; }
+.nav-item.active img { filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%); }
 
 /* --- TOMBOL QR (SQUIRCLE) --- */
-.nav-item-scan-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-}
-
-.scan-button {
-  width: 52px;
-  height: 52px;
-  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-  border-radius: 16px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
-  border: none;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.scan-button:active {
-  transform: scale(0.92);
-}
-
-.scan-button img {
-  width: 26px;
-  height: 26px;
-  filter: brightness(0) invert(1) !important;
-}
-
-.stat-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.icon-square {
-  width: 30px;
-  height: 30px;
-  border-radius: 12px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 6px;
-  overflow: hidden;
-}
-
-.leave-bg-clean {
-  background-color: rgba(168, 85, 247, 0.15) !important; 
-}
-
-.icon-svg-leave {
-  width: 22px;
-  height: 22px;
-  color: #a855f7 !important; 
-  stroke: #a855f7 !important; 
-}
-
-.stat-num {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.stat-label {
-  font-size: 10px;
-  color: #94a3b8;
-  font-weight: 500;
-}
+.nav-item-scan-wrapper { display: flex; justify-content: center; align-items: center; height: 100%; }
+.scan-button { width: 52px; height: 52px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); border-radius: 16px; display: flex; justify-content: center; align-items: center; box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35); border: none; cursor: pointer; transition: transform 0.2s; }
+.scan-button:active { transform: scale(0.92); }
+.scan-button img { width: 26px; height: 26px; filter: brightness(0) invert(1) !important; }
+.stat-card { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.icon-square { width: 30px; height: 30px; border-radius: 12px; display: flex; justify-content: center; align-items: center; margin-bottom: 6px; overflow: hidden; }
+.leave-bg-clean { background-color: rgba(168, 85, 247, 0.15) !important; }
+.icon-svg-leave { width: 22px; height: 22px; color: #a855f7 !important; stroke: #a855f7 !important; }
+.stat-num { font-size: 16px; font-weight: 700; color: #1e293b; }
+.stat-label { font-size: 10px; color: #94a3b8; font-weight: 500; }
 </style>
