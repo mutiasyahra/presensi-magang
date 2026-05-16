@@ -262,41 +262,44 @@ const averageDelay = computed(() => {
       <div class="live-monitor-content-row">
         <!-- Live Status Card (New) -->
         <div class="content-card live-status-blue">
-          <div class="card-header-flex">
-            <div class="live-title-group">
-              <h3 class="live-title">Live Status</h3>
-              <p class="live-subtitle">Current session monitoring</p>
-            </div>
-            <div class="live-icon-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12s2.545-5 7-5c4.454 0 7 5 7 5s-2.546 5-7 5c-4.455 0-7-5-7-5z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            </div>
-          </div>
+  <div class="live-card-bg"></div> 
+  
+  <div class="live-card-content"> <div class="card-header-flex">
+      <div class="live-title-group">
+        <h3 class="live-title">Live Status</h3>
+        <p class="live-subtitle">Current session monitoring</p>
+      </div>
+      <div class="live-icon-white">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12s2.545-5 7-5c4.454 0 7 5 7 5s-2.546 5-7 5c-4.455 0-7-5-7-5z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      </div>
+    </div>
 
-          <div class="live-time-wrap">
-            <h1 class="live-time">
-              {{ liveTime }}<span class="ampm">{{ liveAmPm }}</span>
-            </h1>
-            <div class="active-pulse-group">
-              <span class="active-dot dot-green dot-pulse"></span>
-              Active monitoring in progress
-            </div>
-          </div>
+    <div class="live-time-wrap">
+      <h1 class="live-time">
+        {{ liveTime }}<span class="ampm">{{ liveAmPm }}</span>
+      </h1>
+      <div class="active-pulse-group">
+        <span class="active-dot dot-green dot-pulse"></span>
+        Active monitoring in progress
+      </div>
+    </div>
 
-          <div class="live-stats-divider"></div>
+    <div class="live-stats-divider"></div>
 
-          <div class="live-stats-group">
-            <div class="live-stat-item">
-              <span class="live-stat-label">Recent Check-ins</span>
-              <p class="live-stat-value">{{ todayCheckins }}</p>
-            </div>
-            <div class="live-stat-item">
-              <span class="live-stat-label">Average Delay</span>
-              <p class="live-stat-value">{{ averageDelay }}</p>
-            </div>
-          </div>
+    <div class="live-stats-group">
+      <div class="live-stat-item">
+        <span class="live-stat-label">Recent Check-ins</span>
+        <p class="live-stat-value">{{ todayCheckins }}</p>
+      </div>
+      <div class="live-stat-item">
+        <span class="live-stat-label">Average Delay</span>
+        <p class="live-stat-value">{{ averageDelay }}</p>
+      </div>
+    </div>
 
-          <button class="view-logs-btn" @click="fetchAttendances">Refresh Live Data</button>
-        </div>
+    <button class="view-logs-btn" @click="fetchAttendances">Refresh Live Data</button>
+  </div>
+</div>
 
         <!-- Optional: Other info or just the Live Status taking more space -->
       </div>
@@ -649,18 +652,76 @@ const averageDelay = computed(() => {
   line-height: 1;
 }
 
-/* Live Status Card Styles */
 .live-monitor-content-row {
   margin-bottom: 24px;
 }
 
 .live-status-blue {
-  background: var(--accent-primary);
-  color: white;
-  border-radius: 20px;
-  padding: 30px;
+  background: #1d4ed8;
+  border-radius: 30px;
+  padding: 0;
   border: none;
-  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 40px -10px rgba(29, 78, 216, 0.5);
+}
+
+.live-card-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('../../assets/blue.png');
+  background-size: cover;
+  background-position: center;
+  mix-blend-mode: luminosity; 
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.live-card-content {
+  position: relative;
+  z-index: 2;
+  padding: 30px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.9) 0%, rgba(29, 78, 216, 0.4) 100%);
+}
+
+/* Jam Digital lebih "Pop" */
+.live-time {
+  font-size: 72px; /* Diperbesar sedikit */
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  letter-spacing: -3px;
+  line-height: 0.9;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.live-stats-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 25px 0;
+}
+
+.view-logs-btn {
+  width: 100%;
+  padding: 16px;
+  background-color: white;
+  color: #2563eb;
+  border: none;
+  border-radius: 18px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.view-logs-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+  background-color: #f8fafc;
 }
 
 .live-title-group {
