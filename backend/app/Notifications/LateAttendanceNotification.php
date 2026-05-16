@@ -19,29 +19,15 @@ class LateAttendanceNotification extends Notification
 
     public function via($notifiable)
     {
-        return ['mail'];
-    }
-
-    public function toMail($notifiable)
-    {
-        $mail = (new MailMessage)
-                    ->error()
-                    ->subject('Intern Attendance Alert: Late Arrival Detected')
-                    ->line('The following intern(s) are more than 15 minutes late today:');
-
-        foreach ($this->interns as $intern) {
-            $mail->line('- ' . $intern->name . ' (' . $intern->email . ')');
-        }
-
-        $mail->action('View Live Monitor', url('/admin?tab=live'))
-             ->line('Please check the dashboard for more details.');
-
-        return $mail;
+        return ['database'];
     }
 
     public function toArray($notifiable)
     {
+        $names = collect($this->interns)->pluck('name')->implode(', ');
         return [
+            'message' => count($this->interns) . ' pemagang terlambat lebih dari 15 menit hari ini: ' . $names,
+            'type' => 'late_intern',
             'intern_count' => count($this->interns),
         ];
     }

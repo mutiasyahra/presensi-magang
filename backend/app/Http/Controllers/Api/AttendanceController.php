@@ -49,6 +49,16 @@ class AttendanceController extends Controller
         $currentTime = now()->format('H:i');
         
         $clockInStatus = ($currentTime > $startTime) ? 'terlambat' : 'tepat waktu';
+        
+        // Notification threshold: 15 minutes late
+        $isLateAlertThreshold = false;
+        if ($clockInStatus === 'terlambat') {
+            $threshold = \Carbon\Carbon::createFromFormat('H:i', $startTime)->addMinutes(15)->format('H:i');
+            if ($currentTime >= $threshold) {
+                $isLateAlertThreshold = true;
+            }
+        }
+
         // Keep overall status for summary logic
         $status = ($clockInStatus === 'terlambat') ? 'terlambat' : 'hadir';
 
@@ -71,7 +81,7 @@ class AttendanceController extends Controller
             ]
         );
 
-        if ($clockInStatus === 'terlambat') {
+        if ($isLateAlertThreshold) {
             $admins = \App\Models\User::where('role', 'admin')->where('notify_late_alerts', true)->get();
             foreach ($admins as $admin) {
                 $admin->notify(new \App\Notifications\LateInternNotification($attendanceRecord, $request->user()->name));

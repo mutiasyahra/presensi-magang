@@ -10,18 +10,25 @@ const user = ref({
 });
 
 const notifications = ref([]);
-const unreadNotifications = computed(() => notifications.value.filter(n => !n.read_at));
+const unreadNotifications = computed(() =>
+  notifications.value.filter((n) => !n.read_at),
+);
 const showNotifDropdown = ref(false);
 
 const isLoggedIn = computed(() => {
   return !!localStorage.getItem("token");
 });
 
-const emit = defineEmits(["open-clock-in", "navigate", "logout", "open-detail"]);
+const emit = defineEmits([
+  "open-clock-in",
+  "navigate",
+  "logout",
+  "open-detail",
+]);
 
 const getImageUrl = (path) => {
   if (!path) return null;
-  if (path.startsWith('data:') || path.startsWith('http')) return path;
+  if (path.startsWith("data:") || path.startsWith("http")) return path;
   const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
   return `${baseUrl}/storage/${path}`;
 };
@@ -56,15 +63,31 @@ const userInitial = computed(() => {
 const greetingData = computed(() => {
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 11) {
-    return { text: "Selamat Pagi", icon: "morning", sub: "Semangat produktif hari ini!" };
+    return {
+      text: "Selamat Pagi",
+      icon: "morning",
+      sub: "Semangat produktif hari ini!",
+    };
   }
   if (hour >= 11 && hour < 15) {
-    return { text: "Selamat Siang", icon: "noon", sub: "Jangan lupa istirahat & makan!" };
+    return {
+      text: "Selamat Siang",
+      icon: "noon",
+      sub: "Jangan lupa istirahat & makan!",
+    };
   }
   if (hour >= 15 && hour < 19) {
-    return { text: "Selamat Sore", icon: "afternoon", sub: "Selesaikan tugasmu pelan-pelan." };
+    return {
+      text: "Selamat Sore",
+      icon: "afternoon",
+      sub: "Selesaikan tugasmu pelan-pelan.",
+    };
   }
-  return { text: "Selamat Malam", icon: "night", sub: "Waktunya istirahat yang cukup." };
+  return {
+    text: "Selamat Malam",
+    icon: "night",
+    sub: "Waktunya istirahat yang cukup.",
+  };
 });
 
 // --- LOGIC KALENDER ---
@@ -92,63 +115,85 @@ const attendances = ref([]);
 const holidays = ref([]);
 const leaves = ref([]);
 
-const presentCount = computed(() => calendarDays.value.filter(d => d.type === 'date' && d.status === 'present').length);
-const lateCount = computed(() => calendarDays.value.filter(d => d.type === 'date' && d.status === 'late').length);
-const absentCount = computed(() => calendarDays.value.filter(d => d.type === 'date' && d.status === 'absent').length);
-const leaveCount = computed(() => calendarDays.value.filter(d => d.type === 'date' && d.status === 'leave').length);
- 
- const officeLocation = ref({
-   name: "Tech Innovations Hub",
-   address: "Jakarta, Indonesia",
-   lat: -6.200000,
-   lng: 106.816666
- });
+const presentCount = computed(
+  () =>
+    calendarDays.value.filter(
+      (d) => d.type === "date" && d.status === "present",
+    ).length,
+);
+const lateCount = computed(
+  () =>
+    calendarDays.value.filter((d) => d.type === "date" && d.status === "late")
+      .length,
+);
+const absentCount = computed(
+  () =>
+    calendarDays.value.filter((d) => d.type === "date" && d.status === "absent")
+      .length,
+);
+const leaveCount = computed(
+  () =>
+    calendarDays.value.filter((d) => d.type === "date" && d.status === "leave")
+      .length,
+);
 
- const workHours = ref({
-    start: "08:00",
-    end: "17:00"
-  });
+const officeLocation = ref({
+  name: "Tech Innovations Hub",
+  address: "Jakarta, Indonesia",
+  lat: -6.2,
+  lng: 106.816666,
+});
 
-  const stats = ref({
-    attendance_rate: 0,
-    present: 0,
-    absent: 0
-  });
+const workHours = ref({
+  start: "08:00",
+  end: "17:00",
+});
 
-  const fetchStats = async () => {
-    try {
-      const res = await api.get("/stats");
-      if (res.data) {
-        stats.value = res.data;
-      }
-    } catch (err) {
-      console.error("Gagal mengambil data statistik:", err);
+const stats = ref({
+  attendance_rate: 0,
+  present: 0,
+  absent: 0,
+});
+
+const fetchStats = async () => {
+  try {
+    const res = await api.get("/stats");
+    if (res.data) {
+      stats.value = res.data;
     }
-  };
+  } catch (err) {
+    console.error("Gagal mengambil data statistik:", err);
+  }
+};
 
-  const fetchSystemSettings = async () => {
-    try {
-      const res = await api.get("/settings/system");
-      if (res.data?.data) {
-        officeLocation.value.name = res.data.data.officeName || officeLocation.value.name;
-        officeLocation.value.address = res.data.data.officeAddress || officeLocation.value.address;
-        officeLocation.value.lat = parseFloat(res.data.data.officeLat) || officeLocation.value.lat;
-        officeLocation.value.lng = parseFloat(res.data.data.officeLng) || officeLocation.value.lng;
-        
-        if (res.data.data.startTime) workHours.value.start = res.data.data.startTime;
-        if (res.data.data.endTime) workHours.value.end = res.data.data.endTime;
-      }
-    } catch (err) {
-      console.error("Gagal mengambil pengaturan sistem:", err);
+const fetchSystemSettings = async () => {
+  try {
+    const res = await api.get("/settings/system");
+    if (res.data?.data) {
+      officeLocation.value.name =
+        res.data.data.officeName || officeLocation.value.name;
+      officeLocation.value.address =
+        res.data.data.officeAddress || officeLocation.value.address;
+      officeLocation.value.lat =
+        parseFloat(res.data.data.officeLat) || officeLocation.value.lat;
+      officeLocation.value.lng =
+        parseFloat(res.data.data.officeLng) || officeLocation.value.lng;
+
+      if (res.data.data.startTime)
+        workHours.value.start = res.data.data.startTime;
+      if (res.data.data.endTime) workHours.value.end = res.data.data.endTime;
     }
-  };
+  } catch (err) {
+    console.error("Gagal mengambil pengaturan sistem:", err);
+  }
+};
 
- const openGoogleMaps = () => {
-   const { lat, lng } = officeLocation.value;
-   if (lat && lng) {
-     window.open(`https://www.google.com/maps?q=${lat},${lng}`, "_blank");
-   }
- };
+const openGoogleMaps = () => {
+  const { lat, lng } = officeLocation.value;
+  if (lat && lng) {
+    window.open(`https://www.google.com/maps?q=${lat},${lng}`, "_blank");
+  }
+};
 
 const fetchCalendarData = async () => {
   try {
@@ -217,39 +262,42 @@ const handleNotifClick = async (notif) => {
   showNotifDropdown.value = false;
 
   let targetDate = null;
-  if (notif.data.type === 'review_note') {
+  if (notif.data.type === "review_note") {
     targetDate = notif.data.attendance_date;
-  } else if (notif.data.type === 'leave_approval') {
+  } else if (notif.data.type === "leave_approval") {
     targetDate = notif.data.start_date;
   }
 
   if (targetDate) {
     try {
-      const res = await api.get('/attendance-by-date', { 
-        params: { date: targetDate } 
+      const res = await api.get("/attendance-by-date", {
+        params: { date: targetDate },
       });
-      
+
       const record = res.data.data;
-      
-      let finalStatus = 'absent';
+
+      let finalStatus = "absent";
       if (record) {
         finalStatus = record.status;
-      } else if (notif.data.type === 'leave_approval') {
-        finalStatus = notif.data.leave_type || 'leave';
+      } else if (notif.data.type === "leave_approval") {
+        finalStatus = notif.data.leave_type || "leave";
       }
 
       const d = new Date(targetDate);
-      const matchingLeave = leaves.value.find(l => targetDate >= l.start_date && targetDate <= l.end_date) || null;
+      const matchingLeave =
+        leaves.value.find(
+          (l) => targetDate >= l.start_date && targetDate <= l.end_date,
+        ) || null;
       const item = {
         date: d.getDate(),
         fullDate: targetDate,
         type: "date",
         status: finalStatus,
         attendanceRecord: record,
-        leaveRecord: matchingLeave
+        leaveRecord: matchingLeave,
       };
-      
-      emit('open-detail', item);
+
+      emit("open-detail", item);
     } catch (err) {
       console.error("Gagal memuat detail dari notifikasi:", err);
     }
@@ -305,8 +353,8 @@ const calendarDays = computed(() => {
     let status = null;
 
     // Check if on leave first
-    const leaveRecord = leaves.value.find(l => {
-      if (l.status !== 'approved') return false;
+    const leaveRecord = leaves.value.find((l) => {
+      if (l.status !== "approved") return false;
       return dateStr >= l.start_date && dateStr <= l.end_date;
     });
 
@@ -319,13 +367,27 @@ const calendarDays = computed(() => {
       );
 
       if (attendanceRecord) {
-        if (attendanceRecord.status === "hadir" || attendanceRecord.clock_in || attendanceRecord.status === "present") {
+        if (
+          attendanceRecord.status === "hadir" ||
+          attendanceRecord.clock_in ||
+          attendanceRecord.status === "present"
+        ) {
           status = "present";
-        } else if (attendanceRecord.status === "terlambat" || attendanceRecord.status === "late") {
+        } else if (
+          attendanceRecord.status === "terlambat" ||
+          attendanceRecord.status === "late"
+        ) {
           status = "late";
-        } else if (attendanceRecord.status === "izin" || attendanceRecord.status === "leave" || attendanceRecord.status === "sakit") {
+        } else if (
+          attendanceRecord.status === "izin" ||
+          attendanceRecord.status === "leave" ||
+          attendanceRecord.status === "sakit"
+        ) {
           status = "leave";
-        } else if (attendanceRecord.status === "alpha" || attendanceRecord.status === "absent") {
+        } else if (
+          attendanceRecord.status === "alpha" ||
+          attendanceRecord.status === "absent"
+        ) {
           status = "absent";
         }
       }
@@ -345,8 +407,12 @@ const calendarDays = computed(() => {
       isToday: isToday,
       status: status,
       isHoliday: isHoliday,
-      attendanceRecord: attendances.value.find(a => a.attendance_date === dateStr) || null,
-      leaveRecord: leaves.value.find(l => dateStr >= l.start_date && dateStr <= l.end_date) || null,
+      attendanceRecord:
+        attendances.value.find((a) => a.attendance_date === dateStr) || null,
+      leaveRecord:
+        leaves.value.find(
+          (l) => dateStr >= l.start_date && dateStr <= l.end_date,
+        ) || null,
     });
   }
   return days;
@@ -398,22 +464,29 @@ onUnmounted(() => {
       <div class="top-bar">
         <div class="profile-group" @click="$emit('navigate', 'profile')">
           <div class="avatar-wrapper">
-             <img v-if="user.profile_photo" :src="getImageUrl(user.profile_photo)" class="avatar-img" />
-             <div v-else class="avatar">{{ userInitial }}</div>
-             <div v-if="isLoggedIn" class="active-status"></div>
+            <img
+              v-if="user.profile_photo"
+              :src="getImageUrl(user.profile_photo)"
+              class="avatar-img"
+            />
+            <div v-else class="avatar">{{ userInitial }}</div>
+            <div v-if="isLoggedIn" class="active-status"></div>
           </div>
-<div class="text-info">
-  <div class="greeting-wrapper">
-    <p class="welcome">{{ greetingData.text }}</p>
-    <div class="weather-icon-mini" :class="greetingData.icon"></div>
-  </div>
-  <h2 class="username">{{ user.name }}</h2>
-</div>
+          <div class="text-info">
+            <div class="greeting-wrapper">
+              <p class="welcome">{{ greetingData.text }}</p>
+              <div class="weather-icon-mini" :class="greetingData.icon"></div>
+            </div>
+            <h2 class="username">{{ user.name }}</h2>
+          </div>
         </div>
         <button class="btn-notif" @click="toggleNotifDropdown">
           <div class="notif-wrapper">
             <img src="../assets/notif.png" alt="Notif" />
-            <div class="notif-badge-pulse" v-if="unreadNotifications.length > 0"></div>
+            <div
+              class="notif-badge-pulse"
+              v-if="unreadNotifications.length > 0"
+            ></div>
           </div>
         </button>
 
@@ -421,17 +494,19 @@ onUnmounted(() => {
         <div v-if="showNotifDropdown" class="notif-dropdown">
           <div class="notif-header">
             <h4>Notifications</h4>
-            <button @click="showNotifDropdown = false" class="close-notif">✕</button>
+            <button @click="showNotifDropdown = false" class="close-notif">
+              ✕
+            </button>
           </div>
           <div class="notif-list">
             <div v-if="notifications.length === 0" class="notif-empty">
               No notifications yet
             </div>
-            <div 
-              v-for="notif in notifications" 
-              :key="notif.id" 
+            <div
+              v-for="notif in notifications"
+              :key="notif.id"
               class="notif-item"
-              :class="{ 'unread': !notif.read_at }"
+              :class="{ unread: !notif.read_at }"
               @click="handleNotifClick(notif)"
             >
               <div class="notif-icon-box">
@@ -440,12 +515,32 @@ onUnmounted(() => {
               </div>
               <div class="notif-text">
                 <p class="notif-msg">{{ notif.data.message }}</p>
-                <span class="notif-time">{{ formatNotifDate(notif.created_at) }}</span>
+                <span class="notif-time">{{
+                  formatNotifDate(notif.created_at)
+                }}</span>
               </div>
               <div class="notif-actions-item">
                 <div v-if="!notif.read_at" class="unread-dot-static"></div>
-                <button class="btn-delete-notif" @click.stop="deleteNotif(notif.id)">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                <button
+                  class="btn-delete-notif"
+                  @click.stop="deleteNotif(notif.id)"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path
+                      d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                    ></path>
+                  </svg>
                 </button>
               </div>
             </div>
@@ -472,19 +567,34 @@ onUnmounted(() => {
           <div class="rate-info">
             <p class="rate-label">ATTENDANCE RATE</p>
             <h1 class="rate-num">{{ stats.attendance_rate }}%</h1>
-            <p class="rate-desc" v-if="stats.attendance_rate >= 90">Excellent attendance record! 🌟</p>
-            <p class="rate-desc" v-else-if="stats.attendance_rate >= 75">Good job, keep it up! 👍</p>
+            <p class="rate-desc" v-if="stats.attendance_rate >= 90">
+              Excellent attendance record! 🌟
+            </p>
+            <p class="rate-desc" v-else-if="stats.attendance_rate >= 75">
+              Good job, keep it up! 👍
+            </p>
             <p class="rate-desc" v-else>Keep improving your presence. 💪</p>
           </div>
-          <div class="rate-circle" :class="{'circle-warning': stats.attendance_rate < 75}">
-            <span>{{ stats.attendance_rate >= 90 ? 'EXCELLENT' : (stats.attendance_rate >= 75 ? 'GOOD' : 'FAIR') }}</span>
+          <div
+            class="rate-circle"
+            :class="{ 'circle-warning': stats.attendance_rate < 75 }"
+          >
+            <span>{{
+              stats.attendance_rate >= 90
+                ? "EXCELLENT"
+                : stats.attendance_rate >= 75
+                  ? "GOOD"
+                  : "FAIR"
+            }}</span>
           </div>
         </div>
 
         <div class="time-card">
           <div class="date-row">
             <span class="date-text">{{ currentDateStr }}</span>
-            <span class="work-hours">{{ workHours.start }} - {{ workHours.end }}</span>
+            <span class="work-hours"
+              >{{ workHours.start }} - {{ workHours.end }}</span
+            >
           </div>
 
           <p class="working-label">Current Working Time</p>
@@ -516,53 +626,101 @@ onUnmounted(() => {
         </div>
 
         <div class="stats-grid">
-  <div class="stat-card">
-    <div class="icon-square present-bg">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-      </svg>
-    </div>
-    <span class="stat-num">{{ presentCount < 10 && presentCount > 0 ? '0' + presentCount : presentCount }}</span>
-    <span class="stat-label">Present</span>
-  </div>
+          <div class="stat-card">
+            <div class="icon-square present-bg">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="icon-svg"
+              >
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <span class="stat-num">{{
+              presentCount < 10 && presentCount > 0
+                ? "0" + presentCount
+                : presentCount
+            }}</span>
+            <span class="stat-label">Present</span>
+          </div>
 
-  <div class="stat-card">
-    <div class="icon-square late-bg">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg">
-        <circle cx="12" cy="12" r="10"></circle>
-        <polyline points="12 6 12 12 16 14"></polyline>
-      </svg>
-    </div>
-    <span class="stat-num">{{ lateCount < 10 && lateCount > 0 ? '0' + lateCount : lateCount }}</span>
-    <span class="stat-label">Late</span>
-  </div>
+          <div class="stat-card">
+            <div class="icon-square late-bg">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="icon-svg"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <span class="stat-num">{{
+              lateCount < 10 && lateCount > 0 ? "0" + lateCount : lateCount
+            }}</span>
+            <span class="stat-label">Late</span>
+          </div>
 
-  <div class="stat-card">
-    <div class="icon-square absent-bg">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="15" y1="9" x2="9" y2="15"></line>
-        <line x1="9" y1="9" x2="15" y2="15"></line>
-      </svg>
-    </div>
-    <span class="stat-num">{{ absentCount < 10 && absentCount > 0 ? '0' + absentCount : absentCount }}</span>
-    <span class="stat-label">Absent</span>
-  </div>
+          <div class="stat-card">
+            <div class="icon-square absent-bg">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="icon-svg"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+            </div>
+            <span class="stat-num">{{
+              absentCount < 10 && absentCount > 0
+                ? "0" + absentCount
+                : absentCount
+            }}</span>
+            <span class="stat-label">Absent</span>
+          </div>
 
-  <div class="stat-card">
-    <div class="icon-square leave-bg">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg">
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-        <line x1="16" y1="2" x2="16" y2="6"></line>
-        <line x1="8" y1="2" x2="8" y2="6"></line>
-        <line x1="3" y1="10" x2="21" y2="10"></line>
-      </svg>
-    </div>
-    <span class="stat-num">{{ leaveCount < 10 && leaveCount > 0 ? '0' + leaveCount : leaveCount }}</span>
-    <span class="stat-label">Leave</span>
-  </div>
-</div>
+          <div class="stat-card">
+            <div class="icon-square leave-bg">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="icon-svg"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+            <span class="stat-num">{{
+              leaveCount < 10 && leaveCount > 0 ? "0" + leaveCount : leaveCount
+            }}</span>
+            <span class="stat-label">Leave</span>
+          </div>
+        </div>
 
         <div class="calendar-card">
           <div class="cal-header">
@@ -688,8 +846,14 @@ onUnmounted(() => {
 }
 
 @keyframes dropdownIn {
-  from { opacity: 0; transform: translateY(-10px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .notif-header {
@@ -756,7 +920,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   flex-shrink: 0;
 }
 
@@ -833,7 +997,7 @@ onUnmounted(() => {
     width: 28px; /* Sedikit lebih besar agar mudah ditekan jari */
     height: 28px;
   }
-  
+
   .notif-item {
     padding: 15px 20px; /* Area sentuh lebih luas */
   }
@@ -870,25 +1034,32 @@ onUnmounted(() => {
 }
 
 /* Style Matahari Pagi/Siang */
-.weather-icon-mini.morning, .weather-icon-mini.noon {
+.weather-icon-mini.morning,
+.weather-icon-mini.noon {
   background: #fbbf24;
-  box-shadow: 0 0 10px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.4);
+  box-shadow:
+    0 0 10px #fbbf24,
+    0 0 20px rgba(251, 191, 36, 0.4);
 }
 
 /* Style Matahari Sore (Oranye) */
 .weather-icon-mini.afternoon {
   background: #f97316;
-  box-shadow: 0 0 10px #f97316, 0 0 20px rgba(249, 115, 22, 0.4);
+  box-shadow:
+    0 0 10px #f97316,
+    0 0 20px rgba(249, 115, 22, 0.4);
 }
 
 /* Style Bulan Malam */
 .weather-icon-mini.night {
   background: #f1f5f9;
-  box-shadow: 0 0 10px #f1f5f9, 0 0 20px rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 0 10px #f1f5f9,
+    0 0 20px rgba(255, 255, 255, 0.3);
 }
 /* Efek sabit untuk bulan malam */
 .weather-icon-mini.night::after {
-  content: '';
+  content: "";
   position: absolute;
   top: -2px;
   right: -2px;
@@ -900,20 +1071,24 @@ onUnmounted(() => {
 
 /* --- DIGITAL CLOCK REFINEMENT --- */
 .digital-clock {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 56px;
   font-weight: 700;
   letter-spacing: -2px;
   line-height: 1;
   margin: 0;
-  
+
   /* Gradasi warna yang estetik */
-  background: linear-gradient(to bottom, var(--text-main) 0%, var(--text-muted) 100%);
+  background: linear-gradient(
+    to bottom,
+    var(--text-main) 0%,
+    var(--text-muted) 100%
+  );
   -webkit-background-clip: text; /* Untuk Chrome, Safari, dan Edge */
-  background-clip: text;         /* Properti standar untuk masa depan dan Firefox */
+  background-clip: text; /* Properti standar untuk masa depan dan Firefox */
   -webkit-text-fill-color: transparent;
-  font-variant-numeric: tabular-nums; 
-  filter: drop-shadow(0 4px 4px rgba(0,0,0,0.05));
+  font-variant-numeric: tabular-nums;
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.05));
   transition: all 0.3s ease;
 }
 
@@ -988,10 +1163,11 @@ onUnmounted(() => {
 /* Stats Simple */
 .stats-simple-card {
   background-color: var(--bg-card) !important;
-  border: 1px solid var(--border-color) !important;  color: var(--text-main) !important;
-  box-shadow: 
-    0 4px 12px -2px rgba(0, 0, 0, 0.4),      /* Shadow bawah (halus) */
-    inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-main) !important;
+  box-shadow:
+    0 4px 12px -2px rgba(0, 0, 0, 0.4),
+    /* Shadow bawah (halus) */ inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
   padding: 20px;
   border-radius: 24px;
   display: flex;
@@ -1009,8 +1185,8 @@ onUnmounted(() => {
 }
 .stats-simple-card:hover {
   transform: translateY(-2px);
-  box-shadow: 
-    0 20px 40px -10px rgba(0, 0, 0, 0.6), 
+  box-shadow:
+    0 20px 40px -10px rgba(0, 0, 0, 0.6),
     inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
 }
 .rate-info {
@@ -1053,7 +1229,7 @@ onUnmounted(() => {
   color: var(--text-main) !important;
   /* Perubahan di bawah ini */
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 30px; 
+  border-radius: 30px;
   padding: 24px;
   text-align: center;
   box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15); /* Shadow lebih dalam */
@@ -1065,8 +1241,8 @@ onUnmounted(() => {
 
 .time-card:hover {
   transform: translateY(-2px); /* Melayang sedikit saat dihover */
-  box-shadow: 
-    0 20px 40px -10px rgba(0, 0, 0, 0.6), 
+  box-shadow:
+    0 20px 40px -10px rgba(0, 0, 0, 0.6),
     inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
 }
 
@@ -1161,12 +1337,13 @@ onUnmounted(() => {
 .action-btn.clock-out {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color) !important;
-  color: var(--text-muted) !important;  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  color: var(--text-muted) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 .action-btn.clock-out:hover {
   border-color: #3b82f6 !important;
   color: #3b82f6 !important;
-  background-color: rgba(59, 130, 246, 0.1) !important; 
+  background-color: rgba(59, 130, 246, 0.1) !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 .action-btn.clock-out:hover span {
@@ -1206,11 +1383,12 @@ onUnmounted(() => {
   padding: 14px 6px;
   border-radius: 20px;
   text-align: center;
-  box-shadow: 
+  box-shadow:
     0 4px 12px -2px rgba(0, 0, 0, 0.4),
     inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
-    
-  transition: all 0.3s ease;  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   cursor: pointer;
 }
 .stat-card:active {
@@ -1239,10 +1417,22 @@ onUnmounted(() => {
 }
 
 /* Warna Spesifik Tiap Status (Background & Stroke) */
-.present-bg { background-color: rgba(34, 197, 94, 0.15); color: #22c55e; }
-.late-bg    { background-color: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-.absent-bg  { background-color: rgba(239, 68, 68, 0.15);  color: #ef4444; }
-.leave-bg   { background-color: rgba(168, 85, 247, 0.15); color: #a855f7; }
+.present-bg {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+.late-bg {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+.absent-bg {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+.leave-bg {
+  background-color: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
 
 /* Pastikan SVG memakai warna dari parent-nya */
 .icon-svg {
@@ -1267,7 +1457,7 @@ onUnmounted(() => {
   color: var(--text-main) !important;
   border-radius: 24px;
   padding: 20px;
-  box-shadow: 
+  box-shadow:
     0 4px 12px -2px rgba(0, 0, 0, 0.4),
     inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
   transition: all 0.3s ease;
@@ -1276,8 +1466,8 @@ onUnmounted(() => {
 }
 .calendar-card:hover {
   transform: translateY(-2px); /* Melayang sedikit saat dihover */
-  box-shadow: 
-    0 20px 40px -10px rgba(0, 0, 0, 0.6), 
+  box-shadow:
+    0 20px 40px -10px rgba(0, 0, 0, 0.6),
     inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
 }
 .cal-header {
@@ -1285,7 +1475,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
-  padding-right: 15px
+  padding-right: 15px;
 }
 .cal-header h3 {
   margin: 0;
@@ -1301,7 +1491,7 @@ onUnmounted(() => {
   color: #3b82f6;
 }
 .nav-btn {
-  background: var(--bg-card); 
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   width: 30px;
   height: 30px;
@@ -1410,7 +1600,7 @@ onUnmounted(() => {
 .header-section {
   position: sticky; /* Ubah dari absolute ke sticky */
   top: 0;
-  z-index: 100; 
+  z-index: 100;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
   padding: 20px 25px 25px 25px;
@@ -1449,7 +1639,8 @@ onUnmounted(() => {
   border-radius: 50%;
   padding: 2px;
 }
-.avatar, .avatar-img {
+.avatar,
+.avatar-img {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -1475,7 +1666,7 @@ onUnmounted(() => {
   border: 2.5px solid white;
   border-radius: 50%;
   z-index: 5;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 .text-info h2 {
   margin: 0;
@@ -1515,9 +1706,18 @@ onUnmounted(() => {
   animation: pulse-animation 2s infinite;
 }
 @keyframes pulse-animation {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
 }
 .btn-notif:hover {
   transform: translateY(-2px);
@@ -1539,34 +1739,125 @@ onUnmounted(() => {
   z-index: 100;
   background: var(--bg-card);
   border-top: 1px solid var(--border-color);
-  height: 75px; 
+  height: 75px;
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
   box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.06);
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  align-items: center; 
+  align-items: center;
   padding: 0 5px;
 }
 
-.nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #94A3B8; font-size: 10px; font-weight: 600; cursor: pointer; height: 100%; transition: all 0.2s; }
-.nav-item:active { transform: scale(0.9); }
-.nav-item img { width: 18px; height: 18px; object-fit: contain; opacity: 0.5; filter: grayscale(100%); transition: 0.3s; }
-.nav-item.active { color: var(--accent-primary, #2563eb); }
-.nav-item.active img { opacity: 1; filter: grayscale(0%) brightness(1.2); transform: translateY(-2px); }
-.nav-item img { width: 24px; height: 24px; object-fit: contain; filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%) hue-rotate(182deg) brightness(87%) contrast(85%); transition: 0.3s; }
-.nav-item.active { color: #2563EB; }
-.nav-item.active img { filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%) hue-rotate(213deg) brightness(96%) contrast(97%); }
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  height: 100%;
+  transition: all 0.2s;
+}
+.nav-item:active {
+  transform: scale(0.9);
+}
+.nav-item img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  opacity: 0.5;
+  filter: grayscale(100%);
+  transition: 0.3s;
+}
+.nav-item.active {
+  color: var(--accent-primary, #2563eb);
+}
+.nav-item.active img {
+  opacity: 1;
+  filter: grayscale(0%) brightness(1.2);
+  transform: translateY(-2px);
+}
+.nav-item img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(75%) sepia(11%) saturate(545%)
+    hue-rotate(182deg) brightness(87%) contrast(85%);
+  transition: 0.3s;
+}
+.nav-item.active {
+  color: #2563eb;
+}
+.nav-item.active img {
+  filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(3015%)
+    hue-rotate(213deg) brightness(96%) contrast(97%);
+}
 
 /* --- TOMBOL QR (SQUIRCLE) --- */
-.nav-item-scan-wrapper { display: flex; justify-content: center; align-items: center; height: 100%; }
-.scan-button { width: 52px; height: 52px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); border-radius: 16px; display: flex; justify-content: center; align-items: center; box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35); border: none; cursor: pointer; transition: transform 0.2s; }
-.scan-button:active { transform: scale(0.92); }
-.scan-button img { width: 26px; height: 26px; filter: brightness(0) invert(1) !important; }
-.stat-card { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.icon-square { width: 30px; height: 30px; border-radius: 12px; display: flex; justify-content: center; align-items: center; margin-bottom: 6px; overflow: hidden; }
-.leave-bg-clean { background-color: rgba(168, 85, 247, 0.15) !important; }
-.icon-svg-leave { width: 22px; height: 22px; color: #a855f7 !important; stroke: #a855f7 !important; }
-.stat-num { font-size: 16px; font-weight: 700; color: #1e293b; }
-.stat-label { font-size: 10px; color: #94a3b8; font-weight: 500; }
+.nav-item-scan-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+.scan-button {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.scan-button:active {
+  transform: scale(0.92);
+}
+.scan-button img {
+  width: 26px;
+  height: 26px;
+  filter: brightness(0) invert(1) !important;
+}
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.icon-square {
+  width: 30px;
+  height: 30px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+.leave-bg-clean {
+  background-color: rgba(168, 85, 247, 0.15) !important;
+}
+.icon-svg-leave {
+  width: 22px;
+  height: 22px;
+  color: #a855f7 !important;
+  stroke: #a855f7 !important;
+}
+.stat-num {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.stat-label {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+}
 </style>

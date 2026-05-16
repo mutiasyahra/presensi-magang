@@ -99,7 +99,7 @@
       <div class="toggle-row">
         <div class="toggle-info">
           <h3>Late Intern Alerts</h3>
-          <p>Send an immediate email notification when an intern is 15 minutes late.</p>
+          <p>Get an immediate dashboard notification when an intern is 15 minutes late.</p>
         </div>
         <label class="switch">
           <input type="checkbox" v-model="notifications.lateAlerts">

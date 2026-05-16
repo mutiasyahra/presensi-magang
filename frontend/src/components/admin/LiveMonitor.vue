@@ -5,6 +5,7 @@ import VerificationScreen from "./VerificationScreen.vue";
 
 const isVerifying = ref(false);
 const activeView = ref("clock-in");
+const systemStartTime = ref("09:00");
 
 const getImageUrl = (path) => {
   if (!path) return null;
@@ -61,8 +62,20 @@ const fetchAttendances = async () => {
   }
 };
 
+const fetchSettings = async () => {
+  try {
+    const res = await api.get("/settings/system");
+    if (res.data?.data?.startTime) {
+      systemStartTime.value = res.data.data.startTime;
+    }
+  } catch (e) {
+    console.error("Failed to fetch settings:", e);
+  }
+};
+
 onMounted(() => {
   fetchAttendances();
+  fetchSettings();
 });
 
 const openVerification = (record) => {
@@ -92,6 +105,7 @@ const stats = computed(() => {
   const late = attendanceCards.value.filter(c => c.clock_in_status === 'terlambat').length;
   const office = attendanceCards.value.filter(c => c.clock_in_lat).length;
   const remote = total - office;
+  const activeCount = attendanceCards.value.filter(c => c.clock_in && !['izin', 'sakit'].includes(c.status)).length;
   const pending = attendanceCards.value.filter(c => !c.is_verified).length;
 
   return {
@@ -99,7 +113,7 @@ const stats = computed(() => {
     late, latePct: Math.round((late / total) * 100) + '%',
     office, officePct: Math.round((office / total) * 100) + '%',
     remote, remotePct: Math.round((remote / total) * 100) + '%',
-    active: total,
+    active: activeCount,
     pending
   };
 });
@@ -136,7 +150,7 @@ onUnmounted(() => {
   clearInterval(liveTimer);
 });
 
-const todayCheckins = computed(() => attendanceCards.value.length);
+const todayCheckins = computed(() => attendanceCards.value.filter(c => c.clock_in && !['izin', 'sakit'].includes(c.status)).length);
 
 const averageDelay = computed(() => {
   const today = attendanceCards.value;
@@ -146,10 +160,12 @@ const averageDelay = computed(() => {
   let count = 0;
   
   today.forEach(r => {
-    if (r.clock_in) {
+    if (r.clock_in && !['izin', 'sakit'].includes(r.status)) {
       const clockIn = new Date(r.clock_in);
       const expected = new Date(r.clock_in);
-      expected.setHours(9, 0, 0, 0);
+      const [h, m] = systemStartTime.value.split(':');
+      expected.setHours(parseInt(h), parseInt(m), 0, 0);
+      
       const diff = Math.floor((clockIn - expected) / (1000 * 60));
       if (diff > 0) {
         totalDelay += diff;
@@ -168,6 +184,11 @@ const averageDelay = computed(() => {
       <div class="page-header">
         <h1 class="main-title">Daily Attendance Monitor</h1>
         <div class="header-actions">
+          <div class="status-indicators">
+            <span class="indicator green">
+              <span class="dot"></span> {{ stats.active }} Active
+            </span>
+          </div>
           <div class="search-box">
             <svg
               class="icon"
@@ -184,7 +205,7 @@ const averageDelay = computed(() => {
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" placeholder="Search intern name..." />
+            <input type="text" placeholder="Search..." />
           </div>
           <button class="btn-icon">
             <svg
@@ -219,90 +240,51 @@ const averageDelay = computed(() => {
           </button>
         </div>
       </div>
-
-      <div class="controls-section">
-        <div class="left-stats-placeholder">
-          <!-- Toggles removed based on user request -->
-        </div>
-
-        <div class="right-controls">
-          <div class="status-indicators">
-            <span class="indicator green"
-              ><span class="dot"></span> {{ stats.active }} Active</span
-            >
-            <span class="indicator grey">{{ stats.pending }} Pending</span>
-          </div>
-          <button class="btn-filter">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <line x1="4" y1="21" x2="4" y2="14"></line>
-              <line x1="4" y1="10" x2="4" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12" y2="3"></line>
-              <line x1="20" y1="21" x2="20" y2="16"></line>
-              <line x1="20" y1="12" x2="20" y2="3"></line>
-              <line x1="1" y1="14" x2="7" y2="14"></line>
-              <line x1="9" y1="8" x2="15" y2="8"></line>
-              <line x1="17" y1="16" x2="23" y2="16"></line>
-            </svg>
-            Filters
-          </button>
-        </div>
-      </div>
-
-      <div class="live-monitor-content-row">
-        <!-- Live Status Card (New) -->
         <div class="content-card live-status-blue">
-  <div class="live-card-bg"></div> 
-  
-  <div class="live-card-content"> <div class="card-header-flex">
-      <div class="live-title-group">
-        <h3 class="live-title">Live Status</h3>
-        <p class="live-subtitle">Current session monitoring</p>
-      </div>
-      <div class="live-icon-white">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12s2.545-5 7-5c4.454 0 7 5 7 5s-2.546 5-7 5c-4.455 0-7-5-7-5z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-      </div>
-    </div>
+          <div class="live-card-bg"></div>
+          <div class="live-card-content">
+            <div class="live-content-wrapper">
+              <div class="live-left-content">
+                <div class="live-title-group">
+                  <div class="live-badge-row">
+                    <h3 class="live-title">Live Monitor</h3>
+                    <div class="live-indicator-pill">
+                      <span class="active-dot dot-green dot-pulse"></span>
+                      LIVE
+                    </div>
+                  </div>
+                  <p class="live-subtitle">Real-time attendance session</p>
+                </div>
 
-    <div class="live-time-wrap">
-      <h1 class="live-time">
-        {{ liveTime }}<span class="ampm">{{ liveAmPm }}</span>
-      </h1>
-      <div class="active-pulse-group">
-        <span class="active-dot dot-green dot-pulse"></span>
-        Active monitoring in progress
-      </div>
-    </div>
+                <div class="live-clock-section">
+                  <h1 class="live-time">
+                    {{ liveTime }}<span class="ampm">{{ liveAmPm }}</span>
+                  </h1>
+                </div>
 
-    <div class="live-stats-divider"></div>
+                <div class="live-bottom-row">
+                  <div class="live-stats-minimal">
+                    <div class="mini-stat">
+                      <span class="mini-label">Check-ins</span>
+                      <span class="mini-value">{{ todayCheckins }}</span>
+                    </div>
+                    <div class="mini-stat">
+                      <span class="mini-label">Avg Delay</span>
+                      <div class="mini-value-group">
+                        <span class="mini-value">{{ averageDelay }}</span>
+                        <button class="minimal-refresh-btn-inline" @click="fetchAttendances" title="Refresh Data">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="live-right-visual"></div>
+            </div>
+          </div>
+        </div>
 
-    <div class="live-stats-group">
-      <div class="live-stat-item">
-        <span class="live-stat-label">Recent Check-ins</span>
-        <p class="live-stat-value">{{ todayCheckins }}</p>
-      </div>
-      <div class="live-stat-item">
-        <span class="live-stat-label">Average Delay</span>
-        <p class="live-stat-value">{{ averageDelay }}</p>
-      </div>
-    </div>
-
-    <button class="view-logs-btn" @click="fetchAttendances">Refresh Live Data</button>
-  </div>
-</div>
-
-        <!-- Optional: Other info or just the Live Status taking more space -->
-      </div>
 
       <div class="cards-grid">
         <div
@@ -463,11 +445,15 @@ const averageDelay = computed(() => {
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 /* Main Layout */
 .monitor-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* Header */
@@ -484,7 +470,7 @@ const averageDelay = computed(() => {
 }
 
 .main-title {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-main);
   margin: 0;
@@ -504,7 +490,7 @@ const averageDelay = computed(() => {
   padding: 8px 16px;
   border-radius: 20px;
   border: 1px solid var(--border-color);
-  width: 260px;
+  width: 180px;
 }
 .search-box .icon {
   color: var(--text-dim);
@@ -525,8 +511,8 @@ const averageDelay = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -657,197 +643,208 @@ const averageDelay = computed(() => {
 }
 
 .live-status-blue {
-  background: #1d4ed8;
-  border-radius: 30px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #2b75f4; /* Using your preferred solid blue */
+  border-radius: 24px;
   padding: 0;
   border: none;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 20px 40px -10px rgba(29, 78, 216, 0.5);
+  box-shadow: 0 12px 40px -10px rgba(43, 117, 244, 0.4);
 }
 
 .live-card-bg {
   position: absolute;
   top: 0;
-  left: 0;
+  right: 0;
   width: 100%;
   height: 100%;
   background-image: url('../../assets/blue.png');
-  background-size: cover;
-  background-position: center;
-  mix-blend-mode: luminosity; 
-  opacity: 0.8;
+  background-size: contain;
+  background-position: right center;
+  background-repeat: no-repeat;
+  opacity: 1;
   pointer-events: none;
+  z-index: 1;
+  /* Super smooth fade starting from center to ensure no edges are visible */
+  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 65%);
+  mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 65%);
 }
 
 .live-card-content {
   position: relative;
   z-index: 2;
-  padding: 30px;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.9) 0%, rgba(29, 78, 216, 0.4) 100%);
+  padding: 24px 32px;
+  background: transparent; /* Remove overlapping background */
 }
 
-/* Jam Digital lebih "Pop" */
-.live-time {
-  font-size: 72px; /* Diperbesar sedikit */
-  font-weight: 800;
-  color: white;
-  margin: 0;
-  letter-spacing: -3px;
-  line-height: 0.9;
-  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.live-content-wrapper {
+  display: flex;
+  position: relative;
+  z-index: 3;
 }
 
-.live-stats-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.15);
-  margin: 25px 0;
-}
-
-.view-logs-btn {
-  width: 100%;
-  padding: 16px;
-  background-color: white;
-  color: #2563eb;
-  border: none;
-  border-radius: 18px;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 15px;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.view-logs-btn:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-  background-color: #f8fafc;
-}
-
-.live-title-group {
+.live-left-content {
+  flex: 1;
+  max-width: 60%;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 16px;
+}
+
+.live-right-visual {
+  flex: 1;
+}
+
+.live-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.live-indicator-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.2);
+  padding: 2px 10px;
+  border-radius: 20px;
+  color: #10b981;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .live-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: white;
+  font-size: 14px;
+  font-weight: 800;
+  color: white !important;
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.9;
 }
 
 .live-subtitle {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
   font-weight: 500;
+  color: rgba(255, 255, 255, 0.7) !important;
+  margin: 4px 0 0 0;
 }
 
-.live-time-wrap {
+.live-clock-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 30px;
 }
 
 .live-time {
   font-size: 56px;
   font-weight: 800;
-  color: white;
+  color: white !important;
   margin: 0;
-  letter-spacing: -2px;
+  letter-spacing: -3px;
   line-height: 1;
+  text-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
 .ampm {
-  font-size: 24px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
-  margin-left: 8px;
-}
-
-.active-pulse-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.active-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.dot-green {
-  background-color: #10b981;
-}
-
-.dot-pulse {
-  animation: pulse 2s infinite ease-out;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
-  }
-  70% {
-    box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-  }
-}
-
-.live-stats-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.2);
-  margin: 30px 0;
-}
-
-.live-stats-group {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 30px;
-}
-
-.live-stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.live-stat-label {
+  font-size: 18px;
+  font-weight: 600;
   color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
+  margin-left: 6px;
+  letter-spacing: 0;
+}
+
+.pulse-text {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 13px;
   font-weight: 600;
 }
 
-.live-stat-value {
-  color: white;
-  font-size: 28px;
-  font-weight: 800;
-  margin: 0;
+.live-bottom-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 30px;
+  margin-top: 10px;
 }
 
-.view-logs-btn {
-  width: 100%;
-  padding: 14px;
-  background-color: white;
-  color: var(--accent-primary);
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
+.live-stats-minimal {
+  display: flex;
+  gap: 24px;
+}
+
+.mini-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mini-label {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 11px;
   font-weight: 700;
-  font-size: 15px;
-  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-.view-logs-btn:hover {
-  background-color: rgba(255, 255, 255, 0.9);
-  transform: translateY(-2px);
+.mini-value-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mini-value {
+  color: white !important;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.minimal-refresh-btn-inline {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.minimal-refresh-btn-inline:hover {
+  background-color: white;
+  color: #1d4ed8 !important;
+  transform: rotate(180deg);
+}
+
+.minimal-refresh-btn-top {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.12);
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.minimal-refresh-btn-top:hover {
+  background-color: white;
+  color: #1d4ed8 !important;
+  transform: rotate(180deg) scale(1.05);
 }
 .stat-percent {
   font-size: 13px;
