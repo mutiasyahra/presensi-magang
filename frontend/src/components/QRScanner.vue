@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import jsQR from "jsqr";
+import Swal from 'sweetalert2';
 
 const emit = defineEmits(["go-back"]);
 
@@ -20,8 +21,14 @@ const processQR = (qrData) => {
   if (qrData.startsWith("http://") || qrData.startsWith("https://")) {
     window.location.href = qrData;
   } else {
-    alert("QR Terdeteksi: " + qrData);
-    emit("go-back");
+    Swal.fire({
+      title: 'QR Terdeteksi',
+      text: qrData,
+      icon: 'success',
+      confirmButtonColor: '#3B82F6'
+    }).then(() => {
+      emit("go-back");
+    });
   }
 };
 
@@ -113,10 +120,20 @@ const toggleFlashlight = async () => {
         isFlashOn.value = !isFlashOn.value;
       }
     } else {
-      alert("Flashlight tidak didukung di perangkat ini.");
+      Swal.fire({
+        icon: 'info',
+        title: 'Info',
+        text: 'Flashlight tidak didukung di perangkat ini.',
+        confirmButtonColor: '#3B82F6'
+      });
     }
   } else {
-    alert("Flashlight tidak didukung di perangkat atau browser ini.");
+    Swal.fire({
+      icon: 'error',
+      title: 'Kesalahan',
+      text: 'Flashlight tidak didukung di perangkat atau browser ini.',
+      confirmButtonColor: '#EF4444'
+    });
   }
 };
 
@@ -149,7 +166,12 @@ const handleFileUpload = (event) => {
       if (code && code.data) {
         processQR(code.data);
       } else {
-        alert("QR Code tidak ditemukan dalam gambar.");
+        Swal.fire({
+          icon: 'warning',
+          title: 'Tidak Ditemukan',
+          text: 'QR Code tidak ditemukan dalam gambar.',
+          confirmButtonColor: '#3B82F6'
+        });
         // reset file input so the same file could be selected again if failed
         if (fileInputRef.value) fileInputRef.value.value = "";
       }

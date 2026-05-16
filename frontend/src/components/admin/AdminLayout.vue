@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import api from "../../api/axios.js";
 
 // Modular Components (now in the same directory)
@@ -11,7 +11,97 @@ import AdminLeaves from "./AdminLeaves.vue";
 import AdminReports from "./AdminReports.vue";
 import SettingsScreen from "./SettingsScreen.vue";
 
+import { 
+  Bell, 
+  Search, 
+  ChevronDown, 
+  Clock, 
+  AlertCircle, 
+  CheckCircle,
+  FileText
+} from "lucide-vue-next";
+
 const activeTab = ref("overview");
+const showNotifDropdown = ref(false);
+const notifications = ref([]);
+const unreadNotifications = computed(() => notifications.value.filter(n => !n.read_at));
+
+const fetchNotifications = async () => {
+  try {
+    const res = await api.get('/notifications');
+    notifications.value = res.data;
+  } catch (err) {
+    console.error("Gagal ambil notifikasi:", err);
+  }
+};
+
+const toggleNotifDropdown = () => {
+  showNotifDropdown.value = !showNotifDropdown.value;
+};
+
+const markAsRead = async (id) => {
+  try {
+    await api.post(`/notifications/${id}/read`);
+    fetchNotifications();
+  } catch (err) {
+    console.error("Gagal tandai baca:", err);
+  }
+};
+
+const handleNotifClick = async (notif) => {
+  await markAsRead(notif.id);
+  showNotifDropdown.value = false;
+  
+  if (notif.data?.type === 'new_leave_request') {
+    activeTab.value = 'leaves';
+  } else if (notif.data?.type === 'late_intern') {
+    activeTab.value = 'attendance';
+  }
+};
+
+const deleteNotif = async (id) => {
+  try {
+    await api.delete(`/notifications/${id}`);
+    fetchNotifications();
+  } catch (err) {
+    console.error("Gagal hapus notifikasi:", err);
+  }
+};
+
+const formatNotifDate = (dateStr) => {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const pageTitle = computed(() => {
+  switch(activeTab.value) {
+    case 'overview': return 'Admin Dashboard';
+    case 'attendance': return 'Attendance Records';
+    case 'leaves': return 'Leave Requests';
+    case 'reports': return 'Analytics & Reports';
+    case 'live': return 'Live Monitor';
+    case 'settings': return 'System Settings';
+    default: return 'Admin Portal';
+  }
+});
+
+const pageSubtitle = computed(() => {
+  switch(activeTab.value) {
+    case 'overview': return "Welcome back. Here's what's happening today.";
+    case 'attendance': return "Track and manage intern daily presence.";
+    case 'leaves': return "Review and approve intern leave applications.";
+    case 'reports': return "Export data and analyze performance trends.";
+    case 'live': return "Real-time activity of all active interns.";
+    case 'settings': return "Configure application and notification preferences.";
+    default: return 'Manage your internship program.';
+  }
+});
+
 const stats = ref({
   present: 0,
   late: 0,
@@ -101,7 +191,35 @@ const approveLeave = async (id, status) => {
   }
 };
 
-onMounted(fetchData);
+const deleteLeave = async (id) => {
+  try {
+    const confirm = await Swal.fire({
+      title: 'Hapus Pengajuan?',
+      text: 'Data yang dihapus tidak dapat dikembalikan!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#EF4444',
+      cancelButtonColor: '#64748B',
+      confirmButtonText: 'Ya, hapus!'
+    });
+
+    if (confirm.isConfirmed) {
+      await api.delete(`/leave/${id}`);
+      Swal.fire('Terhapus!', 'Pengajuan telah dihapus.', 'success');
+      fetchData();
+    }
+  } catch (error) {
+    Swal.fire('Gagal!', 'Terjadi kesalahan saat menghapus data.', 'error');
+  }
+};
+
+onMounted(() => {
+  fetchData();
+  fetchNotifications();
+  // Refresh notifications every 30 seconds
+  const interval = setInterval(fetchNotifications, 30000);
+  return () => clearInterval(interval);
+});
 </script>
 
 <template>
@@ -114,6 +232,9 @@ onMounted(fetchData);
     />
 
     <main class="main-content">
+      <!-- Global Header removed as per user request to avoid redundancy with page-specific headers -->
+
+
       <div v-if="isLoading" class="loader">
         <div class="spinner"></div>
         <p>Updating records...</p>
@@ -124,6 +245,7 @@ onMounted(fetchData);
           v-if="activeTab === 'overview'"
           :stats="stats"
           :attendanceList="attendanceList"
+          @change-tab="(tab) => activeTab = tab"
         />
 
         <AdminAttendance v-if="activeTab === 'attendance'" />
@@ -132,6 +254,7 @@ onMounted(fetchData);
           v-if="activeTab === 'leaves'"
           :leaveRequests="leaveRequests"
           @approve="approveLeave"
+          @delete-leave="deleteLeave"
         />
 
         <AdminReports v-if="activeTab === 'reports'" />

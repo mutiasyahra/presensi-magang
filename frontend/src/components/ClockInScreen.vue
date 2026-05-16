@@ -95,8 +95,9 @@
 <script setup>
 import { ref, onMounted, nextTick } from "vue";
 import api from "../api/axios.js";
+import Swal from 'sweetalert2';
 
-const emit = defineEmits(["go-back"]);
+const emit = defineEmits(["go-back", "navigate"]);
 
 const rencanaKegiatan = ref("");
 const isLoading = ref(false);
@@ -183,12 +184,18 @@ const submitAttendance = async () => {
     formData.append("long", coords.value.lng || 106.816666);
     formData.append("photo", photoBlob.value, "attendance.png");
 
-    await api.post("/clock-in", formData, {
+    const res = await api.post("/clock-in", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    alert("Clock-in successful!");
-    emit("go-back");
+    console.log("[ClockIn] Success:", res.data);
+    Swal.fire({
+      icon: 'success',
+      title: 'Berhasil!',
+      text: 'Clock-in berhasil dilakukan. Selamat bekerja!',
+      confirmButtonColor: '#3B82F6'
+    });
+    emit("navigate", "dashboard");
   } catch (error) {
     // Laravel returns 422 with errors object for validation
     if (error.response?.status === 422 && error.response.data?.errors) {

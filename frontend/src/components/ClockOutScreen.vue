@@ -131,8 +131,9 @@
 <script setup>
 import { ref, onMounted, nextTick } from "vue";
 import api from "../api/axios.js";
+import Swal from 'sweetalert2';
 
-const emit = defineEmits(["go-back"]);
+const emit = defineEmits(["go-back", "navigate"]);
 
 const progressKegiatan = ref("");
 const isLoading = ref(false);
@@ -264,12 +265,17 @@ const submitAttendance = async () => {
       formData.append("evidence", selectedFile.value);
     }
 
-    await api.post("/clock-out", formData, {
+    const res = await api.post("/clock-out", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-
-    alert("Clock-out successful!");
-    emit("go-back");
+    console.log("[ClockOut] Success:", res.data);
+    Swal.fire({
+      icon: 'success',
+      title: 'Berhasil!',
+      text: 'Clock-out berhasil. Terima kasih atas kerja kerasnya hari ini!',
+      confirmButtonColor: '#3B82F6'
+    });
+    emit("navigate", "dashboard");
   } catch (error) {
     if (error.response?.status === 422 && error.response.data?.errors) {
       const firstKey = Object.keys(error.response.data.errors)[0];

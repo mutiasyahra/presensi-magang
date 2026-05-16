@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import api from '../api/axios.js'
+import Swal from 'sweetalert2'
 
 const emit = defineEmits(['go-back', 'navigate'])
 
@@ -24,8 +25,13 @@ const handleFileUpload = (event) => {
 
 const submitLeave = async () => {
   if (!startDate.value || !endDate.value || !reason.value) {
-    alert('Harap lengkapi rentang tanggal dan alasan!')
-    return
+    Swal.fire({
+      icon: 'warning',
+      title: 'Data Tidak Lengkap',
+      text: 'Harap lengkapi rentang tanggal dan alasan!',
+      confirmButtonColor: '#3B82F6'
+    });
+    return;
   }
 
   const formData = new FormData()
@@ -45,11 +51,21 @@ const submitLeave = async () => {
       }
     })
     console.log('[Leave] Submit leave sukses:', res.data)
-    alert('Pengajuan Izin Berhasil Dikirim!')
+    Swal.fire({
+      icon: 'success',
+      title: 'Berhasil!',
+      text: 'Pengajuan Izin Berhasil Dikirim!',
+      confirmButtonColor: '#3B82F6'
+    });
     emit('navigate', 'dashboard')
   } catch (error) {
     console.error('[Leave] Gagal submit:', error)
-    alert('Gagal mengirim pengajuan izin.')
+    Swal.fire({
+      icon: 'error',
+      title: 'Gagal',
+      text: 'Gagal mengirim pengajuan izin.',
+      confirmButtonColor: '#EF4444'
+    });
   }
 }
 </script>

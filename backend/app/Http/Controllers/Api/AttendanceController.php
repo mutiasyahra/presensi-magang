@@ -14,6 +14,7 @@ use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Http;
+use App\Notifications\AttendanceNoteNotification;
 
 class AttendanceController extends Controller
 {
@@ -44,7 +45,7 @@ class AttendanceController extends Controller
         $photoPath = $request->file('photo')->store('clock_in', 'public');
 
         $startSetting = \App\Models\Setting::where('key', 'work_start_time')->first();
-        $startTime = $startSetting ? $startSetting->value : '08:00';
+        $startTime = $startSetting ? $startSetting->value : '09:00';
         $currentTime = now()->format('H:i');
         
         $clockInStatus = ($currentTime > $startTime) ? 'terlambat' : 'tepat waktu';
@@ -53,7 +54,7 @@ class AttendanceController extends Controller
 
         $locationName = $this->getAddressFromCoords($request->lat, $request->long);
 
-        Attendance::updateOrCreate(
+        $attendanceRecord = Attendance::updateOrCreate(
             [
                 'user_id' => $userId,
                 'attendance_date' => $today,
@@ -69,6 +70,13 @@ class AttendanceController extends Controller
                 'status' => $status
             ]
         );
+
+        if ($clockInStatus === 'terlambat') {
+            $admins = \App\Models\User::where('role', 'admin')->where('notify_late_alerts', true)->get();
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\LateInternNotification($attendanceRecord, $request->user()->name));
+            }
+        }
 
         return response()->json([
             'message' => 'Clock in berhasil'
@@ -205,7 +213,9 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Akses ditolak'], 403);
         }
 
-        $query = Attendance::with(['user', 'user.intern']);
+        $query = Attendance::with(['user' => function($q) {
+            $q->withCount('tokens');
+        }, 'user.intern']);
 
         if ($request->start_date && $request->end_date) {
             $query->whereBetween('attendance_date', [
@@ -290,7 +300,9 @@ class AttendanceController extends Controller
 
         $request->validate([
             'is_verified' => 'required|boolean',
-            'status' => 'sometimes|in:hadir,izin,alpha' // Optional, to reject with alpha status
+            'status' => 'sometimes|in:hadir,izin,alpha', // Optional, to reject with alpha status
+            'review_notes' => 'nullable|string',
+            'is_flagged' => 'sometimes|boolean'
         ]);
 
         $attendance = Attendance::find($id);
@@ -303,11 +315,60 @@ class AttendanceController extends Controller
         if ($request->has('status')) {
             $updateData['status'] = $request->status;
         }
+        if ($request->has('review_notes')) {
+            $updateData['review_notes'] = $request->review_notes;
+        }
+        if ($request->has('is_flagged')) {
+            $updateData['is_flagged'] = $request->is_flagged;
+        }
 
         $attendance->update($updateData);
 
+        if ($request->review_notes) {
+            $attendance->user->notify(new AttendanceNoteNotification($attendance, $request->review_notes));
+        }
+
         return response()->json([
             'message' => 'Status verifikasi presensi berhasil diubah',
+            'data' => $attendance
+        ]);
+    }
+
+    //  ADMIN - UPDATE REVIEW NOTES ONLY
+    public function updateNotes(Request $request, $id)
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Akses ditolak'], 403);
+        }
+
+        $request->validate([
+            'review_notes' => 'nullable|string',
+            'is_flagged' => 'sometimes|boolean'
+        ]);
+
+        $attendance = Attendance::find($id);
+
+        if (!$attendance) {
+            return response()->json(['message' => 'Data presensi tidak ditemukan'], 404);
+        }
+
+        $updateData = [];
+        if ($request->has('review_notes')) {
+            $updateData['review_notes'] = $request->review_notes;
+        }
+        if ($request->has('is_flagged')) {
+            $updateData['is_flagged'] = $request->is_flagged;
+        }
+
+        if (!empty($updateData)) {
+            $attendance->update($updateData);
+            if ($request->review_notes) {
+                $attendance->user->notify(new AttendanceNoteNotification($attendance, $request->review_notes));
+            }
+        }
+
+        return response()->json([
+            'message' => 'Catatan berhasil disimpan',
             'data' => $attendance
         ]);
     }
@@ -400,20 +461,46 @@ class AttendanceController extends Controller
         }
 
 
+        $intern = $user->intern;
+        if (!$intern || !$intern->start_date) {
+            return response()->json([
+                'present' => 0,
+                'absent' => 0,
+                'attendance_rate' => 0
+            ]);
+        }
+
         $present = Attendance::where('user_id', $user->id)
-            ->whereIn('status', ['hadir', 'terlambat'])
-            ->where('attendance_date', 'like', $month.'%')
+            ->whereIn('status', ['hadir', 'terlambat', 'izin', 'sakit'])
             ->count();
 
         $absent = Attendance::where('user_id', $user->id)
             ->where('status', 'alpha')
-            ->where('attendance_date', 'like', $month.'%')
             ->count();
 
-        $totalWorkDays = 22;
-        $rate = $totalWorkDays > 0
-            ? round(($present / $totalWorkDays) * 100, 1)
+        $startDate = Carbon::parse($intern->start_date);
+        $endDate = Carbon::parse($intern->end_date);
+        $today = now();
+
+        $calculationEnd = $today->lt($endDate) ? $today : $endDate;
+
+        if ($startDate->gt($today)) {
+            $elapsedWorkingDays = 0;
+        } else {
+            $elapsedWorkingDays = $startDate->diffInDaysFiltered(function (Carbon $date) {
+                return !$date->isWeekend();
+            }, clone $calculationEnd);
+
+            if (!$calculationEnd->isWeekend()) {
+                $elapsedWorkingDays++;
+            }
+        }
+
+        $rate = $elapsedWorkingDays > 0 
+            ? round(($present / $elapsedWorkingDays) * 100, 1) 
             : 0;
+        
+        if ($rate > 100) $rate = 100;
 
         return response()->json([
             'present' => $present,
@@ -436,6 +523,24 @@ class AttendanceController extends Controller
         $pdf = Pdf::loadView('pdf.rekap', compact('data'));
 
         return $pdf->download('rekap-presensi.pdf');
+    }
+
+    //  GET SINGLE ATTENDANCE BY DATE (USER)
+    public function showByDate(Request $request)
+    {
+        $request->validate([
+            'date' => 'required'
+        ]);
+
+        $date = \Carbon\Carbon::parse($request->date)->toDateString();
+
+        $attendance = Attendance::where('user_id', $request->user()->id)
+            ->whereDate('attendance_date', $date)
+            ->first();
+
+        return response()->json([
+            'data' => $attendance
+        ]);
     }
 
     //  CALENDAR (USER)

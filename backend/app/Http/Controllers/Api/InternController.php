@@ -21,14 +21,25 @@ class InternController extends Controller
             ->map(function ($user) {
                 $intern = $user->intern;
                 
-                $totalDays = $intern && $intern->start_date
-                    ? now()->diffInWeekdays($intern->start_date)
-                    : 0;
+                $startDate = \Carbon\Carbon::parse($intern->start_date);
+                $today = now();
+                
+                if ($startDate->gt($today)) {
+                    $totalDays = 0;
+                } else {
+                    $totalDays = $startDate->diffInDaysFiltered(function ($date) {
+                        return !$date->isWeekend();
+                    }, $today);
+                    
+                    if (!$today->isWeekend()) {
+                        $totalDays++;
+                    }
+                }
 
                 $presentDays = $user->attendances_count ?? 0;
 
                 $attendancePercentage = $totalDays > 0
-                    ? round(($presentDays / $totalDays) * 100)
+                    ? round(($presentDays / $totalDays) * 100, 1)
                     : 0;
                 
                 return [

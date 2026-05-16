@@ -36,6 +36,7 @@ const fetchAttendances = async () => {
       intern_id: item.user?.intern?.intern_id || "-",
       role: "Intern",
       photo: item.user?.profile_photo || null,
+      is_online: item.user?.tokens_count > 0,
       statusDisplay: item.status ? item.status.toUpperCase() : "UNKNOWN",
       periodDisplay: item.user?.intern?.start_date && item.user?.intern?.end_date
         ? `${new Date(item.user.intern.start_date).toLocaleDateString("id-ID", {
@@ -313,7 +314,7 @@ const averageDelay = computed(() => {
                 <div v-else class="avatar-initial-box">
                   {{ (intern.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) }}
                 </div>
-                <span class="status-dot"></span>
+                <span v-if="intern.is_online" class="status-dot"></span>
               </div>
               <div class="info">
                 <div class="name-row">

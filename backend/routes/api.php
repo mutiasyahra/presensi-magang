@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\LeaveController;
 |
 */
 Route::middleware('auth:sanctum')->get('/calendar', [AttendanceController::class, 'calendar']);
+Route::middleware('auth:sanctum')->get('/attendance-by-date', [AttendanceController::class, 'showByDate']);
 
 // ================= USER =================
 Route::middleware('auth:sanctum')->group(function () {
@@ -29,20 +30,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-
+    Route::get('/stats', [AttendanceController::class, 'stats']);
 });
 
 // ================= ADMIN =================
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::patch('/leave/{id}', [LeaveController::class, 'approve']);
+    Route::delete('/leave/{id}', [LeaveController::class, 'destroy']);
     Route::get('/leaves', [LeaveController::class, 'index']);
-    Route::get('/stats', [AttendanceController::class, 'stats']);
     Route::get('/export', [AttendanceController::class, 'exportExcel']);
     Route::get('/recap-monthly', [AttendanceController::class, 'monthlyRecap']);
     Route::get('/attendances', [AttendanceController::class, 'index']);
     Route::get('/attendance-filters', [AttendanceController::class, 'attendanceFilters']);
     Route::patch('/attendances/{id}/verify', [AttendanceController::class, 'verify']);
+    Route::patch('/attendances/{id}/notes', [AttendanceController::class, 'updateNotes']);
     Route::get('/interns', [InternController::class, 'index']);
     Route::post('/interns', [InternController::class, 'store']);
     Route::put('/interns/{id}', [InternController::class, 'update']);
@@ -57,6 +59,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/settings/system', [\App\Http\Controllers\Api\SettingsController::class, 'getSystem']);
     Route::get('/settings/me', [\App\Http\Controllers\Api\SettingsController::class, 'getMe']);
     Route::post('/settings/me', [\App\Http\Controllers\Api\SettingsController::class, 'updateMe']);
+    Route::put('/settings/me', [\App\Http\Controllers\Api\SettingsController::class, 'updateMe']);
+    
+    // Notifications
+    Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
+    Route::delete('/notifications/{id}', [\App\Http\Controllers\Api\NotificationController::class, 'destroy']);
 });
 
 // ================= AUTH =================

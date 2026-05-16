@@ -29,7 +29,9 @@ class Attendance extends Model
         'clock_in_status',
         'clock_out_status',
         'is_auto',
-        'is_verified'
+        'is_verified',
+        'review_notes',
+        'is_flagged'
     ];
 
     protected $casts = [

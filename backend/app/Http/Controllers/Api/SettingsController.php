@@ -91,15 +91,15 @@ class SettingsController extends Controller
         }
 
         if ($request->has('isDarkMode')) {
-            $user->is_dark_mode = $request->boolean('isDarkMode');
+            $user->is_dark_mode = filter_var($request->input('isDarkMode'), FILTER_VALIDATE_BOOLEAN);
         }
         
         if ($request->has('notifyLateAlerts')) {
-            $user->notify_late_alerts = $request->boolean('notifyLateAlerts');
+            $user->notify_late_alerts = filter_var($request->input('notifyLateAlerts'), FILTER_VALIDATE_BOOLEAN);
         }
         
         if ($request->has('notifyLeaveRequests')) {
-            $user->notify_leave_requests = $request->boolean('notifyLeaveRequests');
+            $user->notify_leave_requests = filter_var($request->input('notifyLeaveRequests'), FILTER_VALIDATE_BOOLEAN);
         }
 
         $user->save();
@@ -125,7 +125,7 @@ class SettingsController extends Controller
     {
         // Define default values
         $defaults = [
-            'work_start_time' => '08:00',
+            'work_start_time' => '09:00',
             'work_end_time' => '17:00',
             'office_name' => 'Tech Innovations Hub',
             'office_address' => 'Jakarta, Indonesia',

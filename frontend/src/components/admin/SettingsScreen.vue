@@ -156,7 +156,7 @@ const account = reactive({
 });
 
 const system = reactive({
-  startTime: '08:00',
+  startTime: '09:00',
   endTime: '17:00',
   officeName: '',
   officeAddress: '',
@@ -207,27 +207,39 @@ const notifications = reactive({
 });
 
 const isDarkMode = ref(document.documentElement.classList.contains('dark'));
-const isLoaded = ref(false); // flag to prevent watch from firing during initial load
+const isLoaded = ref(false);
 
 const loadSettings = async () => {
     try {
-        // Fetch User Settings
+        console.log("[Settings] Loading settings from server...");
         const userRes = await api.get('/settings/me');
         if (userRes.data?.data) {
             const u = userRes.data.data;
+            console.log("[Settings] User data fetched:", u);
+            
             account.fullName = u.fullName || '';
             account.email = u.email || '';
-            // Trust the current document state rather than server state to avoid jarring theme jumps
-            isDarkMode.value = document.documentElement.classList.contains('dark');
-            notifications.lateAlerts = !!u.notifyLateAlerts;
-            notifications.leaveRequests = !!u.notifyLeaveRequests;
+            
+            // Sync preferences
+            notifications.lateAlerts = u.notifyLateAlerts == true || u.notifyLateAlerts == 1 || u.notifyLateAlerts == "1";
+            notifications.leaveRequests = u.notifyLeaveRequests == true || u.notifyLeaveRequests == 1 || u.notifyLeaveRequests == "1";
+            
+            // Sync local storage to keep it updated with server truth
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                try {
+                    const userObj = JSON.parse(userStr);
+                    userObj.notify_late_alerts = notifications.lateAlerts;
+                    userObj.notify_leave_requests = notifications.leaveRequests;
+                    localStorage.setItem('user', JSON.stringify(userObj));
+                } catch (e) {}
+            }
         }
 
-        // Fetch System Settings
         const sysRes = await api.get('/settings/system');
         if (sysRes.data?.data) {
             const s = sysRes.data.data;
-            system.startTime = s.startTime || '08:00';
+            system.startTime = s.startTime || '09:00';
             system.endTime = s.endTime || '17:00';
             system.officeName = s.officeName || '';
             system.officeAddress = s.officeAddress || '';
@@ -236,12 +248,12 @@ const loadSettings = async () => {
         }
     } catch (error) {
         console.error("Failed to load settings:", error);
-        Swal.fire('Error', 'Gagal memuat pengaturan.', 'error');
     } finally {
-        // Mark as loaded AFTER initial values are set and tick has passed
+        // Use a small delay to ensure reactivity has settled
         setTimeout(() => {
             isLoaded.value = true;
-        }, 100);
+            console.log("[Settings] Load complete, isLoaded set to true");
+        }, 300);
     }
 };
 
@@ -280,7 +292,7 @@ const saveAccount = async (silent = false) => {
             payload.password = account.password;
         }
 
-        await api.put('/settings/me', payload);
+        await api.post('/settings/me', payload);
 
         // Update localStorage user object so App.vue uses latest settings on fresh load
         const userStr = localStorage.getItem('user');
@@ -340,11 +352,18 @@ const saveSystem = async () => {
     }
 };
 
-watch([isDarkMode, () => notifications.lateAlerts, () => notifications.leaveRequests], () => {
-    // Only auto-save after initial load is complete (not during loadSettings)
+watch(
+  [() => notifications.lateAlerts, () => notifications.leaveRequests, isDarkMode],
+  ([newLate, newLeave, newDark], [oldLate, oldLeave, oldDark]) => {
     if (!isLoaded.value) return;
-    saveAccount(true); // silent = true, no popup
-});
+    
+    // Only save if values actually changed to avoid unnecessary API calls
+    if (newLate !== oldLate || newLeave !== oldLeave || newDark !== oldDark) {
+        console.log("[Settings] Preference change detected, auto-saving...");
+        saveAccount(true); 
+    }
+  }
+);
 
 onMounted(() => {
     loadSettings();

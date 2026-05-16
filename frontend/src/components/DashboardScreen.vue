@@ -9,7 +9,15 @@ const user = ref({
   profile_photo: null,
 });
 
-const emit = defineEmits(["open-clock-in", "navigate", "logout"]);
+const notifications = ref([]);
+const unreadNotifications = computed(() => notifications.value.filter(n => !n.read_at));
+const showNotifDropdown = ref(false);
+
+const isLoggedIn = computed(() => {
+  return !!localStorage.getItem("token");
+});
+
+const emit = defineEmits(["open-clock-in", "navigate", "logout", "open-detail"]);
 
 const getImageUrl = (path) => {
   if (!path) return null;
@@ -89,19 +97,44 @@ const leaveCount = computed(() => calendarDays.value.filter(d => d.type === 'dat
    lng: 106.816666
  });
 
- const fetchSystemSettings = async () => {
-   try {
-     const res = await api.get("/settings/system");
-     if (res.data?.data) {
-       officeLocation.value.name = res.data.data.officeName;
-       officeLocation.value.address = res.data.data.officeAddress;
-       officeLocation.value.lat = parseFloat(res.data.data.officeLat);
-       officeLocation.value.lng = parseFloat(res.data.data.officeLng);
-     }
-   } catch (err) {
-     console.error("Gagal mengambil pengaturan sistem:", err);
-   }
- };
+ const workHours = ref({
+    start: "08:00",
+    end: "17:00"
+  });
+
+  const stats = ref({
+    attendance_rate: 0,
+    present: 0,
+    absent: 0
+  });
+
+  const fetchStats = async () => {
+    try {
+      const res = await api.get("/stats");
+      if (res.data) {
+        stats.value = res.data;
+      }
+    } catch (err) {
+      console.error("Gagal mengambil data statistik:", err);
+    }
+  };
+
+  const fetchSystemSettings = async () => {
+    try {
+      const res = await api.get("/settings/system");
+      if (res.data?.data) {
+        officeLocation.value.name = res.data.data.officeName || officeLocation.value.name;
+        officeLocation.value.address = res.data.data.officeAddress || officeLocation.value.address;
+        officeLocation.value.lat = parseFloat(res.data.data.officeLat) || officeLocation.value.lat;
+        officeLocation.value.lng = parseFloat(res.data.data.officeLng) || officeLocation.value.lng;
+        
+        if (res.data.data.startTime) workHours.value.start = res.data.data.startTime;
+        if (res.data.data.endTime) workHours.value.end = res.data.data.endTime;
+      }
+    } catch (err) {
+      console.error("Gagal mengambil pengaturan sistem:", err);
+    }
+  };
 
  const openGoogleMaps = () => {
    const { lat, lng } = officeLocation.value;
@@ -133,6 +166,97 @@ const fetchHolidays = async (year) => {
   } catch (err) {
     console.error("Gagal mengambil data hari libur:", err);
   }
+};
+
+const fetchNotifications = async () => {
+  try {
+    const res = await api.get("/notifications");
+    if (res.data?.data) {
+      notifications.value = res.data.data;
+    }
+  } catch (err) {
+    console.error("Gagal mengambil data notifikasi:", err);
+  }
+};
+
+const toggleNotifDropdown = () => {
+  showNotifDropdown.value = !showNotifDropdown.value;
+  if (showNotifDropdown.value && unreadNotifications.value.length > 0) {
+    // Optional: mark all as read when opening
+    // markAllAsRead();
+  }
+};
+
+const markAsRead = async (id) => {
+  try {
+    await api.post(`/notifications/${id}/read`);
+    fetchNotifications();
+  } catch (err) {
+    console.error("Gagal menandai notifikasi dibaca:", err);
+  }
+};
+
+const deleteNotif = async (id) => {
+  try {
+    await api.delete(`/notifications/${id}`);
+    fetchNotifications();
+  } catch (err) {
+    console.error("Gagal menghapus notifikasi:", err);
+  }
+};
+
+const handleNotifClick = async (notif) => {
+  await markAsRead(notif.id);
+  showNotifDropdown.value = false;
+
+  let targetDate = null;
+  if (notif.data.type === 'review_note') {
+    targetDate = notif.data.attendance_date;
+  } else if (notif.data.type === 'leave_approval') {
+    targetDate = notif.data.start_date;
+  }
+
+  if (targetDate) {
+    try {
+      const res = await api.get('/attendance-by-date', { 
+        params: { date: targetDate } 
+      });
+      
+      const record = res.data.data;
+      
+      let finalStatus = 'absent';
+      if (record) {
+        finalStatus = record.status;
+      } else if (notif.data.type === 'leave_approval') {
+        finalStatus = notif.data.leave_type || 'leave';
+      }
+
+      const d = new Date(targetDate);
+      const matchingLeave = leaves.value.find(l => targetDate >= l.start_date && targetDate <= l.end_date) || null;
+      const item = {
+        date: d.getDate(),
+        fullDate: targetDate,
+        type: "date",
+        status: finalStatus,
+        attendanceRecord: record,
+        leaveRecord: matchingLeave
+      };
+      
+      emit('open-detail', item);
+    } catch (err) {
+      console.error("Gagal memuat detail dari notifikasi:", err);
+    }
+  }
+};
+
+const formatNotifDate = (dateStr) => {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 watch(displayYear, (newYear, oldYear) => {
@@ -188,14 +312,13 @@ const calendarDays = computed(() => {
       );
 
       if (attendanceRecord) {
-        if (attendanceRecord.status === "hadir" || attendanceRecord.clock_in) {
+        if (attendanceRecord.status === "hadir" || attendanceRecord.clock_in || attendanceRecord.status === "present") {
           status = "present";
-        } else if (attendanceRecord.status === "terlambat") {
+        } else if (attendanceRecord.status === "terlambat" || attendanceRecord.status === "late") {
           status = "late";
-        } else if (
-          attendanceRecord.status === "alpha" ||
-          attendanceRecord.status === "izin"
-        ) {
+        } else if (attendanceRecord.status === "izin" || attendanceRecord.status === "leave" || attendanceRecord.status === "sakit") {
+          status = "leave";
+        } else if (attendanceRecord.status === "alpha" || attendanceRecord.status === "absent") {
           status = "absent";
         }
       }
@@ -215,7 +338,8 @@ const calendarDays = computed(() => {
       isToday: isToday,
       status: status,
       isHoliday: isHoliday,
-      attendanceRecord: status === 'present' || status === 'late' || status === 'absent' ? attendances.value.find(a => a.attendance_date === dateStr) : null,
+      attendanceRecord: attendances.value.find(a => a.attendance_date === dateStr) || null,
+      leaveRecord: leaves.value.find(l => dateStr >= l.start_date && dateStr <= l.end_date) || null,
     });
   }
   return days;
@@ -253,6 +377,8 @@ onMounted(() => {
   fetchCalendarData();
   fetchHolidays(displayYear.value);
   fetchSystemSettings();
+  fetchNotifications();
+  fetchStats();
 });
 onUnmounted(() => {
   clearInterval(timer);
@@ -267,19 +393,54 @@ onUnmounted(() => {
           <div class="avatar-wrapper">
              <img v-if="user.profile_photo" :src="getImageUrl(user.profile_photo)" class="avatar-img" />
              <div v-else class="avatar">{{ userInitial }}</div>
-             <div class="active-status"></div>
+             <div v-if="isLoggedIn" class="active-status"></div>
           </div>
           <div class="text-info">
             <p class="welcome">{{ greetingText }}</p>
             <h2 class="username">{{ user.name }}</h2>
           </div>
         </div>
-        <button class="btn-notif" @click="$emit('navigate', 'profile')">
+        <button class="btn-notif" @click="toggleNotifDropdown">
           <div class="notif-wrapper">
             <img src="../assets/notif.png" alt="Notif" />
-            <div class="notif-badge-pulse"></div>
+            <div class="notif-badge-pulse" v-if="unreadNotifications.length > 0"></div>
           </div>
         </button>
+
+        <!-- Dropdown Notifikasi -->
+        <div v-if="showNotifDropdown" class="notif-dropdown">
+          <div class="notif-header">
+            <h4>Notifications</h4>
+            <button @click="showNotifDropdown = false" class="close-notif">✕</button>
+          </div>
+          <div class="notif-list">
+            <div v-if="notifications.length === 0" class="notif-empty">
+              No notifications yet
+            </div>
+            <div 
+              v-for="notif in notifications" 
+              :key="notif.id" 
+              class="notif-item"
+              :class="{ 'unread': !notif.read_at }"
+              @click="handleNotifClick(notif)"
+            >
+              <div class="notif-icon-box">
+                <span v-if="notif.data.type === 'review_note'">📝</span>
+                <span v-else>🔔</span>
+              </div>
+              <div class="notif-text">
+                <p class="notif-msg">{{ notif.data.message }}</p>
+                <span class="notif-time">{{ formatNotifDate(notif.created_at) }}</span>
+              </div>
+              <div class="notif-actions-item">
+                <div v-if="!notif.read_at" class="unread-dot-static"></div>
+                <button class="btn-delete-notif" @click.stop="deleteNotif(notif.id)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -300,18 +461,20 @@ onUnmounted(() => {
         <div class="stats-simple-card">
           <div class="rate-info">
             <p class="rate-label">ATTENDANCE RATE</p>
-            <h1 class="rate-num">94.8%</h1>
-            <p class="rate-desc">↗ +2.4% from last month</p>
+            <h1 class="rate-num">{{ stats.attendance_rate }}%</h1>
+            <p class="rate-desc" v-if="stats.attendance_rate >= 90">Excellent attendance record! 🌟</p>
+            <p class="rate-desc" v-else-if="stats.attendance_rate >= 75">Good job, keep it up! 👍</p>
+            <p class="rate-desc" v-else>Keep improving your presence. 💪</p>
           </div>
-          <div class="rate-circle">
-            <span>GOOD</span>
+          <div class="rate-circle" :class="{'circle-warning': stats.attendance_rate < 75}">
+            <span>{{ stats.attendance_rate >= 90 ? 'EXCELLENT' : (stats.attendance_rate >= 75 ? 'GOOD' : 'FAIR') }}</span>
           </div>
         </div>
 
         <div class="time-card">
           <div class="date-row">
             <span class="date-text">{{ currentDateStr }}</span>
-            <span class="work-hours">09:00 - 17:00</span>
+            <span class="work-hours">{{ workHours.start }} - {{ workHours.end }}</span>
           </div>
 
           <p class="working-label">Current Working Time</p>
@@ -495,6 +658,175 @@ onUnmounted(() => {
   border-bottom-right-radius: 35px;
   box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
   transition: all 0.3s ease;
+}
+
+/* --- NOTIF DROPDOWN --- */
+.notif-dropdown {
+  position: absolute;
+  top: 80px;
+  right: 25px;
+  width: 280px;
+  max-height: 400px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: dropdownIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.notif-header {
+  padding: 15px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notif-header h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.close-notif {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.notif-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 0;
+}
+
+.notif-empty {
+  padding: 30px 20px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.notif-item {
+  padding: 12px 20px;
+  display: flex;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+  align-items: flex-start;
+}
+
+.notif-item:hover {
+  background: #f8fafc;
+}
+
+.notif-item.unread {
+  background: #eff6ff;
+}
+
+.notif-icon-box {
+  width: 32px;
+  height: 32px;
+  background: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  flex-shrink: 0;
+}
+
+.notif-text {
+  flex: 1;
+}
+
+.notif-msg {
+  margin: 0;
+  font-size: 12px;
+  color: #1e293b;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.notif-time {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 4px;
+  display: block;
+}
+
+.notif-actions-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.unread-dot-static {
+  width: 6px;
+  height: 6px;
+  background: #2563eb;
+  border-radius: 50%;
+}
+
+.btn-delete-notif {
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.notif-item:hover .btn-delete-notif {
+  opacity: 1;
+}
+
+.btn-delete-notif:hover {
+  background: #fecaca;
+  transform: scale(1.1);
+}
+
+/* --- MOBILE RESPONSIVENESS FOR NOTIF --- */
+@media (max-width: 768px) {
+  .notif-dropdown {
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-width: none;
+    top: 70px;
+  }
+
+  .btn-delete-notif {
+    opacity: 1; /* Selalu muncul di HP karena tidak ada hover */
+    width: 28px; /* Sedikit lebih besar agar mudah ditekan jari */
+    height: 28px;
+  }
+  
+  .notif-item {
+    padding: 15px 20px; /* Area sentuh lebih luas */
+  }
 }
 
 /* --- SCROLL CONTENT --- */
@@ -860,12 +1192,14 @@ background-color: var(--bg-card) !important;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
+  padding-right: 15px
 }
 .cal-header h3 {
   margin: 0;
   font-size: 16px;
   color: var(--text-main) !important;
   font-weight: 700;
+  padding-left: 15px;
 }
 .cal-nav {
   display: flex;

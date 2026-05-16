@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import api from "../api/axios.js";
+import Swal from 'sweetalert2';
 
 const emit = defineEmits(["go-back", "profile-updated"]);
 
@@ -55,7 +56,12 @@ const handleFileChange = (event) => {
 
 const saveChanges = async () => {
   if (passwordData.value.new && passwordData.value.new.length < 6) {
-    alert("Password baru minimal 6 karakter.");
+    Swal.fire({
+      icon: 'warning',
+      title: 'Password Terlalu Pendek',
+      text: 'Password baru minimal 6 karakter.',
+      confirmButtonColor: '#3B82F6'
+    });
     return;
   }
 
@@ -65,12 +71,22 @@ const saveChanges = async () => {
 
     if (passwordData.value.new) {
       if (!passwordData.value.current) {
-        alert("Masukkan password saat ini untuk mengubah password.");
+        Swal.fire({
+          icon: 'warning',
+          title: 'Verifikasi Diperlukan',
+          text: 'Masukkan password saat ini untuk mengubah password.',
+          confirmButtonColor: '#3B82F6'
+        });
         isLoading.value = false;
         return;
       }
       if (passwordData.value.new !== passwordData.value.confirm) {
-        alert("Konfirmasi password baru tidak cocok.");
+        Swal.fire({
+          icon: 'error',
+          title: 'Password Tidak Cocok',
+          text: 'Konfirmasi password baru tidak cocok.',
+          confirmButtonColor: '#EF4444'
+        });
         isLoading.value = false;
         return;
       }
@@ -100,7 +116,13 @@ const saveChanges = async () => {
 
       localStorage.setItem("user", JSON.stringify(storedUser));
 
-      alert("Perubahan berhasil disimpan!");
+      Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Perubahan berhasil disimpan!',
+        timer: 2000,
+        showConfirmButton: false
+      });
       emit("profile-updated", storedUser);
       emit("go-back");
     }

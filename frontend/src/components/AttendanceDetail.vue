@@ -82,16 +82,38 @@
             <div class="icon-box">
               <ClipboardList :size="16" color="#3b82f6" />
             </div>
-            <span class="row-label">Rencana Kegiatan</span>
+            <span class="row-label">{{ isLeaveStatus ? (leaveData?.type === 'sakit' ? 'Alasan Sakit' : 'Alasan Izin') : 'Rencana Kegiatan' }}</span>
           </div>
-          <span class="row-value">{{
-            attendance?.attendanceRecord?.rencana_kegiatan || "—"
-          }}</span>
+          <span class="row-value">{{ leaveReason || "—" }}</span>
+        </div>
+
+        <div class="info-row" v-if="isLeaveStatus && leaveData">
+          <div class="info-left">
+            <div class="icon-box">
+              <CalendarDays :size="16" color="#3b82f6" />
+            </div>
+            <span class="row-label">{{ leaveData?.type === 'sakit' ? 'Periode Sakit' : 'Periode Izin' }}</span>
+          </div>
+          <span class="row-value">{{ formatLeaveDate(leaveData.start_date) }} — {{ formatLeaveDate(leaveData.end_date) }}</span>
+        </div>
+
+        <div class="info-row" v-if="isLeaveStatus && leaveData">
+          <div class="info-left">
+            <div class="icon-box">
+              <FileText :size="16" color="#9333ea" />
+            </div>
+            <span class="row-label">Status Pengajuan</span>
+          </div>
+          <span class="row-value">
+            <span :class="['leave-status-badge', leaveData.status === 'approved' ? 'approved' : leaveData.status === 'rejected' ? 'rejected' : 'pending']">
+              {{ leaveData.status === 'approved' ? 'Disetujui' : leaveData.status === 'rejected' ? 'Ditolak' : 'Menunggu' }}
+            </span>
+          </span>
         </div>
 
         <div
           class="info-row"
-          v-if="attendance?.attendanceRecord?.progress_kegiatan"
+          v-if="attendance?.attendanceRecord?.progress_kegiatan && !isLeaveStatus"
         >
           <div class="info-left">
             <div class="icon-box">
@@ -112,7 +134,7 @@
             <div class="icon-box orange">
               <MessageSquare :size="16" color="#f59e0b" />
             </div>
-            <span class="row-label">Keterangan</span>
+            <span class="row-label">Review Admin</span>
           </div>
           <span class="row-value">{{
             attendance?.attendanceRecord?.notes || attendance?.notes
@@ -129,7 +151,8 @@
           v-if="
             attendance?.attendanceRecord?.clock_in_photo ||
             attendance?.attendanceRecord?.clock_out_photo ||
-            attendance?.attendanceRecord?.evidence
+            attendance?.attendanceRecord?.evidence ||
+            (isLeaveStatus && leaveData?.file)
           "
         >
           <div
@@ -154,10 +177,11 @@
               class="evidence-photo"
             />
           </div>
+          <!-- Bukti Izin / Progress -->
           <div class="photo-card" v-if="attendance?.attendanceRecord?.evidence">
-            <span class="photo-label">📎 Bukti Progress</span>
+            <span class="photo-label">{{ isLeaveStatus ? '📄 Bukti Izin' : '📎 Bukti Progress' }}</span>
             <template
-              v-if="attendance.attendanceRecord.evidence.endsWith('.pdf')"
+              v-if="String(attendance.attendanceRecord.evidence).endsWith('.pdf')"
             >
               <a
                 :href="getImageUrl(attendance.attendanceRecord.evidence)"
@@ -169,9 +193,19 @@
             <template v-else>
               <img
                 :src="getImageUrl(attendance.attendanceRecord.evidence)"
-                alt="Bukti Progress"
+                alt="Bukti"
                 class="evidence-photo"
               />
+            </template>
+          </div>
+          <!-- Bukti Izin from Leave table -->
+          <div class="photo-card" v-if="isLeaveStatus && leaveData?.file && !attendance?.attendanceRecord?.evidence">
+            <span class="photo-label">📄 {{ leaveData?.type === 'sakit' ? 'Bukti Sakit' : 'Bukti Izin' }}</span>
+            <template v-if="String(leaveData.file).endsWith('.pdf')">
+              <a :href="getImageUrl(leaveData.file)" target="_blank" class="pdf-link">Lihat PDF</a>
+            </template>
+            <template v-else>
+              <img :src="getImageUrl(leaveData.file)" alt="Bukti Izin" class="evidence-photo" />
             </template>
           </div>
         </div>
@@ -179,6 +213,26 @@
         <div class="no-photo" v-else>
           <ImageOff :size="40" color="#cbd5e1" />
           <p>Tidak ada foto / bukti tersedia</p>
+        </div>
+      </div>
+
+      <!-- Review Notes (dari Admin) -->
+      <div
+        class="section-card review-card"
+        v-if="attendance?.attendanceRecord?.review_notes"
+      >
+        <div class="review-header">
+          <h4 class="section-title">REVIEW NOTES</h4>
+          <div class="flag-badge" v-if="attendance?.attendanceRecord?.is_flagged">
+            <AlertCircle :size="12" color="#ef4444" />
+            <span>Follow-up</span>
+          </div>
+        </div>
+        <div class="review-content">
+          <MessageSquare :size="18" color="#3b82f6" class="review-icon" />
+          <p class="review-text">
+            {{ attendance.attendanceRecord.review_notes }}
+          </p>
         </div>
       </div>
 
@@ -208,6 +262,8 @@ import {
   MessageSquare,
   ImageOff,
   AlertCircle,
+  CalendarDays,
+  FileText,
 } from "lucide-vue-next";
 
 const props = defineProps({
@@ -218,6 +274,9 @@ const props = defineProps({
 });
 
 defineEmits(["go-back"]);
+
+// Leave data passed from DashboardScreen via attendance prop
+const leaveData = computed(() => props.attendance?.leaveRecord || null);
 
 const formattedDate = computed(() => {
   if (!props.attendance?.fullDate) return "Tanggal tidak tersedia";
@@ -231,6 +290,11 @@ const formattedDate = computed(() => {
 });
 
 const statusLabel = computed(() => {
+  if (isLeaveStatus.value && leaveData.value?.type) {
+    const type = leaveData.value.type.toLowerCase();
+    return type === 'sakit' ? 'Sakit' : 'Izin';
+  }
+
   const s = props.attendance?.status;
   if (!s) return "Hadir";
   const map = {
@@ -242,8 +306,13 @@ const statusLabel = computed(() => {
     terlambat: "Terlambat",
     alpha: "Alpha",
     izin: "Izin",
+    sakit: "Sakit",
+    sick: "Sakit",
+    cuti: "Cuti",
+    dinas: "Dinas",
   };
-  return map[s.toLowerCase()] || s;
+  const lowerS = s.toLowerCase();
+  return map[lowerS] || s;
 });
 
 const statusClass = computed(() => {
@@ -251,9 +320,35 @@ const statusClass = computed(() => {
   if (s === "hadir" || s === "present") return "status-present";
   if (s === "terlambat" || s === "late") return "status-late";
   if (s === "alpha" || s === "absent") return "status-absent";
-  if (s === "leave" || s === "izin") return "status-leave";
+  if (s === "leave" || s === "izin" || s === "sakit" || s === "sick" || s === "cuti" || s === "dinas") return "status-leave";
   return "status-present";
 });
+
+const isLeaveStatus = computed(() => {
+  const s = props.attendance?.status?.toLowerCase() || "";
+  return ["leave", "izin", "sakit", "sick", "cuti", "dinas"].includes(s);
+});
+
+// Smart leave reason: prioritize leave table data, fallback to attendance record
+const leaveReason = computed(() => {
+  if (isLeaveStatus.value && leaveData.value?.reason) {
+    return leaveData.value.reason;
+  }
+  // Fallback: attendance record may have "Pengajuan izin: [reason]" in rencana_kegiatan
+  const rk = props.attendance?.attendanceRecord?.rencana_kegiatan;
+  if (rk && rk.startsWith('Pengajuan')) {
+    // Extract just the reason part after the colon
+    const parts = rk.split(': ');
+    return parts.length > 1 ? parts.slice(1).join(': ') : rk;
+  }
+  return rk || null;
+});
+
+const formatLeaveDate = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+};
 
 const duration = computed(() => {
   const ci = props.attendance?.attendanceRecord?.clock_in;
@@ -284,6 +379,28 @@ const getImageUrl = (path) => {
 </script>
 
 <style scoped>
+/* Leave Status Badge */
+.leave-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.leave-status-badge.approved {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+.leave-status-badge.rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+.leave-status-badge.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+}
 .screen-container {
   display: flex;
   flex-direction: column;
@@ -647,6 +764,54 @@ const getImageUrl = (path) => {
 .no-photo p {
   font-size: 13px;
   margin: 0;
+}
+
+/* ===== REVIEW NOTES ===== */
+.review-card {
+  background: #f0f7ff; /* Biru sangat muda */
+  border: 1px solid #bfdbfe;
+}
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.review-header .section-title {
+  margin-bottom: 0;
+  color: #3b82f6;
+}
+.flag-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fee2e2;
+  color: #ef4444;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.review-content {
+  display: flex;
+  gap: 12px;
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #dbeafe;
+}
+.review-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.review-text {
+  margin: 0;
+  font-size: 13px;
+  color: #1e293b;
+  line-height: 1.6;
+  font-style: italic;
 }
 
 /* ===== FOOTER ===== */

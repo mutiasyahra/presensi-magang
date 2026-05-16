@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
+import api from "../../api/axios.js";
 import {
   LogIn,
   LogOut,
@@ -25,6 +26,7 @@ const toLocalDateString = (isoString) => {
 };
 
 const props = defineProps(["stats", "attendanceList"]);
+const emit = defineEmits(["change-tab"]);
 
 // Helper: format waktu dari ISO string ke "DD MMM, HH:MM AM/PM"
 const formatTime = (isoString) => {
@@ -128,6 +130,70 @@ const allRecentEvents = computed(() => {
   });
 
   return allEvents.sort((a, b) => b.rawTime - a.rawTime);
+});
+
+// Notifications
+const notifications = ref([]);
+const unreadNotifications = computed(() => notifications.value.filter(n => !n.read_at));
+const showNotifDropdown = ref(false);
+
+const fetchNotifications = async () => {
+  try {
+    const res = await api.get("/notifications");
+    if (res.data?.data) {
+      notifications.value = res.data.data;
+    }
+  } catch (err) {
+    console.error("Gagal mengambil data notifikasi:", err);
+  }
+};
+
+const toggleNotifDropdown = () => {
+  showNotifDropdown.value = !showNotifDropdown.value;
+};
+
+const markAsRead = async (id) => {
+  try {
+    await api.post(`/notifications/${id}/read`);
+    fetchNotifications();
+  } catch (err) {
+    console.error("Gagal menandai notifikasi dibaca:", err);
+  }
+};
+
+const deleteNotif = async (id) => {
+  try {
+    await api.delete(`/notifications/${id}`);
+    fetchNotifications();
+  } catch (err) {
+    console.error("Gagal menghapus notifikasi:", err);
+  }
+};
+
+const handleNotifClick = async (notif) => {
+  await markAsRead(notif.id);
+  showNotifDropdown.value = false;
+  
+  // Logic pengalihan berdasarkan tipe notifikasi
+  if (notif.data?.type === 'new_leave_request') {
+    emit('change-tab', 'leaves');
+  } else if (notif.data?.type === 'late_intern') {
+    emit('change-tab', 'attendance');
+  }
+};
+
+const formatNotifDate = (dateStr) => {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+onMounted(() => {
+  fetchNotifications();
 });
 
 const totalPages = computed(() => Math.ceil(filteredEvents.value.length / itemsPerPage));
@@ -516,9 +582,47 @@ const internPerformance = computed(() => {
         <input type="text" placeholder="Search interns..." />
       </div>
 
-      <button class="icon-btn">
-        <Bell size="20" />
-      </button>
+      <div class="notif-container" style="position: relative;">
+        <button class="icon-btn" @click="toggleNotifDropdown">
+          <Bell size="20" />
+          <div class="notif-badge" v-if="unreadNotifications.length > 0"></div>
+        </button>
+
+        <div v-if="showNotifDropdown" class="admin-notif-dropdown">
+          <div class="notif-header">
+            <h4>Notifications</h4>
+            <button @click="showNotifDropdown = false" class="close-notif">✕</button>
+          </div>
+          <div class="notif-list">
+            <div v-if="notifications.length === 0" class="notif-empty">
+              No notifications yet
+            </div>
+            <div 
+              v-for="notif in notifications" 
+              :key="notif.id" 
+              class="notif-item"
+              :class="{ 'unread': !notif.read_at }"
+              @click="handleNotifClick(notif)"
+            >
+              <div class="notif-icon-box">
+                <span v-if="notif.data.type === 'new_leave_request'">🏖️</span>
+                <span v-else-if="notif.data.type === 'late_intern'">⚠️</span>
+                <span v-else>🔔</span>
+              </div>
+              <div class="notif-text">
+                <p class="notif-msg">{{ notif.data.message }}</p>
+                <span class="notif-time">{{ formatNotifDate(notif.created_at) }}</span>
+              </div>
+              <div class="notif-actions-item">
+                <div v-if="!notif.read_at" class="unread-dot-static"></div>
+                <button class="btn-delete-notif" @click.stop="deleteNotif(notif.id)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <button class="icon-btn">
         <Moon size="20" />
@@ -776,10 +880,8 @@ const internPerformance = computed(() => {
                              <input type="date" v-model="tempEndDate" class="admin-inline-input" />
                            </div>
                         </div>
-                        <div class="opt-right">
-                          <input type="radio" :value="opt" v-model="tempRange" name="admin-range" />
-                          <span class="admin-radio-custom"></span>
-                        </div>
+                        <input type="radio" :value="opt" v-model="tempRange" name="admin-range" />
+                        <span class="admin-radio-custom"></span>
                       </label>
                     </div>
                   </div>
@@ -989,6 +1091,168 @@ const internPerformance = computed(() => {
 .icon-btn:hover {
   background-color: var(--bg-input);
   color: var(--text-main);
+}
+
+/* Notification Dropdown Styles */
+.notif-container {
+  position: relative;
+}
+
+.notif-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  border: 2px solid var(--bg-app);
+}
+
+.admin-notif-dropdown {
+  position: absolute;
+  top: 45px;
+  right: -10px;
+  width: 320px;
+  max-height: 400px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  animation: dropdownIn 0.2s ease-out;
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.notif-header {
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notif-header h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.close-notif {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.notif-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 350px;
+}
+
+.notif-empty {
+  padding: 20px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.notif-item {
+  padding: 12px 16px;
+  display: flex;
+  gap: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.2s;
+  align-items: flex-start;
+}
+
+.notif-item:hover {
+  background: #f8fafc;
+}
+
+.notif-item.unread {
+  background: #eff6ff;
+}
+
+.notif-icon-box {
+  width: 32px;
+  height: 32px;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  flex-shrink: 0;
+}
+
+.notif-text {
+  flex: 1;
+}
+
+.notif-msg {
+  margin: 0;
+  font-size: 12px;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.notif-time {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+  display: block;
+}
+
+.notif-actions-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.unread-dot-static {
+  width: 6px;
+  height: 6px;
+  background: #3b82f6;
+  border-radius: 50%;
+}
+
+.btn-delete-notif {
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.notif-item:hover .btn-delete-notif {
+  opacity: 1;
+}
+
+.btn-delete-notif:hover {
+  background: #fecaca;
 }
 
 /* =========================================
@@ -1408,8 +1672,9 @@ const internPerformance = computed(() => {
   align-items: flex-start;
   padding: 12px 20px;
   cursor: pointer;
-  transition: background 0.2s;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
 }
 
 .admin-range-option:hover {
@@ -1424,10 +1689,10 @@ const internPerformance = computed(() => {
 }
 
 .opt-text {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-main);
-  line-height: 20px;
+  line-height: 24px;
 }
 
 .opt-input-wrapper {
@@ -1456,43 +1721,39 @@ const internPerformance = computed(() => {
   color: var(--text-muted);
 }
 
-.opt-right {
-  display: flex;
-  align-items: center;
-  height: 20px;
-  margin-left: 12px;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.admin-radio-custom {
-  height: 18px;
-  width: 18px;
-  flex-shrink: 0;
-  border: 2px solid #cbd5e1;
-  border-radius: 50%;
-  position: relative;
-}
-
 .admin-range-option input[type="radio"] {
   position: absolute;
   opacity: 0;
+  cursor: pointer;
+}
+
+.admin-radio-custom {
+  height: 22px;
+  width: 22px;
+  background-color: transparent;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .admin-range-option input:checked ~ .admin-radio-custom {
   border-color: var(--accent-primary);
+  background-color: white;
 }
 
 .admin-range-option input:checked ~ .admin-radio-custom::after {
   content: "";
-  width: 10px;
-  height: 10px;
+  display: block;
+  width: 12px;
+  height: 12px;
   background: var(--accent-primary);
   border-radius: 50%;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
 }
 
 .admin-modal-footer {

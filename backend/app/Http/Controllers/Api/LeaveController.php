@@ -49,6 +49,12 @@ class LeaveController extends Controller
             'file' => $filePath
         ]);
 
+        // Kirim notifikasi ke admin yang mengaktifkan alert leave
+        $admins = \App\Models\User::where('role', 'admin')->where('notify_leave_requests', true)->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\NewLeaveRequestNotification($leave, $request->user()->name));
+        }
+
         return response()->json([
             'message' => 'Pengajuan berhasil',
             'data' => $leave
@@ -81,8 +87,9 @@ class LeaveController extends Controller
                         [
                             'status' => $leave->type,
                             'is_verified' => true,
-                            'rencana_kegiatan' => 'Cuti: ' . $leave->reason,
-                            'progress_kegiatan' => 'Cuti: ' . $leave->reason,
+                            'rencana_kegiatan' => 'Pengajuan ' . $leave->type . ': ' . $leave->reason,
+                            'progress_kegiatan' => 'Disetujui oleh Admin',
+                            'evidence' => $leave->file,
                         ]
                     );
                 }
@@ -96,6 +103,16 @@ class LeaveController extends Controller
         return response()->json([
             'message' => 'Status diperbarui',
             'data' => $leave
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $leave = Leave::findOrFail($id);
+        $leave->delete();
+        
+        return response()->json([
+            'message' => 'Pengajuan berhasil dihapus'
         ]);
     }
 }

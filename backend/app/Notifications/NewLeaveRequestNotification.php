@@ -5,15 +5,17 @@ namespace App\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-class LeaveApprovedNotification extends Notification
+class NewLeaveRequestNotification extends Notification
 {
     use Queueable;
 
     protected $leave;
+    protected $internName;
 
-    public function __construct($leave)
+    public function __construct($leave, $internName)
     {
         $this->leave = $leave;
+        $this->internName = $internName;
     }
 
     public function via($notifiable)
@@ -24,13 +26,10 @@ class LeaveApprovedNotification extends Notification
     public function toArray($notifiable)
     {
         return [
-            'message' => 'Pengajuan ' . $this->leave->type . 
-                        ' tanggal ' . $this->leave->start_date . 
-                        ' telah ' . $this->leave->status,
+            'message' => $this->internName . ' telah mengajukan ' . $this->leave->type . ' untuk tanggal ' . $this->leave->start_date,
             'leave_id' => $this->leave->id,
             'start_date' => $this->leave->start_date,
-            'leave_type' => $this->leave->type,
-            'type' => 'leave_approval'
+            'type' => 'new_leave_request'
         ];
     }
 }

@@ -1,6 +1,7 @@
 <script setup>
 import { defineProps, defineEmits, ref, onMounted, computed } from "vue";
 import api from "../../api/axios.js";
+import Swal from 'sweetalert2';
 
 const props = defineProps({
   attendance: {
@@ -23,6 +24,11 @@ const getImageUrl = (path) => {
 const isProcessing = ref(false);
 const currentAttendance = ref(props.attendance);
 const selectedDate = ref(props.attendance?.attendance_date || new Date().toISOString().split("T")[0]);
+
+// Review Notes State
+const reviewNotes = ref(props.attendance?.review_notes || "");
+const isFlagged = ref(!!props.attendance?.is_flagged);
+const isSavingNotes = ref(false);
 
 // Calendar State
 const showCalendar = ref(false);
@@ -95,14 +101,20 @@ const fetchAttendanceByDate = async (date) => {
     });
 
     if (response.data.data && response.data.data.length > 0) {
+      const att = response.data.data[0];
       currentAttendance.value = {
-        ...response.data.data[0],
+        ...att,
         name: props.attendance.name,
         intern_id: props.attendance.intern_id,
         avatar: props.attendance.avatar
       };
+      // Update notes from the fetched attendance
+      reviewNotes.value = att.review_notes || "";
+      isFlagged.value = !!att.is_flagged;
     } else {
       currentAttendance.value = null;
+      reviewNotes.value = "";
+      isFlagged.value = false;
     }
   } catch (error) {
     console.error("Failed to fetch attendance for date", error);
@@ -169,6 +181,33 @@ const toggleCalendar = () => {
   }
 };
 
+const saveOnlyNotes = async () => {
+  if (!currentAttendance.value || !currentAttendance.value.id) return;
+  isSavingNotes.value = true;
+  try {
+    await api.patch(`/attendances/${currentAttendance.value.id}/notes`, {
+      review_notes: reviewNotes.value,
+      is_flagged: isFlagged.value
+    });
+    // Notifikasi sederhana bisa ditambahkan di sini jika perlu
+  } catch (error) {
+    console.error("Failed to save notes", error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Gagal',
+      text: 'Gagal menyimpan catatan',
+      confirmButtonColor: '#EF4444'
+    });
+  } finally {
+    isSavingNotes.value = false;
+  }
+};
+
+const clearNotes = () => {
+  reviewNotes.value = "";
+  isFlagged.value = false;
+};
+
 const goBack = () => {
   emit("close");
 };
@@ -183,6 +222,8 @@ const handleVerify = async (status, isVerified) => {
       {
         is_verified: isVerified,
         status: status,
+        review_notes: reviewNotes.value,
+        is_flagged: isFlagged.value
       }
     );
 
@@ -190,7 +231,12 @@ const handleVerify = async (status, isVerified) => {
     emit("refresh");
   } catch (error) {
     console.error("Failed to verify attendance", error);
-    alert("Failed to verify attendance");
+    Swal.fire({
+      icon: 'error',
+      title: 'Kesalahan Verifikasi',
+      text: 'Gagal memproses verifikasi presensi',
+      confirmButtonColor: '#EF4444'
+    });
   } finally {
     isProcessing.value = false;
   }
@@ -594,13 +640,43 @@ const totalHours = computed(() => {
         </div>
 
         <div class="widget-card">
-          <h4>Review Notes</h4>
-          <textarea placeholder="Add a comment or internal note..."></textarea>
-          <label class="checkbox-container">
-            <input type="checkbox" />
-            <span class="checkmark"></span>
-            Flag for Follow-up
-          </label>
+          <div class="widget-header">
+            <h4>Review Notes</h4>
+          </div>
+          <div class="textarea-wrapper">
+            <textarea
+              v-model="reviewNotes"
+              placeholder="Add a comment or internal note..."
+            ></textarea>
+          </div>
+          <div class="notes-actions">
+            <label class="checkbox-container">
+              <input type="checkbox" v-model="isFlagged" />
+              <span class="checkmark"></span>
+              Flag for Follow-up
+            </label>
+            <div class="action-buttons-group">
+              <button 
+                class="btn-clear-notes" 
+                @click="clearNotes" 
+                title="Clear Notes"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+              <button
+                class="btn-send-outside"
+                @click="saveOnlyNotes"
+                :disabled="isSavingNotes"
+                title="Save Notes"
+              >
+                <svg v-if="!isSavingNotes" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+                <div v-else class="mini-spinner"></div>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1150,10 +1226,53 @@ const totalHours = computed(() => {
   background: var(--bg-card);
 }
 .widget-card h4 {
-  margin: 0 0 16px 0;
+  margin: 0;
   font-size: 14px;
   font-weight: 700;
   color: var(--text-main);
+}
+
+.btn-send-notes {
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+}
+
+.btn-send-notes:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-send-notes:active {
+  transform: scale(0.9);
+}
+
+.btn-send-notes:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.mini-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .widget-header {
@@ -1258,6 +1377,91 @@ textarea {
 }
 textarea:focus {
   border-color: var(--accent-primary);
+}
+.textarea-wrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.textarea-wrapper textarea {
+  width: 100%;
+  height: 100px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-main);
+  resize: none;
+  outline: none;
+  margin-bottom: 0;
+  background: transparent;
+  transition: border-color 0.2s;
+}
+
+.textarea-wrapper textarea:focus {
+  border-color: var(--accent-primary);
+}
+
+.notes-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.action-buttons-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-clear-notes {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  border: none;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-clear-notes:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.btn-send-outside {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent-primary);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.btn-send-outside:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+}
+
+.btn-send-outside:active {
+  transform: scale(0.92);
+}
+
+.btn-send-outside:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .checkbox-container {

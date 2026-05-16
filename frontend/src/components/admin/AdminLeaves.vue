@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 
 const props = defineProps(['leaveRequests']);
-const emit = defineEmits(['approve']);
+const emit = defineEmits(['approve', 'delete-leave']);
 
 const pendingCount = computed(() => props.leaveRequests?.filter(l => l.status === 'pending').length || 0);
 
@@ -194,9 +194,15 @@ const paginatedLeaves = computed(() => {
                   <button class="btn-reject" @click="$emit('approve', leave.id, 'rejected')">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                   </button>
+                  <button class="btn-delete-row" @click="$emit('delete-leave', leave.id)" title="Delete Request">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  </button>
                 </div>
                 <div v-else class="action-done">
                   <span class="text-muted">No actions needed</span>
+                  <button class="btn-delete-row" @click="$emit('delete-leave', leave.id)" title="Delete Request">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -496,6 +502,28 @@ const paginatedLeaves = computed(() => {
   display: flex; align-items: center; justify-content: center;
   background: var(--bg-card); color: var(--accent-danger); border: 1px solid var(--accent-danger);
   width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+}
+
+.action-done {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.btn-delete-row {
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete-row:hover {
+  background: #fee2e2;
+  color: #ef4444;
 }
 
 /* Pagination */
